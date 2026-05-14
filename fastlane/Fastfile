@@ -1,0 +1,93 @@
+# ── CuniGest — Fastfile ──────────────────────────────────────
+# Lanes disponibles :
+#
+#   bundle          → build le .aab release (sans upload)
+#   internal        → build + upload en test interne Play Store
+#   beta            → promeut internal → test fermé
+#   production      → promeut beta → production (avec confirmation)
+#
+# Usage :
+#   fastlane bundle
+#   fastlane internal
+#   fastlane beta
+#   fastlane production
+#
+# Pré-requis :
+#   gem install fastlane
+#   fastlane supply init   (première fois — synchronise les métadonnées)
+# ─────────────────────────────────────────────────────────────
+
+default_platform(:android)
+
+# Chemin vers le bundle AAB généré par flutter build appbundle
+AAB_PATH = "build/app/outputs/bundle/release/app-release.aab"
+
+platform :android do
+
+  # ── Build seul (sans upload) ──────────────────────────────
+  desc "Build le bundle AAB release"
+  lane :bundle do
+    sh("flutter build appbundle --release --dart-define=SENTRY_ENV=production")
+    UI.success("✅ AAB généré : #{AAB_PATH}")
+  end
+
+  # ── Build + upload test interne ───────────────────────────
+  desc "Build et déploie en test interne Play Store"
+  lane :internal do
+    bundle
+    upload_to_play_store(
+      track:                    "internal",
+      aab:                      AAB_PATH,
+      skip_upload_apk:          true,
+      skip_upload_metadata:     false,
+      skip_upload_changelogs:   false,
+      skip_upload_images:       true,    # à false quand les captures sont prêtes
+      skip_upload_screenshots:  true,    # à false quand les captures sont prêtes
+      release_status:           "draft", # passer à "completed" quand prêt
+    )
+    UI.success("✅ Déployé en test interne !")
+  end
+
+  # ── Promotion : interne → test fermé ─────────────────────
+  desc "Promeut la dernière version de test interne vers test fermé (alpha)"
+  lane :beta do
+    upload_to_play_store_internal_app_sharing(
+      # alternative : utiliser promote_to_production si votre flux est différent
+    )
+    upload_to_play_store(
+      track:        "internal",
+      track_promote_to: "alpha",
+      skip_upload_apk:  true,
+      skip_upload_aab:  true,
+    )
+    UI.success("✅ Promu en test fermé (alpha) !")
+  end
+
+  # ── Promotion : test fermé → production ──────────────────
+  desc "Promeut vers la production (rollout progressif 10%)"
+  lane :production do
+    UI.important("⚠️  Vous êtes sur le point de déployer en PRODUCTION.")
+    UI.confirm("Confirmer le déploiement en production ?")
+    upload_to_play_store(
+      track:            "alpha",
+      track_promote_to: "production",
+      rollout:          "0.1",  # 10% des utilisateurs au départ
+      skip_upload_apk:  true,
+      skip_upload_aab:  true,
+    )
+    UI.success("✅ Déployé en production (rollout 10%) !")
+  end
+
+  # ── Synchroniser uniquement les métadonnées ───────────────
+  desc "Met à jour titre, description, notes de version (sans builder)"
+  lane :metadata do
+    upload_to_play_store(
+      skip_upload_apk:         true,
+      skip_upload_aab:         true,
+      skip_upload_images:      true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("✅ Métadonnées mises à jour !")
+  end
+
+end

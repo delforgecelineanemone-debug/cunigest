@@ -1,0 +1,12 @@
+# ── CuniGest — Fastlane Appfile ──────────────────────────────
+# Identifiants de l'application Android pour le Play Store.
+#
+# Pré-requis :
+#   1. Créer un compte de service Google Play Console
+#   2. Télécharger le fichier JSON de clé de service
+#   3. Remplacer "path/to/service-account.json" par le chemin réel
+#      (NE PAS committer ce fichier JSON dans git !)
+# ─────────────────────────────────────────────────────────────
+
+json_key_file("path/to/service-account.json")   # ← à remplacer
+package_name("com.cunigest.gestion_cunicole")

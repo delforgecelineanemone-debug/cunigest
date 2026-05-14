@@ -1,0 +1,335 @@
+// ──────────────────────────────────────────────────────────────
+// Écran : Formulaire Soin (Ajout / Modification)
+// ──────────────────────────────────────────────────────────────
+// Permet d'enregistrer un traitement médical ou vaccin.
+//
+// Champ "délai d'attente" : nombre de jours pendant lesquels
+// le lapin ne peut pas être vendu/abattu pour la consommation.
+// Pré-rempli automatiquement selon le type de soin (valeurs
+// indicatives — vérifier le RCP du produit utilisé).
+// ──────────────────────────────────────────────────────────────
+
+import 'package:flutter/material.dart';
+import '../../database/db_helper.dart';
+import '../../models/soin.dart';
+import '../../models/lapin.dart';
+import '../../utils/theme.dart';
+import '../../widgets/common_widgets.dart';
+
+class SoinFormScreen extends StatefulWidget {
+  final Soin? soin;
+  final Map<int, Lapin>? lapinsMap;
+  final Lapin? lapinPreselect;
+
+  const SoinFormScreen({super.key, this.soin, this.lapinsMap, this.lapinPreselect});
+
+  @override
+  State<SoinFormScreen> createState() => _SoinFormScreenState();
+}
+
+class _SoinFormScreenState extends State<SoinFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final db = DBHelper.instance;
+
+  int? _lapinId;
+  String _typeSoin = Soin.typesSoins.first;
+  String _dateSoin = DateTime.now().toIso8601String().substring(0, 10);
+  String? _dateRappel;
+  final _produitCtrl = TextEditingController();
+  final _doseCtrl = TextEditingController();
+  final _vetoCtrl = TextEditingController();
+  final _coutCtrl = TextEditingController();
+  final _delaiCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+  bool _saving = false;
+  bool _toutElevage = false;
+
+  List<Lapin> get _lapins =>
+      widget.lapinsMap?.values.where((l) => l.statut == 'actif').toList() ?? [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.lapinPreselect != null) _lapinId = widget.lapinPreselect!.id;
+    final s = widget.soin;
+    if (s != null) {
+      _lapinId = s.lapinId;
+      _typeSoin = s.typeSoin;
+      _dateSoin = s.dateSoin;
+      _dateRappel = s.dateRappel;
+      _produitCtrl.text = s.produit ?? '';
+      _doseCtrl.text = s.dose ?? '';
+      _vetoCtrl.text = s.veterinaire ?? '';
+      _coutCtrl.text = s.cout?.toString() ?? '';
+      _delaiCtrl.text = s.delaiAttenteJours?.toString() ?? '';
+      _notesCtrl.text = s.notes ?? '';
+      _toutElevage = s.lapinId == null;
+    } else {
+      _appliquerDelaiParDefaut();
+    }
+  }
+
+  /// Pré-remplit le délai d'attente selon le type de soin
+  void _appliquerDelaiParDefaut() {
+    final defaut = Soin.delaisAttenteParDefaut[_typeSoin];
+    if (defaut != null) {
+      _delaiCtrl.text = defaut.toString();
+    } else {
+      _delaiCtrl.text = '';
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in [
+      _produitCtrl,
+      _doseCtrl,
+      _vetoCtrl,
+      _coutCtrl,
+      _delaiCtrl,
+      _notesCtrl
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.soin != null ? 'Modifier le soin' : 'Nouveau soin')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _section('🐇 Lapin concerné'),
+            SwitchListTile(
+              title: const Text('Tout l\'élevage'),
+              subtitle: const Text('Traitement collectif'),
+              value: _toutElevage,
+              onChanged: (v) => setState(() {
+                _toutElevage = v;
+                if (v) _lapinId = null;
+              }),
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (!_toutElevage) ...[
+              DropdownButtonFormField<int>(
+                initialValue: _lapinId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                    labelText: 'Sélectionner un lapin *', prefixIcon: Icon(Icons.pets)),
+                items: _lapins
+                    .map((l) => DropdownMenuItem(
+                        value: l.id,
+                        child: Text('${l.displayName} (${l.numeroBague})',
+                            overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                validator: (v) =>
+                    !_toutElevage && v == null ? 'Sélectionnez un lapin' : null,
+                onChanged: (v) => setState(() => _lapinId = v),
+              ),
+            ],
+            const SizedBox(height: 12),
+
+            _section('💉 Type de soin'),
+            DropdownButtonFormField<String>(
+              initialValue: _typeSoin,
+              decoration: const InputDecoration(
+                  labelText: 'Type de soin *',
+                  prefixIcon: Icon(Icons.health_and_safety)),
+              items: Soin.typesSoins
+                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                  .toList(),
+              onChanged: (v) {
+                setState(() => _typeSoin = v!);
+                _appliquerDelaiParDefaut();
+              },
+            ),
+            const SizedBox(height: 12),
+
+            _section('📅 Dates'),
+            _datePicker('Date du soin *', _dateSoin, (d) => setState(() => _dateSoin = d)),
+            const SizedBox(height: 12),
+            _datePicker('Date de rappel (optionnel)', _dateRappel,
+                (d) => setState(() => _dateRappel = d)),
+            const SizedBox(height: 12),
+
+            _section('💊 Traitement'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _produitCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Produit utilisé', prefixIcon: Icon(Icons.medication)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _doseCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Dose', prefixIcon: Icon(Icons.colorize)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _vetoCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Vétérinaire', prefixIcon: Icon(Icons.person)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _coutCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                        labelText: 'Coût (€)',
+                        prefixIcon: Icon(Icons.euro_symbol),
+                        suffixText: '€'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Délai d'attente médicament ──
+            _section('⏱️ Délai d\'attente avant abattage / vente'),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: const Text(
+                'Pendant ce délai, le lapin ne peut pas être vendu pour la consommation '
+                '(résidus de médicaments). Vérifiez la notice du produit utilisé — '
+                'la valeur pré-remplie est indicative.',
+                style: TextStyle(fontSize: 12, color: Colors.black87),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _delaiCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Délai d\'attente',
+                helperText: 'Nombre de jours (laisser vide si non applicable)',
+                prefixIcon: Icon(Icons.timer),
+                suffixText: 'jours',
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return null;
+                final n = int.tryParse(v);
+                if (n == null || n < 0) return 'Nombre invalide';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _notesCtrl,
+              maxLines: 2,
+              decoration:
+                  const InputDecoration(labelText: 'Notes', prefixIcon: Icon(Icons.notes)),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Text(widget.soin != null ? 'Enregistrer' : 'Créer le soin'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _section(String t) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, top: 4),
+        child: Text(t,
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+      );
+
+  Widget _datePicker(String label, String? value, Function(String) onPick) {
+    final display = value != null ? formatDate(value) : 'Non définie';
+    return InkWell(
+      onTap: () async {
+        final init = value != null ? DateTime.tryParse(value) ?? DateTime.now() : DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: init,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2030),
+        );
+        if (picked != null) onPick(picked.toIso8601String().substring(0, 10));
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: label, prefixIcon: const Icon(Icons.calendar_today)),
+        child: Row(
+          children: [
+            Expanded(
+                child: Text(display,
+                    style: TextStyle(color: value != null ? Colors.black87 : Colors.grey))),
+            if (value != null && label.contains('rappel'))
+              GestureDetector(
+                onTap: () => setState(() => _dateRappel = null),
+                child: const Icon(Icons.clear, size: 16, color: Colors.grey),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    final soin = Soin(
+      id: widget.soin?.id,
+      lapinId: _toutElevage ? null : _lapinId,
+      typeSoin: _typeSoin,
+      dateSoin: _dateSoin,
+      dateRappel: _dateRappel,
+      produit: _produitCtrl.text.trim().isEmpty ? null : _produitCtrl.text.trim(),
+      dose: _doseCtrl.text.trim().isEmpty ? null : _doseCtrl.text.trim(),
+      veterinaire: _vetoCtrl.text.trim().isEmpty ? null : _vetoCtrl.text.trim(),
+      cout: _coutCtrl.text.isEmpty ? null : double.tryParse(_coutCtrl.text),
+      delaiAttenteJours: _delaiCtrl.text.isEmpty ? null : int.tryParse(_delaiCtrl.text),
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+    );
+
+    try {
+      if (widget.soin == null) {
+        await db.insertSoin(soin);
+      } else {
+        await db.updateSoin(soin);
+      }
+      if (mounted) {
+        showSuccessSnackBar(context, 'Soin enregistré avec succès !');
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        showErrorSnackBar(context, 'Erreur d\'enregistrement : $e');
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+# Gems Fastlane utilisés par CuniGest
+# Généré automatiquement — ne pas modifier manuellement.
+# Pour installer : bundle install (depuis le dossier fastlane/)
+
+gem "fastlane"

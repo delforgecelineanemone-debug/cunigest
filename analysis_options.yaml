@@ -1,0 +1,11 @@
+# Règles d'analyse de code pour CuniGest
+# Ce fichier configure les bonnes pratiques de code Dart/Flutter
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Règles de style recommandées
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    avoid_print: true
+    prefer_single_quotes: true

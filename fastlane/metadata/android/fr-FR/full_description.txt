@@ -1,0 +1,62 @@
+CuniGest est l'application de référence pour les cuniculteurs professionnels et amateurs. Conçue pour fonctionner même sans connexion internet, elle centralise toutes les informations de votre élevage dans une interface simple et rapide.
+
+── CE QUE VOUS POUVEZ FAIRE ──
+
+🐇 GESTION DU CHEPTEL
+• Fiche complète par lapin : race, sexe, poids, cage, statut
+• Historique des pesées et courbe de croissance
+• Gestion des cages, clapiers et bâtiments
+• QR Code par animal pour identification rapide
+
+🔁 REPRODUCTION
+• Saisie des saillies avec calcul automatique des dates (mise bas, sevrage)
+• Suivi des portées : naissances, morts-nés, sevrages
+• Alertes automatiques de contrôle (mamelles J+4, pesée J+7...)
+• Statistiques de reproduction (taux de réussite, intervalle entre portées)
+
+💊 SANTÉ
+• Carnet de soins et vaccinations par animal
+• Rappels sanitaires programmés
+• Suivi des traitements (médicament, dose, durée)
+
+🥬 ALIMENTATION & STOCKS
+• Gestion des stocks d'aliments et médicaments
+• Alertes quand un article passe sous le seuil minimum
+• Historique des distributions par lot
+
+📦 LOTS D'ENGRAISSEMENT
+• Création et suivi de lots de lapereaux
+• Pesées collectives, calcul de gain moyen quotidien
+• Gestion de la vente groupée
+
+💰 VENTES & FINANCES
+• Enregistrement des ventes (poids vif, carcasse)
+• Suivi des dépenses par catégorie
+• Tableau de bord financier mensuel
+• Export PDF des rapports
+
+📊 TABLEAU DE BORD
+• Vue synthétique de l'élevage en un clin d'œil
+• Alertes prioritaires du jour
+• Répartition du cheptel par statut
+
+── FONCTIONNALITÉS AVANCÉES ──
+
+• Mode hors-ligne complet — l'app fonctionne sans internet
+• Synchronisation cloud automatique à la reconnexion
+• Backup chiffré AES-256 protégé par mot de passe
+• Mode multi-utilisateurs avec gestion des rôles (admin / ouvrier)
+• Thème clair et sombre
+• Système de motivation : streaks, niveaux, badges
+
+── SÉCURITÉ & CONFIDENTIALITÉ ──
+
+Toutes vos données sont stockées localement sur votre téléphone, chiffrées et protégées. Aucune donnée personnelle n'est partagée avec des tiers. La synchronisation cloud optionnelle utilise votre propre compte.
+
+Politique de confidentialité : https://titanddev-cmd.github.io/cunigest-privacy
+
+── POUR QUI ? ──
+
+CuniGest convient aussi bien aux éleveurs débutants qui veulent structurer leur suivi qu'aux professionnels gérant plusieurs centaines d'animaux. L'interface est simple, en français, et pensée pour une utilisation terrain (une main suffit).
+
+Développé par un passionné, pour les passionnés.

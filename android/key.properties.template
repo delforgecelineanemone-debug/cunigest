@@ -1,0 +1,29 @@
+# ──────────────────────────────────────────────────────────────
+# key.properties — Config de signature release (MODÈLE)
+# ──────────────────────────────────────────────────────────────
+# INSTRUCTIONS :
+#
+# 1. Créer votre keystore (une seule fois, à conserver précieusement) :
+#
+#    keytool -genkey -v -keystore cunigest-release.jks \
+#            -alias cunigest -keyalg RSA -keysize 2048 \
+#            -validity 10000
+#
+#    → Placez le fichier .jks dans le dossier android/
+#
+# 2. Copiez ce fichier en "key.properties" (sans .template) :
+#    Renommez android/key.properties.template → android/key.properties
+#
+# 3. Remplissez les valeurs ci-dessous avec vos informations réelles.
+#
+# 4. Ne commitez JAMAIS key.properties sur Git (déjà dans .gitignore).
+#
+# ⚠️  SAUVEGARDEZ le fichier .jks et ce fichier key.properties
+#     en lieu sûr (cloud chiffré, clé USB). Sans eux, vous ne
+#     pourrez plus mettre à jour votre app sur le Play Store.
+# ──────────────────────────────────────────────────────────────
+
+storePassword=VOTRE_MOT_DE_PASSE_KEYSTORE
+keyPassword=VOTRE_MOT_DE_PASSE_CLE
+keyAlias=cunigest
+storeFile=../android/cunigest-release.jks

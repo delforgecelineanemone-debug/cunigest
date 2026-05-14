@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__get_project",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__list_tables",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__get_project_url",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__get_publishable_keys",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__get_advisors",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__apply_migration",
+      "Bash(flutter --version)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter pub *)",
+      "Bash(python3 -c ' *)",
+      "Bash(xxd)",
+      "Bash(flutter test *)",
+      "mcp__8fef1f08-3654-4fe3-87e5-d872381e8453__execute_sql",
+      "Bash(curl -s -X POST https://psqjcgdzauwsdplxgdjn.supabase.co/auth/v1/signup -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcWpjZ2R6YXV3c2RwbHhnZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MzAxMDIsImV4cCI6MjA5MzEwNjEwMn0.Hpcp_5eWgLbrNKzbefQ2AexLk8G_n-EOM5AlXdv68IM' -H 'Content-Type: application/json' -d '{}')",
+      "Bash(xargs -I {} sh -c 'wc -l {} | awk \"{print \\\\$1 \\\\\" \\\\\" FILENAME}\" FILENAME=$\\(basename {}\\)')",
+      "Bash(grep -v '//')",
+      "Bash(cat)",
+      "Bash(bash /tmp/count_methods.sh)",
+      "PowerShell(Rename-Item -Path \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\\\\lib\\\\screens\" -NewName \"features\")",
+      "Bash(powershell.exe -Command \"Get-Content 'C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\\\\lib\\\\database\\\\db_helper.dart' -Encoding Unicode | Select-String 'verifierBadges|getStatistiquesLapins|getAllSaillies|getAllSoins|getAllVentes' | Select-Object -First 30\")",
+      "PowerShell($content = Get-Content 'C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\\\\lib\\\\database\\\\db_helper.dart' -Raw; $content.Length; $content.Substring\\(0, 200\\))",
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\\\\lib\\\\utils\" -File)",
+      "Bash(Select-Object Name)"
+    ]
+  }
+}

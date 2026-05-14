@@ -1,0 +1,131 @@
+# ──────────────────────────────────────────────────────────────
+# CuniGest — Application de gestion d'élevage cunicole
+# ──────────────────────────────────────────────────────────────
+
+name: gestion_cunicole
+description: Application mobile de gestion d'élevage de lapins — suivi des animaux, reproduction, santé, alimentation, ventes, lots d'engraissement.
+publish_to: 'none'
+version: 2.5.0+8
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Base de données locale (chiffrée SQLCipher) ──
+  sqflite: ^2.3.3                # Conservé pour compatibilité types/exceptions
+  sqflite_sqlcipher: ^3.1.0+1    # SQLite chiffré (V2.1)
+  path: ^1.9.0
+  path_provider: ^2.1.4
+
+  # ── Stockage sécurisé (clés de chiffrement DB) ──
+  flutter_secure_storage: ^9.2.2
+
+  # ── Partage et import de fichiers ──
+  share_plus: ^10.0.2
+  file_picker: ^8.1.2
+
+  # ── Formatage et localisation ──
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.6
+
+  # ── Graphiques ──
+  fl_chart: ^0.68.0
+
+  # ── Calendrier mensuel des tâches (V2.5 — Phase 4) ──
+  table_calendar: ^3.1.2
+
+  # ── Notifications & timezone ──
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+  flutter_timezone: ^4.0.0
+
+  # ── State management (V2.5 — Riverpod) ──
+  flutter_riverpod: ^2.5.1
+
+  # ── QR codes (V2) ──
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
+
+  # ── Photos lapins (V2.2 — Phase 2) ──
+  image_picker: ^1.1.2
+
+  # ── Compression images / thumbnails (D.4) ──
+  flutter_image_compress: ^2.4.0
+
+  # ── Export PDF (V2) ──
+  pdf: ^3.11.1
+  printing: ^5.13.3
+
+  # ── Authentification locale (V2 multi-utilisateur) ──
+  crypto: ^3.0.5
+
+  # ── Réseau / détection connectivité (D.5) ──
+  connectivity_plus: ^6.1.0
+
+  # ── Sync cloud Supabase (V2.1) ──
+  # Auth (email/JWT) + push/pull via REST. Pas besoin de supabase_flutter.
+  http: ^1.2.2
+
+  # ── Crash reporting (Phase A.2) ──
+  sentry_flutter: ^8.0.0
+
+  # ── Backup chiffré AES-256-GCM (Phase A.4) ──
+  cryptography: ^2.7.0
+
+  # ── Ouverture URL (politique de confidentialité — Phase A.5) ──
+  url_launcher: ^6.3.2
+
+  # ── Typographie Inter (CuniUI Design System — Phase R1) ──
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  sentry_dart_plugin: ^3.3.0
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+  # ── SQLite en mémoire pour les tests (sans SQLCipher) ──
+  sqflite_common_ffi: ^2.3.3
+
+  # ── Icône adaptative + splash natif (Phase 5) ──
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/
+    - assets/logo/
+
+# ── Configuration flutter_launcher_icons ──────────────────────
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icons/icon.png"
+  adaptive_icon_background: "#1D9E75"
+  adaptive_icon_foreground: "assets/icons/icon.png"
+  min_sdk_android: 21
+
+# ── Configuration flutter_native_splash ───────────────────────
+flutter_native_splash:
+  color: "#F7F6F1"
+  image: assets/logo/logo.png
+  color_dark: "#1A1A1A"
+  image_dark: assets/logo/logo.png
+  android_12:
+    image: assets/logo/logo.png
+    icon_background_color: "#1D9E75"
+    image_dark: assets/logo/logo.png
+    icon_background_color_dark: "#1A1A1A"
+  android: true
+  ios: false
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: true
+  project: flutter
+  org: cunigest

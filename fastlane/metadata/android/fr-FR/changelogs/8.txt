@@ -1,0 +1,9 @@
+Version 2.5 — Mise à jour majeure
+
+• Backup chiffré AES-256 protégé par mot de passe (export / import entre appareils)
+• Synchronisation cloud améliorée avec reprise automatique hors-ligne
+• Calendrier des tâches (vue mensuelle)
+• Thème sombre amélioré
+• Nouvelles statistiques de reproduction
+• Optimisations de performance (chargement 2× plus rapide)
+• Corrections de bugs

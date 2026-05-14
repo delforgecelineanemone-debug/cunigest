@@ -12,18 +12,12 @@ import '../providers/state_providers.dart';
 import '../state/app_state.dart';
 import '../ui/cu_ui.dart';
 import '../utils/breakpoints.dart';
-import '../utils/theme.dart';
-import '../widgets/common_widgets.dart';
 import 'lapins/lapins_list_screen.dart';
 import 'sante/sante_screen.dart';
 import 'ventes/ventes_screen.dart';
 import 'lots/lots_screen.dart';
 import 'lots/lot_detail_screen.dart';
 import 'routine/routine_screen.dart';
-import 'alertes/alertes_screen.dart';
-import 'reglages/reglages_screen.dart';
-import 'qr/qr_scan_screen.dart';
-import 'auth/login_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -50,18 +44,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashAsync = ref.watch(dashboardProvider);
     final profilState = ref.watch(profilProvider);
     final reglagesState = ref.watch(reglagesProvider);
-    final alertesCount = ref.watch(alertesCountProvider).count;
     final session = ref.watch(sessionProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final estAdmin = session.isAdmin || !session.isAuthenticated;
     final peutVoirFinances =
         session.peutVoirFinances || !session.isAuthenticated;
 
     return Scaffold(
       backgroundColor:
           isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: _buildAppBar(context, session, alertesCount, estAdmin),
+      appBar: const CuAppBar.brand(),
       body: RefreshIndicator(
         color: CuColors.primary,
         onRefresh: _refresh,
@@ -82,66 +74,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  AppBar _buildAppBar(
-    BuildContext context,
-    SessionState session,
-    int alertesCount,
-    bool estAdmin,
-  ) {
-    return AppBar(
-      title: Row(
-        children: [
-          Icon(Icons.eco, color: Colors.white, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            'CuniGest',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.qr_code_scanner),
-          tooltip: 'Scanner un QR',
-          onPressed: () => _navigate(const QrScanScreen()),
-        ),
-        _NotifIcon(
-          count: alertesCount,
-          onTap: () => _navigate(const AlertesScreen()),
-        ),
-        if (estAdmin)
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Réglages',
-            onPressed: () => _navigate(const ReglagesScreen()),
-          ),
-        if (session.isAuthenticated)
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Déconnexion',
-            onPressed: () => _logout(session),
-          ),
-      ],
-    );
-  }
-
-  Future<void> _logout(SessionState session) async {
-    final ok = await showConfirmDialog(
-      context,
-      title: 'Se déconnecter ?',
-      message: 'Vous reviendrez à l\'écran de connexion.',
-      confirmLabel: 'Déconnexion',
-    );
-    if (!ok || !mounted) return;
-    ref.read(sessionProvider.notifier).logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
 }
 
 // ── Corps principal ────────────────────────────────────────────
@@ -449,47 +381,6 @@ class _SectionHeader extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-// ── Icône notifications ────────────────────────────────────────
-
-class _NotifIcon extends StatelessWidget {
-  final int count;
-  final VoidCallback onTap;
-
-  const _NotifIcon({required this.count, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: onTap,
-        ),
-        if (count > 0)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: CuColors.danger,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                count > 9 ? '9+' : '$count',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

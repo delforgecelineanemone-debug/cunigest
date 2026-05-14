@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/vente.dart';
 import '../../models/lapin.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'vente_form_screen.dart';
@@ -85,9 +86,10 @@ class _VentesScreenState extends State<VentesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('💰 Ventes & Revenus'),
-        backgroundColor: const Color(0xFF9C27B0), // Violet pour l'argent
+      appBar: const CuAppBar(
+        title: 'Ventes & Revenus',
+        emoji: '💰',
+        accent: CuColors.accentFinance,
       ),
       body: Column(
         children: [
@@ -95,7 +97,7 @@ class _VentesScreenState extends State<VentesScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
-              color: Color(0xFF9C27B0),
+              color: CuColors.accentFinance,
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -154,7 +156,8 @@ class _VentesScreenState extends State<VentesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF9C27B0),
+        backgroundColor: CuColors.accentFinance,
+        foregroundColor: Colors.white,
         onPressed: _ajouter,
         icon: const Icon(Icons.add),
         label: const Text('Vente'),
@@ -177,8 +180,8 @@ class _VentesScreenState extends State<VentesScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: const CircleAvatar(
-          backgroundColor: Color.fromRGBO(156, 39, 176, 0.15),
-          child: Icon(Icons.attach_money, color: Color(0xFF9C27B0)),
+          backgroundColor: Color.fromRGBO(180, 116, 22, 0.15),
+          child: Icon(Icons.attach_money, color: CuColors.accentFinance),
         ),
         title: Row(
           children: [
@@ -190,7 +193,7 @@ class _VentesScreenState extends State<VentesScreen> {
             ),
             Text(
               formatMontant(v.prixVente),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF9C27B0), fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: CuColors.accentFinance, fontSize: 16),
             ),
           ],
         ),

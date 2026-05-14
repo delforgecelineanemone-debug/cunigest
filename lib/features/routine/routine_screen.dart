@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/tache.dart';
 import '../../models/profil.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../../services/notification_service.dart';
@@ -92,29 +93,30 @@ class _RoutineScreenState extends State<RoutineScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📋 Ma Routine'),
-        actions: [
-          // Calendrier mensuel des tâches
+      appBar: CuAppBar(
+        title: 'Ma Routine',
+        emoji: '📋',
+        automaticallyImplyLeading: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
             tooltip: 'Calendrier',
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const CalendrierTachesScreen())),
           ),
-          // Badge des trophées
           IconButton(
             icon: const Icon(Icons.emoji_events),
             tooltip: 'Mes badges',
             onPressed: _showBadges,
           ),
-          // Ajouter une tâche personnalisée
-          IconButton(
-            icon: const Icon(Icons.add_task),
-            tooltip: 'Ajouter une tâche',
-            onPressed: _ajouterTache,
-          ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _ajouterTache,
+        icon: const Icon(Icons.add),
+        label: const Text('Tâche'),
+        backgroundColor: CuColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

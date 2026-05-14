@@ -11,6 +11,7 @@ import '../../models/lapin.dart';
 import '../../models/lot.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class DepenseFormScreen extends StatefulWidget {
   final Depense? depense;
@@ -106,8 +107,7 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.depense != null;
     return Scaffold(
-      appBar: AppBar(
-          title: Text(isEdit ? 'Modifier dépense' : 'Nouvelle dépense')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier dépense' : 'Nouvelle dépense', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

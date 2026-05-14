@@ -18,6 +18,7 @@ import '../../models/user.dart';
 import '../../providers/state_providers.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -48,7 +49,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final estAdmin = session.isAdmin || !session.isAuthenticated;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('👥 Utilisateurs')),
+      appBar: CuAppBar(title: 'Utilisateurs', emoji: '👥', showActions: false),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

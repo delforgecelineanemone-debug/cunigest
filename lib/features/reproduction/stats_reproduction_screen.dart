@@ -15,6 +15,7 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../utils/theme.dart';
+import '../../ui/cu_ui.dart';
 
 class StatsReproductionScreen extends StatefulWidget {
   const StatsReproductionScreen({super.key});
@@ -47,9 +48,11 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📊 Statistiques reproduction'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Statistiques reproduction',
+        emoji: '📊',
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {

@@ -16,6 +16,7 @@ import '../../widgets/common_widgets.dart';
 import '../../widgets/growth_chart.dart';
 import 'lot_form_screen.dart';
 import 'lot_individualisation_screen.dart';
+import '../../ui/cu_ui.dart';
 
 class LotDetailScreen extends StatefulWidget {
   final Lot lot;
@@ -76,9 +77,10 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_lot.code),
-        actions: [
+      appBar: CuAppBar(
+        title: _lot.code,
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () async {

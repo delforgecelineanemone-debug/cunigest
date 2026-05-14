@@ -1,12 +1,12 @@
 // CheptelHubScreen — Onglet 2 : Lapins | Lots | Cages
 // IndexedStack pour lazy-loading (état conservé entre les tabs)
+// V4 : header global CuAppBar + tab bar en bottom, sous-écrans embedded.
 
 import 'package:flutter/material.dart';
-import '../../ui/tokens/colors.dart';
-import '../../ui/tokens/typography.dart';
+import '../../ui/cu_ui.dart';
+import '../cages/cages_home_screen.dart';
 import '../lapins/lapins_list_screen.dart';
 import '../lots/lots_screen.dart';
-import '../cages/cages_home_screen.dart';
 
 class CheptelHubScreen extends StatefulWidget {
   const CheptelHubScreen({super.key});
@@ -29,7 +29,7 @@ class _CheptelHubScreenState extends State<CheptelHubScreen> {
   void initState() {
     super.initState();
     _pages = List.filled(_tabs.length, null);
-    _pages[0] = const LapinsListScreen();
+    _pages[0] = const LapinsListScreen(embedded: true);
   }
 
   void _select(int i) {
@@ -37,9 +37,9 @@ class _CheptelHubScreenState extends State<CheptelHubScreen> {
     setState(() {
       _tab = i;
       _pages[i] ??= switch (i) {
-        1 => const LotsScreen(),
-        2 => const CagesHomeScreen(),
-        _ => const LapinsListScreen(),
+        1 => const LotsScreen(embedded: true),
+        2 => const CagesHomeScreen(embedded: true),
+        _ => const LapinsListScreen(embedded: true),
       };
     });
   }
@@ -48,94 +48,104 @@ class _CheptelHubScreenState extends State<CheptelHubScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? CuColors.bgDark : CuColors.bgLight;
-    final tabBg = isDark ? CuColors.cardDark : CuColors.cardLight;
-    final border = isDark ? CuColors.borderDark : CuColors.borderLight;
 
     return Scaffold(
       backgroundColor: bg,
-      body: Column(
+      appBar: CuAppBar(
+        title: 'Cheptel',
+        automaticallyImplyLeading: false,
+        bottom: _HubTabBar(
+          tabs: _tabs,
+          current: _tab,
+          onSelect: _select,
+        ),
+      ),
+      body: IndexedStack(
+        index: _tab,
         children: [
-          // ── Tab bar collé sous la status bar ──
-          Container(
-            color: tabBg,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
+          for (var i = 0; i < _tabs.length; i++)
+            _pages[i] ?? const SizedBox.shrink(),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tab bar (bottom de l'AppBar) ──────────────────────────────
+
+class _HubTabBar extends StatelessWidget implements PreferredSizeWidget {
+  final List<_TabDef> tabs;
+  final int current;
+  final ValueChanged<int> onSelect;
+
+  const _HubTabBar({
+    required this.tabs,
+    required this.current,
+    required this.onSelect,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(48);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? CuColors.cardDark : CuColors.cardLight;
+    final border = isDark ? CuColors.borderDark : CuColors.borderLight;
+    final inactive =
+        isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight;
+
+    return Container(
+      color: bg,
+      decoration: BoxDecoration(
+        color: bg,
+        border: Border(bottom: BorderSide(color: border)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: List.generate(tabs.length, (i) {
+          final selected = current == i;
+          final t = tabs[i];
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onSelect(i),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: tabBg,
-                  border: Border(bottom: BorderSide(color: border)),
+                  border: Border(
+                    bottom: BorderSide(
+                      color:
+                          selected ? CuColors.primary : Colors.transparent,
+                      width: 2.5,
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 4),
                 child: Row(
-                  children: List.generate(_tabs.length, (i) {
-                    final selected = _tab == i;
-                    final t = _tabs[i];
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => _select(i),
-                        behavior: HitTestBehavior.opaque,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: selected
-                                    ? CuColors.primary
-                                    : Colors.transparent,
-                                width: 2.5,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                selected ? t.activeIcon : t.icon,
-                                size: 18,
-                                color: selected
-                                    ? CuColors.primary
-                                    : (isDark
-                                        ? CuColors.textSecondaryDark
-                                        : CuColors.textSecondaryLight),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                t.label,
-                                style: CuTypography.textTheme.labelMedium
-                                    ?.copyWith(
-                                  fontWeight: selected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: selected
-                                      ? CuColors.primary
-                                      : (isDark
-                                          ? CuColors.textSecondaryDark
-                                          : CuColors.textSecondaryLight),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      selected ? t.activeIcon : t.icon,
+                      size: 18,
+                      color: selected ? CuColors.primary : inactive,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      t.label,
+                      style:
+                          CuTypography.textTheme.labelMedium?.copyWith(
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                        color: selected ? CuColors.primary : inactive,
                       ),
-                    );
-                  }),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-          // ── Contenu ──
-          Expanded(
-            child: IndexedStack(
-              index: _tab,
-              children: [
-                for (var i = 0; i < _tabs.length; i++)
-                  _pages[i] ?? const SizedBox.shrink(),
-              ],
-            ),
-          ),
-        ],
+          );
+        }),
       ),
     );
   }

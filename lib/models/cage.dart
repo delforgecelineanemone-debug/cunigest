@@ -11,6 +11,7 @@
 const List<String> kCageStatuts = [
   'vide',
   'occupee',
+  'pleine',
   'gestante',
   'allaitement',
   'sevrage',
@@ -80,6 +81,31 @@ class Cage {
   /// Libellé humain du statut.
   String get statutLabel => cageStatutLabel(statut);
 
+  /// Statuts "spéciaux" qui restent renseignés manuellement par l'éleveur.
+  /// Les statuts automatiques (`vide`, `occupee`, `pleine`) sont calculés
+  /// à partir de l'occupation réelle.
+  static const Set<String> statutsSpeciaux = {
+    'gestante',
+    'allaitement',
+    'sevrage',
+    'quarantaine',
+    'desinfection',
+    'maintenance',
+  };
+
+  /// True quand le statut courant est un état manuel (gestation, quarantaine…)
+  bool get aStatutSpecial => statutsSpeciaux.contains(statut);
+
+  /// Statut effectif à afficher pour [occupants] lapins (V2.5 — auto B4).
+  /// - Statut spécial conservé tel quel (priorité éleveur)
+  /// - Sinon : vide / occupee / pleine selon occupation
+  String statutEffectif(int occupants) {
+    if (aStatutSpecial) return statut;
+    if (occupants <= 0) return 'vide';
+    if (capaciteMax > 0 && occupants >= capaciteMax) return 'pleine';
+    return 'occupee';
+  }
+
   /// Charge utile QR : `cunigest:cage:<id>:<numero>`
   String? qrPayload() => id == null ? null : 'cunigest:cage:$id:$numero';
 }
@@ -91,6 +117,8 @@ String cageStatutLabel(String s) {
       return 'Vide';
     case 'occupee':
       return 'Occupée';
+    case 'pleine':
+      return 'Pleine';
     case 'gestante':
       return 'Gestante';
     case 'allaitement':

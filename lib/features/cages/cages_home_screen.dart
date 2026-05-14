@@ -15,6 +15,7 @@ import '../../models/batiment.dart';
 import '../../models/clapier.dart';
 import '../../models/cage.dart';
 import '../../services/pdf_service.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'batiment_form_screen.dart';
@@ -23,7 +24,10 @@ import 'cage_form_screen.dart';
 import 'cage_detail_screen.dart';
 
 class CagesHomeScreen extends StatefulWidget {
-  const CagesHomeScreen({super.key});
+  /// True quand intégré dans le Cheptel Hub (pas d'AppBar locale).
+  final bool embedded;
+
+  const CagesHomeScreen({super.key, this.embedded = false});
 
   @override
   State<CagesHomeScreen> createState() => _CagesHomeScreenState();
@@ -216,22 +220,19 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cages'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            tooltip: 'Imprimer toutes les étiquettes',
-            onPressed: _imprimerToutesEtiquettes,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Rafraîchir',
-            onPressed: _load,
-          ),
-        ],
+    final actions = <Widget>[
+      IconButton(
+        icon: const Icon(Icons.print),
+        tooltip: 'Imprimer toutes les étiquettes',
+        color: widget.embedded ? null : Colors.white,
+        onPressed: _imprimerToutesEtiquettes,
       ),
+    ];
+
+    return Scaffold(
+      appBar: widget.embedded
+          ? null
+          : CuAppBar(title: 'Cages', extraActions: actions),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _batiments.isEmpty
@@ -247,6 +248,15 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(12),
                     children: [
+                      if (widget.embedded)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _imprimerToutesEtiquettes,
+                            icon: const Icon(Icons.print, size: 18),
+                            label: const Text('Imprimer étiquettes'),
+                          ),
+                        ),
                       _statsHeader(),
                       const SizedBox(height: 8),
                       ..._batiments.map(_buildBatimentTile),
@@ -441,9 +451,11 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
   }
 
   Widget _buildCageCell(Cage cage) {
-    final color = cageStatutColor(cage.statut);
     final occ = _occByCage[cage.id] ?? 0;
     final cap = cage.capaciteMax;
+    // V2.5 — B4 : statut auto vide/occupee/pleine depuis l'occupation
+    final statutAffiche = cage.statutEffectif(occ);
+    final color = cageStatutColor(statutAffiche);
     final pleine = occ >= cap;
     return InkWell(
       onTap: () => _ouvrirCage(cage),
@@ -462,7 +474,7 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(cageStatutIcon(cage.statut), color: color, size: 16),
+                Icon(cageStatutIcon(statutAffiche), color: color, size: 16),
                 if (pleine)
                   const Icon(Icons.lock, size: 12, color: Colors.redAccent),
               ],

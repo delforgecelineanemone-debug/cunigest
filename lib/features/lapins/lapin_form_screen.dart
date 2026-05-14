@@ -31,6 +31,8 @@ import '../../models/lapin.dart';
 import '../../services/id_generator_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
+import '../../data/cunicole_reference.dart';
 
 class LapinFormScreen extends StatefulWidget {
   final Lapin? lapin; // null = création, sinon = modification
@@ -61,17 +63,12 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   String? _cageLabel; // libellé affiché ("Bât A • Clapier 1 • C4B1")
   String? _photoPath;
   String? _destination; // V14 — sortie de ferme
+  String? _causeMortalite; // V16 — obligatoire si statut='mort'
   bool _saving = false;
 
   List<Lapin> _allLapins = [];
   bool _loadingParents = true;
 
-  /// Races de lapins courantes en élevage
-  static const List<String> races = [
-    'Néo-Zélandais', 'Californien', 'Rex', 'Fauve de Bourgogne',
-    'Géant des Flandres', 'Blanc de Termonde', 'Angora', 'Nain',
-    'Papillon', 'Bélier', 'Chinchilla', 'Autre',
-  ];
 
   @override
   void initState() {
@@ -94,6 +91,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       _cageId = l.cageId;
       _photoPath = l.photoPath;
       _destination = l.destination;
+      _causeMortalite = l.causeMortalite;
     }
     _loadParents();
     _resolveCageLabel();
@@ -273,6 +271,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
           ? null
           : double.tryParse(_prixAchat.text.replaceAll(',', '.')),
       destination: _destination,
+      causeMortalite: _statut == 'mort' ? _causeMortalite : null,
     );
 
     try {
@@ -335,7 +334,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.lapin != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Modifier le lapin' : 'Nouveau lapin')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier le lapin' : 'Nouveau lapin', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -435,7 +434,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     const SizedBox(height: 12),
     Autocomplete<String>(
       initialValue: TextEditingValue(text: _race.text),
-      optionsBuilder: (v) => races.where((r) => r.toLowerCase().contains(v.text.toLowerCase())),
+      optionsBuilder: (v) => CunicoleRef.races.where((r) => r.toLowerCase().contains(v.text.toLowerCase())),
       onSelected: (v) => _race.text = v,
       fieldViewBuilder: (_, ctrl, focus, onSubmit) => TextFormField(
         controller: ctrl, focusNode: focus,
@@ -448,10 +447,15 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
 
   List<Widget> _buildCaracteristiquesSection() => [
     _sectionTitle('Caractéristiques'),
-    TextFormField(
-      controller: _couleur,
-      decoration: const InputDecoration(
-          labelText: 'Couleur', prefixIcon: Icon(Icons.palette)),
+    Autocomplete<String>(
+      initialValue: TextEditingValue(text: _couleur.text),
+      optionsBuilder: (v) => CunicoleRef.couleurs.where((c) => c.toLowerCase().contains(v.text.toLowerCase())),
+      onSelected: (v) => _couleur.text = v,
+      fieldViewBuilder: (_, ctrl, focus, onSubmit) => TextFormField(
+        controller: ctrl, focusNode: focus,
+        onEditingComplete: onSubmit, onChanged: (v) => _couleur.text = v,
+        decoration: const InputDecoration(labelText: 'Couleur', prefixIcon: Icon(Icons.palette)),
+      ),
     ),
     const SizedBox(height: 12),
     TextFormField(
@@ -563,9 +567,32 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         DropdownMenuItem(value: 'vendu', child: Text('Vendu')),
         DropdownMenuItem(value: 'mort', child: Text('Mort')),
       ],
-      onChanged: (v) => setState(() => _statut = v!),
+      onChanged: (v) => setState(() {
+        _statut = v!;
+        // V2.5 — réinitialiser la cause si on quitte le statut "mort"
+        if (_statut != 'mort') _causeMortalite = null;
+      }),
     ),
     const SizedBox(height: 12),
+    // V16 — cause de mortalité OBLIGATOIRE quand statut='mort'
+    if (_statut == 'mort') ...[
+      DropdownButtonFormField<String>(
+        initialValue: _causeMortalite,
+        decoration: const InputDecoration(
+          labelText: 'Cause de mortalité *',
+          prefixIcon: Icon(Icons.warning_amber, color: Colors.red),
+          helperText: 'Donnée sanitaire essentielle pour vos statistiques',
+          helperMaxLines: 2,
+        ),
+        validator: (v) =>
+            (v == null || v.isEmpty) ? 'Cause obligatoire' : null,
+        items: Lapin.causesMortalite.entries
+            .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+            .toList(),
+        onChanged: (v) => setState(() => _causeMortalite = v),
+      ),
+      const SizedBox(height: 12),
+    ],
     _sectionTitle('Sortie de ferme (optionnel)'),
     DropdownButtonFormField<String?>(
       initialValue: _destination,

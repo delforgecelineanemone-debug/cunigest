@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/stock.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'stock_form_screen.dart';
@@ -50,11 +51,13 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
   Widget build(BuildContext context) {
     final critiques = _stocks.where((s) => s.estCritique).length;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🌾 Alimentation & Stocks'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Alimentation & Stocks',
+        emoji: '🌾',
+        accent: CuColors.accentFeed,
+        extraActions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list, color: Colors.white),
             onSelected: (v) => setState(() => _filtre = v),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'tous', child: Text('Tous les stocks')),

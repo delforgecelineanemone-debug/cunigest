@@ -14,6 +14,7 @@ import '../../models/sync_entry.dart';
 import '../../services/account_service.dart';
 import '../../services/sync_service.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key});
@@ -50,7 +51,7 @@ class _SyncScreenState extends State<SyncScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sauvegarde cloud')),
+      appBar: const CuAppBar(title: 'Sauvegarde cloud', emoji: '☁️', showActions: false),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

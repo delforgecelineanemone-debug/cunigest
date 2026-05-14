@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/alerte.dart';
 import '../../models/lot.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../lots/lot_individualisation_screen.dart';
@@ -53,9 +54,11 @@ class _AlertesScreenState extends State<AlertesScreen> {
     final normales = _alertes.where((a) => a.priorite == 'normal').length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🔔 Notifications'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Notifications',
+        emoji: '🔔',
+        showNotifications: false,
+        extraActions: [
           if (_alertes.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.done_all),

@@ -11,6 +11,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../utils/theme.dart';
+import '../../ui/cu_ui.dart';
 
 class CalculatricesScreen extends StatelessWidget {
   const CalculatricesScreen({super.key});
@@ -20,8 +21,10 @@ class CalculatricesScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('🧮 Calculatrices'),
+        appBar: CuAppBar(
+          title: 'Calculatrices',
+          emoji: '🧮',
+          showActions: false,
           bottom: const TabBar(
             isScrollable: true,
             tabs: [

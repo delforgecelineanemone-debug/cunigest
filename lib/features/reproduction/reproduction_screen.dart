@@ -96,7 +96,11 @@ class _ReproductionScreenState extends State<ReproductionScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: AppBar(title: const Text('Reproduction')),
+      appBar: const CuAppBar(
+        title: 'Reproduction',
+        accent: CuColors.accentRepro,
+        automaticallyImplyLeading: false,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

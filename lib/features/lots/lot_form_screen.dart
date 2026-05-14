@@ -8,6 +8,7 @@ import '../../models/lot.dart';
 import '../../services/id_generator_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class LotFormScreen extends StatefulWidget {
   final Lot? lot;
@@ -75,8 +76,7 @@ class _LotFormScreenState extends State<LotFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.lot != null;
     return Scaffold(
-      appBar:
-          AppBar(title: Text(isEdit ? 'Modifier le lot' : 'Nouveau lot')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier le lot' : 'Nouveau lot', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

@@ -10,6 +10,7 @@ import '../../database/db_helper.dart';
 import '../../models/cage.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class CageFormScreen extends StatefulWidget {
   final int clapierId;
@@ -96,7 +97,7 @@ class _CageFormScreenState extends State<CageFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.cage != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Modifier la cage' : 'Nouvelle cage')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier la cage' : 'Nouvelle cage', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

@@ -28,6 +28,7 @@ import '../../models/saillie.dart';
 import '../../services/id_generator_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class LotIndividualisationScreen extends StatefulWidget {
   final Lot lot;
@@ -269,9 +270,7 @@ class _LotIndividualisationScreenState
   Widget build(BuildContext context) {
     final ageJours = _calculerAge();
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Individualiser ${widget.lot.code}'),
-      ),
+      appBar: CuAppBar(title: 'Individualiser ${widget.lot.code}', showActions: false),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(

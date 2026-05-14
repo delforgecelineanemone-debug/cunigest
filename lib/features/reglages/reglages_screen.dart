@@ -18,6 +18,7 @@ import '../../providers/state_providers.dart';
 import '../../services/backup_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/seed_test_data_service.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../auth/users_screen.dart';
@@ -126,7 +127,12 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
     final estAdmin = session.isAdmin || !session.isAuthenticated;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('⚙️ Réglages')),
+      appBar: const CuAppBar(
+        title: 'Réglages',
+        emoji: '⚙️',
+        showSettings: false,
+        accent: CuColors.accentAdmin,
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

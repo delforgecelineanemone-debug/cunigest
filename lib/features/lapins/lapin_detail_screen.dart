@@ -22,6 +22,7 @@ import '../cages/cage_detail_screen.dart';
 import '../sante/soin_form_screen.dart';
 import '../qr/qr_display_screen.dart';
 import 'lapin_form_screen.dart';
+import '../../ui/cu_ui.dart';
 
 class LapinDetailScreen extends StatefulWidget {
   final Lapin lapin;
@@ -315,9 +316,10 @@ class _LapinDetailScreenState extends State<LapinDetailScreen> {
   Widget build(BuildContext context) {
     final color = lapin.sexe == 'male' ? Colors.blue : Colors.pink;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lapin.displayName),
-        actions: [
+      appBar: CuAppBar(
+        title: lapin.displayName,
+        showActions: false,
+        extraActions: [
           IconButton(icon: const Icon(Icons.qr_code), tooltip: 'QR code',
               onPressed: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => QrDisplayScreen(lapin: lapin)))),
@@ -618,8 +620,35 @@ class _PeseesCard extends StatelessWidget {
   final VoidCallback onAjouter;
   final void Function(PeseeLapin) onSupprimer;
 
+  /// GMQ global (g/j) sur toute la période. Null si < 2 pesées ou 0 jour.
+  int? get _gmqGlobal {
+    if (pesees.length < 2) return null;
+    final first = pesees.first;
+    final last = pesees.last;
+    final days = DateTime.parse(last.datePesee)
+        .difference(DateTime.parse(first.datePesee))
+        .inDays;
+    if (days == 0) return null;
+    return ((last.poids - first.poids) * 1000 / days).round();
+  }
+
+  /// GMQ sur les 2 dernières pesées (g/j). Null si < 2 pesées ou même jour.
+  int? get _gmqRecent {
+    if (pesees.length < 2) return null;
+    final prev = pesees[pesees.length - 2];
+    final last = pesees.last;
+    final days = DateTime.parse(last.datePesee)
+        .difference(DateTime.parse(prev.datePesee))
+        .inDays;
+    if (days == 0) return null;
+    return ((last.poids - prev.poids) * 1000 / days).round();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gmqG = _gmqGlobal;
+    final gmqR = _gmqRecent;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -646,6 +675,37 @@ class _PeseesCard extends StatelessWidget {
                         style: TextStyle(color: Colors.grey))),
               )
             else ...[
+              // ── Stats GMQ ──────────────────────────────────────────
+              if (gmqG != null || gmqR != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    children: [
+                      if (gmqG != null)
+                        _StatChip(
+                          label: 'GMQ global',
+                          value: '$gmqG g/j',
+                          color: gmqG >= 30
+                              ? Colors.green
+                              : gmqG >= 20
+                                  ? Colors.orange
+                                  : Colors.red,
+                        ),
+                      if (gmqR != null && pesees.length >= 3)
+                        _StatChip(
+                          label: 'GMQ récent',
+                          value: '$gmqR g/j',
+                          color: gmqR >= 30
+                              ? Colors.green
+                              : gmqR >= 20
+                                  ? Colors.orange
+                                  : Colors.red,
+                        ),
+                    ],
+                  ),
+                ),
+              // ── Courbe de croissance ───────────────────────────────
               if (pesees.length >= 2) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -656,16 +716,36 @@ class _PeseesCard extends StatelessWidget {
                 ),
                 const Divider(height: 12),
               ],
-              ...pesees.reversed.take(5).map((p) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.scale, color: AppTheme.primary),
-                    title: Text('${p.poids.toStringAsFixed(2)} kg'),
-                    subtitle: Text(formatDate(p.datePesee)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => onSupprimer(p),
-                    ),
-                  )),
+              // ── Liste pesées ───────────────────────────────────────
+              ...pesees.reversed.take(5).map((p) {
+                final idx = pesees.indexOf(p);
+                final prev = idx > 0 ? pesees[idx - 1] : null;
+                final delta = prev != null ? p.poids - prev.poids : null;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.scale, color: AppTheme.primary),
+                  title: Text('${p.poids.toStringAsFixed(2)} kg'),
+                  subtitle: Text(formatDate(p.datePesee)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (delta != null)
+                        Text(
+                          '${delta >= 0 ? '+' : ''}${(delta * 1000).round()} g',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: delta >= 0 ? Colors.green.shade700 : Colors.red,
+                          ),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => onSupprimer(p),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               if (pesees.length > 5)
                 Padding(
                   padding: const EdgeInsets.only(top: 4, left: 8),
@@ -675,6 +755,35 @@ class _PeseesCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: color)),
+          const SizedBox(width: 4),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }

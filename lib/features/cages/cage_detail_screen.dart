@@ -26,6 +26,7 @@ import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../lapins/lapin_detail_screen.dart';
 import 'cage_form_screen.dart';
+import '../../ui/cu_ui.dart';
 
 class CageDetailScreen extends ConsumerStatefulWidget {
   final int cageId;
@@ -311,9 +312,10 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
     final cap = cage.capaciteMax;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Cage ${cage.numero}'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Cage ${cage.numero}',
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.qr_code_2),
             tooltip: 'Voir le QR',

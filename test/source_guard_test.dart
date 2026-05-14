@@ -27,12 +27,14 @@ void main() {
 
     test('schema version a jour avec branche de migration', () {
       final schema = read('lib/database/schema.dart');
-      expect(schema, contains('const int kCurrentDbVersion = 11'));
+      expect(schema, contains('const int kCurrentDbVersion = 16'));
       expect(schema, contains("devise TEXT DEFAULT '€'"));
       expect(schema, contains('if (oldVersion < 10)'));
       expect(schema, contains('if (oldVersion < 11)'));
+      expect(schema, contains('if (oldVersion < 16)'));
       expect(schema, contains('ALTER TABLE reglages ADD COLUMN devise'));
       expect(schema, contains('ALTER TABLE sync_config ADD COLUMN password_hash'));
+      expect(schema, contains('ALTER TABLE lapins ADD COLUMN cause_mortalite'));
     });
 
     test('release builds cannot silently use debug signing', () {

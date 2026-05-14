@@ -16,6 +16,7 @@ import '../../models/lapin.dart';
 import '../../services/id_generator_service.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class SaillieFormScreen extends StatefulWidget {
   final Saillie? saillie;
@@ -43,7 +44,8 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   double? _poidsSevrageTotal;
   String _statut = 'en_attente';
   bool _palpationPositive = false;
-  int? _nbChevauchements;
+  // V2.5 — B5 : défaut intelligent (la pratique terrain est 2-3 montes réussies)
+  int? _nbChevauchements = 2;
   final _etatNidCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   bool _saving = false;
@@ -108,7 +110,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.saillie != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Modifier la saillie' : 'Nouvelle saillie')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier la saillie' : 'Nouvelle saillie', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -262,22 +264,41 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
 
             if (_statut != 'en_attente' && _statut != 'echec') ...[
               const SizedBox(height: 12),
-              _datePicker('Date de mise bas réelle', _dateMiseBasReelle,
-                  (d) => setState(() => _dateMiseBasReelle = d)),
+              _datePicker('Date de mise bas réelle', _dateMiseBasReelle, (d) {
+                  setState(() {
+                    _dateMiseBasReelle = d;
+                    // Auto-calcul sevrage J+28
+                    _dateSevrage ??= DateTime.parse(d)
+                        .add(const Duration(days: 28))
+                        .toIso8601String()
+                        .substring(0, 10);
+                  });
+                }),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: _intField('Nés total', _nbNes, (v) => _nbNes = v)),
+                Expanded(
+                    child: _intField('Nés total', _nbNes, (v) {
+                  setState(() {
+                    _nbNes = v;
+                    _recalcMorts();
+                  });
+                })),
                 const SizedBox(width: 10),
                 Expanded(
-                    child: _intField('Vivants', _nbVivants, (v) => _nbVivants = v)),
+                    child: _intField('Vivants', _nbVivants, (v) {
+                  setState(() {
+                    _nbVivants = v;
+                    _recalcMorts();
+                  });
+                }, maxValue: _nbNes)),
                 const SizedBox(width: 10),
-                Expanded(child: _intField('Morts-nés', _nbMorts, (v) => _nbMorts = v)),
+                Expanded(child: _mortsField()),
               ]),
             ],
 
             if (_statut == 'sevrage' || _statut == 'termine') ...[
               const SizedBox(height: 12),
-              _datePicker('Date de sevrage', _dateSevrage,
+              _datePicker('Date de sevrage (auto: J+28)', _dateSevrage,
                   (d) => setState(() => _dateSevrage = d)),
               const SizedBox(height: 12),
               Row(children: [
@@ -411,12 +432,51 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
     );
   }
 
-  Widget _intField(String label, int? value, Function(int?) onChanged) {
+  Widget _intField(
+    String label,
+    int? value,
+    Function(int?) onChanged, {
+    int? maxValue,
+  }) {
     return TextFormField(
-        initialValue: value?.toString() ?? '',
-        keyboardType: TextInputType.number,
-        decoration: InputDecoration(labelText: label),
-        onChanged: (v) => onChanged(int.tryParse(v)));
+      initialValue: value?.toString() ?? '',
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(labelText: label),
+      onChanged: (v) => onChanged(int.tryParse(v)),
+      validator: (v) {
+        if (v == null || v.isEmpty) return null;
+        final n = int.tryParse(v);
+        if (n == null) return 'Nombre invalide';
+        if (n < 0) return '≥ 0';
+        if (maxValue != null && n > maxValue) return '≤ $maxValue';
+        return null;
+      },
+    );
+  }
+
+  /// Calcul auto morts-nés = nés − vivants (V2.5 — automatisation B1).
+  void _recalcMorts() {
+    if (_nbNes != null && _nbVivants != null) {
+      final diff = _nbNes! - _nbVivants!;
+      _nbMorts = diff >= 0 ? diff : 0;
+    } else {
+      _nbMorts = null;
+    }
+  }
+
+  /// Champ morts-nés en lecture seule, alimenté automatiquement.
+  Widget _mortsField() {
+    final text = _nbMorts?.toString() ?? '—';
+    return TextFormField(
+      key: ValueKey('morts_${_nbMorts ?? ''}'),
+      initialValue: text,
+      enabled: false,
+      decoration: const InputDecoration(
+        labelText: 'Morts-nés',
+        helperText: 'auto',
+        helperMaxLines: 1,
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -505,6 +565,9 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
         await db.updateSaillie(saillie);
         messageLot = 'Lot $code créé automatiquement';
       }
+
+      // Génère les alertes reproduction en arrière-plan (idempotent)
+      db.genererAlertesReproduction().ignore();
 
       if (mounted) {
         showSuccessSnackBar(

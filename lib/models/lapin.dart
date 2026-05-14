@@ -28,6 +28,7 @@ class Lapin {
   final int? mereId;            // ID de la mère (lapine) — généalogie
   final double? prixAchat;      // V2.5 — Prix d'achat (reproducteurs achetés)
   final String? destination;    // V14 — Sortie de ferme : 'vendu', 'consomme', 'reproducteur', 'autre' (null = en cours)
+  final String? causeMortalite; // V16 — Cause de mortalité (obligatoire si statut='mort')
   final String dateCreation;    // Date d'ajout dans l'application
 
   Lapin({
@@ -48,6 +49,7 @@ class Lapin {
     this.mereId,
     this.prixAchat,
     this.destination,
+    this.causeMortalite,
     String? dateCreation,
   }) : dateCreation = dateCreation ?? DateTime.now().toIso8601String().substring(0, 10);
 
@@ -70,6 +72,7 @@ class Lapin {
         'mere_id': mereId,
         'prix_achat': prixAchat,
         'destination': destination,
+        'cause_mortalite': causeMortalite,
         'date_creation': dateCreation,
       };
 
@@ -94,6 +97,7 @@ class Lapin {
             ? (m['prix_achat'] as num).toDouble()
             : null,
         destination: m['destination'] as String?,
+        causeMortalite: m['cause_mortalite'] as String?,
         dateCreation: m['date_creation'],
       );
 
@@ -120,6 +124,8 @@ class Lapin {
     bool clearPrixAchat = false,
     String? destination,
     bool clearDestination = false,
+    String? causeMortalite,
+    bool clearCauseMortalite = false,
   }) => Lapin(
         id: id ?? this.id,
         numeroBague: numeroBague ?? this.numeroBague,
@@ -138,6 +144,9 @@ class Lapin {
         mereId: mereId ?? this.mereId,
         prixAchat: clearPrixAchat ? null : (prixAchat ?? this.prixAchat),
         destination: clearDestination ? null : (destination ?? this.destination),
+        causeMortalite: clearCauseMortalite
+            ? null
+            : (causeMortalite ?? this.causeMortalite),
         dateCreation: dateCreation,
       );
 
@@ -162,6 +171,27 @@ class Lapin {
       default: return '—';
     }
   }
+
+  /// Causes de mortalité (V16) — codes normalisés pour stats fiables.
+  /// Ordre d'apparition = fréquence terrain en cuniculture africaine/européenne.
+  static const Map<String, String> causesMortalite = {
+    'pasteurellose': 'Pasteurellose',
+    'coccidiose': 'Coccidiose',
+    'myxomatose': 'Myxomatose',
+    'vhd': 'VHD (maladie hémorragique)',
+    'coryza': 'Coryza',
+    'enterite': 'Entérite',
+    'coup_chaleur': 'Coup de chaleur',
+    'predateur': 'Prédateur',
+    'ecrasement_mere': 'Écrasement par la mère',
+    'malformation': 'Malformation',
+    'post_partum': 'Complication post-partum',
+    'autre': 'Autre',
+    'inconnue': 'Cause inconnue',
+  };
+
+  String? get causeMortaliteLabel =>
+      causeMortalite == null ? null : causesMortalite[causeMortalite!] ?? causeMortalite;
 
   /// Affiche le statut en français
   String get statutLabel {

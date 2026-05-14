@@ -14,6 +14,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../database/db_helper.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 import '../cages/cage_detail_screen.dart';
 import '../lapins/lapin_detail_screen.dart';
 
@@ -97,11 +98,11 @@ class _QrScanScreenState extends State<QrScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('📷 Scanner un QR code'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        actions: [
+      appBar: CuAppBar(
+        title: 'Scanner un QR code',
+        emoji: '📷',
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.flashlight_on),
             onPressed: () => _controller.toggleTorch(),

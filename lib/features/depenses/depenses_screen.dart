@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../database/db_helper.dart';
 import '../../models/depense.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'depense_form_screen.dart';
@@ -127,7 +128,11 @@ class _DepensesScreenState extends State<DepensesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('💰 Dépenses')),
+      appBar: const CuAppBar(
+        title: 'Dépenses',
+        emoji: '💰',
+        accent: CuColors.accentFinance,
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _depenses.isEmpty

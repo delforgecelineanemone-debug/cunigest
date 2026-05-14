@@ -10,7 +10,10 @@ import 'lot_detail_screen.dart';
 import 'lot_form_screen.dart';
 
 class LotsScreen extends StatefulWidget {
-  const LotsScreen({super.key});
+  /// True quand intégré dans le Cheptel Hub (pas d'AppBar locale).
+  final bool embedded;
+
+  const LotsScreen({super.key, this.embedded = false});
 
   @override
   State<LotsScreen> createState() => _LotsScreenState();
@@ -64,7 +67,9 @@ class _LotsScreenState extends State<LotsScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: AppBar(title: const Text('Lots d\'engraissement')),
+      appBar: widget.embedded
+          ? null
+          : const CuAppBar(title: 'Lots d\'engraissement'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

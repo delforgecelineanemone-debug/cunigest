@@ -16,6 +16,7 @@ import '../../database/db_helper.dart';
 import '../../models/tache.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class CalendrierTachesScreen extends StatefulWidget {
   const CalendrierTachesScreen({super.key});
@@ -154,9 +155,11 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
     final tachesJour = _tachesPourJour(_selected);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📅 Calendrier des tâches'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Calendrier des tâches',
+        emoji: '📅',
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Rafraîchir',

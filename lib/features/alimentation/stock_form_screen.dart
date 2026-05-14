@@ -5,6 +5,7 @@ import '../../database/db_helper.dart';
 import '../../models/stock.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class StockFormScreen extends StatefulWidget {
   final Stock? stock;
@@ -48,6 +49,25 @@ class _StockFormScreenState extends State<StockFormScreen> {
       _notesCtrl.text = s.notes ?? '';
     } else {
       _dateEntree = DateTime.now().toIso8601String().substring(0, 10);
+      _prefillFournisseurRecent();
+    }
+  }
+
+  /// V2.5 — B5 : pré-remplit le fournisseur avec celui du dernier stock saisi.
+  /// Évite la ressaisie quand l'éleveur s'approvisionne toujours au même endroit.
+  Future<void> _prefillFournisseurRecent() async {
+    try {
+      final repo = await db.stocks;
+      final stocks = await repo.getAllStocks();
+      final dernier = stocks
+          .map((s) => s.fournisseur)
+          .firstWhere((f) => f != null && f.trim().isNotEmpty,
+              orElse: () => null);
+      if (dernier != null && mounted && _fournisseurCtrl.text.isEmpty) {
+        setState(() => _fournisseurCtrl.text = dernier);
+      }
+    } catch (_) {
+      // silencieux
     }
   }
 
@@ -62,7 +82,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.stock != null ? 'Modifier le stock' : 'Nouveau stock')),
+      appBar: CuAppBar(title: widget.stock != null ? 'Modifier le stock' : 'Nouveau stock', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

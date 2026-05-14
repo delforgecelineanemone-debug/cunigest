@@ -18,6 +18,7 @@ import '../../models/lapin.dart';
 import '../../models/soin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class VenteFormScreen extends StatefulWidget {
   final Map<int, Lapin> lapinsMap;
@@ -39,10 +40,15 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   String _dateVente = DateTime.now().toIso8601String().substring(0, 10);
 
   final _acheteurCtrl = TextEditingController();
+  final _prixUnitaireCtrl = TextEditingController();
   final _prixCtrl = TextEditingController();
   final _poidsCtrl = TextEditingController();
   final _quantiteCtrl = TextEditingController(text: '1');
   final _notesCtrl = TextEditingController();
+
+  /// True quand l'utilisateur a saisi manuellement le prix total :
+  /// dans ce cas on n'écrase plus avec le calcul auto.
+  bool _prixTotalManuel = false;
 
   bool _saving = false;
 
@@ -56,7 +62,14 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
 
   @override
   void dispose() {
-    for (final c in [_acheteurCtrl, _prixCtrl, _poidsCtrl, _quantiteCtrl, _notesCtrl]) {
+    for (final c in [
+      _acheteurCtrl,
+      _prixUnitaireCtrl,
+      _prixCtrl,
+      _poidsCtrl,
+      _quantiteCtrl,
+      _notesCtrl,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -73,6 +86,19 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
     final lots = await repo.getAll();
     if (!mounted) return;
     setState(() => _lotsDispo = lots);
+  }
+
+  /// Calcule prix total = prix unitaire × quantité (V2.5 — automatisation B2).
+  /// N'écrase pas si l'utilisateur a saisi un prix total manuellement.
+  void _recalcPrixTotal() {
+    if (_prixTotalManuel) return;
+    final pu = double.tryParse(_prixUnitaireCtrl.text.replaceAll(',', '.'));
+    final qte = int.tryParse(_quantiteCtrl.text);
+    if (pu == null || qte == null || qte <= 0) return;
+    final total = pu * qte;
+    final formatted =
+        total == total.roundToDouble() ? total.toStringAsFixed(0) : total.toStringAsFixed(2);
+    _prixCtrl.text = formatted;
   }
 
   Future<void> _verifierDelai(int? lapinId) async {
@@ -105,9 +131,10 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nouvelle vente'),
-        backgroundColor: const Color(0xFF9C27B0),
+      appBar: CuAppBar(
+        title: 'Nouvelle vente',
+        accent: CuColors.accentFinance,
+        showActions: false,
       ),
       body: Form(
         key: _formKey,
@@ -173,6 +200,20 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
                     (v == null || int.tryParse(v) == null || int.parse(v) <= 0)
                         ? 'Quantité invalide'
                         : null,
+                onChanged: (_) => _recalcPrixTotal(),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _prixUnitaireCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Prix unitaire',
+                  prefixIcon: Icon(Icons.sell_outlined),
+                  suffixText: '€',
+                  helperText: 'Optionnel — calcule le prix total automatiquement',
+                  helperMaxLines: 2,
+                ),
+                onChanged: (_) => _recalcPrixTotal(),
               ),
               if (_lotsDispo.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -228,6 +269,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
                   prefixIcon: Icon(Icons.attach_money),
                   suffixText: '€'),
               validator: (v) => (v == null || v.isEmpty) ? 'Obligatoire' : null,
+              onChanged: (_) => _prixTotalManuel = true,
             ),
             const SizedBox(height: 12),
             TextFormField(

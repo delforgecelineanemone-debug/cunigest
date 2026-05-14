@@ -7,13 +7,15 @@ import '../../models/lapin.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/breakpoints.dart';
 import '../../utils/cu_page_route.dart';
-import '../../utils/theme.dart';
-import '../qr/qr_scan_screen.dart';
 import 'lapin_detail_screen.dart';
 import 'lapin_form_screen.dart';
 
 class LapinsListScreen extends StatefulWidget {
-  const LapinsListScreen({super.key});
+  /// Quand true, l'écran est intégré dans le Cheptel Hub :
+  /// pas de Scaffold appBar (le hub fournit le sien).
+  final bool embedded;
+
+  const LapinsListScreen({super.key, this.embedded = false});
 
   @override
   State<LapinsListScreen> createState() => _LapinsListScreenState();
@@ -143,19 +145,9 @@ class _LapinsListScreenState extends State<LapinsListScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: AppBar(
-        title: const Text('Cheptel'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            tooltip: 'Scanner un QR',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const QrScanScreen()),
-            ),
-          ),
-        ],
-      ),
+      appBar: widget.embedded
+          ? null
+          : const CuAppBar(title: 'Lapins'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouterLapin,
         icon: const Icon(Icons.add),

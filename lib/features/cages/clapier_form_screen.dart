@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/clapier.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class ClapierFormScreen extends StatefulWidget {
   final int batimentId;
@@ -83,7 +84,7 @@ class _ClapierFormScreenState extends State<ClapierFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.clapier != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Modifier le clapier' : 'Nouveau clapier')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier le clapier' : 'Nouveau clapier', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

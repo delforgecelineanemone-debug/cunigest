@@ -15,6 +15,8 @@ import '../../models/soin.dart';
 import '../../models/lapin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
+import '../../data/cunicole_reference.dart';
 
 class SoinFormScreen extends StatefulWidget {
   final Soin? soin;
@@ -66,6 +68,24 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
       _toutElevage = s.lapinId == null;
     } else {
       _appliquerDelaiParDefaut();
+      _prefillVeterinaireRecent();
+    }
+  }
+
+  /// V2.5 — B5 : pré-remplit le vétérinaire avec celui du dernier soin.
+  /// Évite la ressaisie du nom pour les éleveurs qui ont un vétérinaire attitré.
+  Future<void> _prefillVeterinaireRecent() async {
+    try {
+      final recents = await db.getAllSoins(limit: 5);
+      final dernier = recents
+          .map((s) => s.veterinaire)
+          .firstWhere((v) => v != null && v.trim().isNotEmpty,
+              orElse: () => null);
+      if (dernier != null && mounted && _vetoCtrl.text.isEmpty) {
+        setState(() => _vetoCtrl.text = dernier);
+      }
+    } catch (_) {
+      // silencieux : pas critique
     }
   }
 
@@ -97,7 +117,7 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.soin != null ? 'Modifier le soin' : 'Nouveau soin')),
+      appBar: CuAppBar(title: widget.soin != null ? 'Modifier le soin' : 'Nouveau soin', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -160,10 +180,20 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    controller: _produitCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Produit utilisé', prefixIcon: Icon(Icons.medication)),
+                  child: Autocomplete<String>(
+                    initialValue: TextEditingValue(text: _produitCtrl.text),
+                    optionsBuilder: (v) => CunicoleRef.medicaments.where(
+                        (m) => m.toLowerCase().contains(v.text.toLowerCase())),
+                    onSelected: (v) => _produitCtrl.text = v,
+                    fieldViewBuilder: (_, ctrl, focus, onSubmit) => TextFormField(
+                      controller: ctrl,
+                      focusNode: focus,
+                      onEditingComplete: onSubmit,
+                      onChanged: (v) => _produitCtrl.text = v,
+                      decoration: const InputDecoration(
+                          labelText: 'Produit utilisé',
+                          prefixIcon: Icon(Icons.medication)),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),

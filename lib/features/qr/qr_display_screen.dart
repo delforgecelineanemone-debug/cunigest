@@ -16,6 +16,7 @@ import 'package:path/path.dart' as p;
 import 'dart:ui' as ui;
 import 'dart:io';
 import '../../models/lapin.dart';
+import '../../ui/cu_ui.dart';
 
 class QrDisplayScreen extends StatelessWidget {
   final Lapin lapin;
@@ -28,9 +29,11 @@ class QrDisplayScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('QR Code'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'QR Code',
+        emoji: '📱',
+        showActions: false,
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () => _partager(context),

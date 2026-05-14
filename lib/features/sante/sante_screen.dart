@@ -108,7 +108,10 @@ class _SanteScreenState extends State<SanteScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: AppBar(title: const Text('Santé & Soins')),
+      appBar: const CuAppBar(
+        title: 'Santé & Soins',
+        accent: CuColors.accentHealth,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

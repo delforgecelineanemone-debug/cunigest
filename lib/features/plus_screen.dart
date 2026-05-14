@@ -7,7 +7,6 @@ import '../providers/state_providers.dart';
 import '../services/csv_service.dart';
 import '../ui/cu_ui.dart';
 import '../utils/breakpoints.dart';
-import '../utils/theme.dart';
 import 'cages/cages_home_screen.dart';
 import 'depenses/depenses_screen.dart';
 import 'lots/lots_screen.dart';
@@ -89,7 +88,10 @@ class PlusScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
-      appBar: AppBar(title: const Text('Plus')),
+      appBar: const CuAppBar(
+        title: 'Plus',
+        automaticallyImplyLeading: false,
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(hPad, CuSpacing.lg, hPad, CuSpacing.x3l),
         children: [

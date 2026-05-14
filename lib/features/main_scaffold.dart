@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import '../database/db_helper.dart';
-import '../models/lapin.dart';
 import '../ui/tokens/colors.dart';
 import '../utils/breakpoints.dart';
 import '../utils/cu_page_route.dart';

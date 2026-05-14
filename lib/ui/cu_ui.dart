@@ -21,6 +21,7 @@ export 'molecules/cu_search_bar.dart';
 export 'molecules/cu_segmented.dart';
 
 // ── Organisms ──
+export 'organisms/cu_app_bar.dart';
 export 'organisms/cu_lapin_tile.dart';
 export 'organisms/cu_empty_state.dart';
 export 'organisms/cu_speed_dial.dart';

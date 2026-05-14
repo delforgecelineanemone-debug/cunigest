@@ -14,7 +14,7 @@ import '../models/reglages.dart';
 import '../utils/app_config.dart';
 
 /// Version courante du schéma de base de données.
-const int kCurrentDbVersion = 15;
+const int kCurrentDbVersion = 16;
 
 /// Active les contraintes de clés étrangères (SQLite les ignore par défaut).
 Future<void> onConfigureSchema(Database db) async {
@@ -41,6 +41,7 @@ Future<void> createSchema(Database db, int version) async {
       photo_path TEXT,
       prix_achat REAL,
       destination TEXT,
+      cause_mortalite TEXT,
       notes TEXT,
       pere_id INTEGER,
       mere_id INTEGER,
@@ -758,5 +759,12 @@ Future<void> upgradeSchema(Database db, int oldVersion, int newVersion) async {
     // mode_gants  : cibles tactiles agrandies +15% (utilisation avec gants)
     await _addColumn(db, 'ALTER TABLE reglages ADD COLUMN mode_soleil INTEGER DEFAULT 0');
     await _addColumn(db, 'ALTER TABLE reglages ADD COLUMN mode_gants INTEGER DEFAULT 0');
+  }
+
+  if (oldVersion < 16) {
+    // Version 16 : V2.5 — automatisation B3.
+    // lapins.cause_mortalite : champ obligatoire à renseigner quand statut='mort'
+    // (pasteurellose, coccidiose, coup_chaleur, predateur, ecrasement, inconnue…)
+    await _addColumn(db, 'ALTER TABLE lapins ADD COLUMN cause_mortalite TEXT');
   }
 }

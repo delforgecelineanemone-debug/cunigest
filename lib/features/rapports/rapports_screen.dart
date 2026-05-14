@@ -12,6 +12,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../services/pdf_service.dart';
+import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 
@@ -68,9 +69,10 @@ class _RapportsScreenState extends State<RapportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('📄 Rapports'),
-        actions: [
+      appBar: CuAppBar(
+        title: 'Rapports',
+        emoji: '📄',
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Rafraîchir',

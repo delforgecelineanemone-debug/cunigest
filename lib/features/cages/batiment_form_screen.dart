@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/batiment.dart';
 import '../../widgets/common_widgets.dart';
+import '../../ui/cu_ui.dart';
 
 class BatimentFormScreen extends StatefulWidget {
   final Batiment? batiment;
@@ -78,7 +79,7 @@ class _BatimentFormScreenState extends State<BatimentFormScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.batiment != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Modifier le bâtiment' : 'Nouveau bâtiment')),
+      appBar: CuAppBar(title: isEdit ? 'Modifier le bâtiment' : 'Nouveau bâtiment', showActions: false),
       body: Form(
         key: _formKey,
         child: ListView(

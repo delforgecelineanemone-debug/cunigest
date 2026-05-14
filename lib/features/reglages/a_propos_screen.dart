@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../utils/app_config.dart';
 import '../../utils/theme.dart';
+import '../../ui/cu_ui.dart';
 
 const _kPrivacyUrl = 'https://titanddev-cmd.github.io/cunigest-privacy';
 
@@ -22,7 +23,7 @@ class AProposScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('À propos')),
+      appBar: const CuAppBar(title: 'À propos', showActions: false),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

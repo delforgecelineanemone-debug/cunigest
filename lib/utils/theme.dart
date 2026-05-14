@@ -213,6 +213,8 @@ Color cageStatutColor(String statut) {
       return CuColors.cageVide;
     case 'occupee':
       return CuColors.cageOccupee;
+    case 'pleine':
+      return CuColors.cageAllaitement; // rose foncé : saturée
     case 'gestante':
       return CuColors.cageGestante;
     case 'allaitement':
@@ -236,6 +238,8 @@ IconData cageStatutIcon(String statut) {
       return Icons.crop_square;
     case 'occupee':
       return Icons.pets;
+    case 'pleine':
+      return Icons.groups;
     case 'gestante':
       return Icons.pregnant_woman;
     case 'allaitement':

@@ -296,7 +296,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               style:
-                  ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9C27B0)),
+                  ElevatedButton.styleFrom(backgroundColor: CuColors.accentFinance),
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(

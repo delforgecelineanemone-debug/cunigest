@@ -179,20 +179,20 @@ class _DepensesScreenState extends State<DepensesScreen> {
     return Row(
       children: [
         Expanded(
-          child: StatCard(
+          child: CuKpiCard(
             label: 'Ce mois',
             value: formatMontant(_totalMois),
             icon: Icons.calendar_today,
-            color: AppTheme.primary,
+            color: CuColors.primary,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: StatCard(
+          child: CuKpiCard(
             label: 'Cette année',
             value: formatMontant(_totalAnnee),
             icon: Icons.calendar_view_month,
-            color: const Color(0xFF6A1B9A),
+            color: CuColors.accentFinance,
           ),
         ),
       ],

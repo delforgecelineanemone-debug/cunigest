@@ -1,8 +1,8 @@
 # 🗺️ ROADMAP DE REFACTORING — CuniGest V2.5 → V3.0
 
 > **Document vivant.** Mis à jour au fil de l'eau par Claude (rôle CTO).
-> **Dernière mise à jour :** 2026-05-08
-> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | D.2 terminé
+> **Dernière mise à jour :** 2026-05-17
+> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | 🟡 Phase E (2/5)
 
 ---
 
@@ -236,7 +236,7 @@ lib/
 
 ## E.1 — Compléter tests repositories (11/14 manquants)
 **Effort :** 3 jours
-**Statut :** ⏸ Pas démarré
+**Statut :** ✅ Terminé (2026-05-17) — 11 fichiers de test créés (`user`, `pesee_lapin`, `lot`, `stock`, `profil`, `routine`, `saillie`, `soin`, `vente`, `depense`, `sync`), 89 nouveaux tests, total 168/168 OK. Pattern `openTestDb()` en mémoire. Cible : zones à risque (transactions atomiques, contraintes, calculs métier), pas de CRUD trivial. Aucun bug trouvé dans la production.
 
 ## E.2 — Tests services (sync, account, notification, backup)
 **Effort :** 2 jours
@@ -255,7 +255,7 @@ lib/
 ## E.5 — GitHub Actions CI
 **Cibles :** `flutter analyze` + `flutter test` à chaque PR + build APK sur tag.
 **Effort :** 0,5 jour
-**Statut :** ⏸ Pas démarré
+**Statut :** ✅ Terminé (2026-05-17) — `.github/workflows/ci.yml` : checkout + setup Flutter (channel stable, cache) + `pub get` + `analyze --no-fatal-infos` + `test`. Trigger : push/PR sur `main`. Timeout 15 min. Verify formatting non bloquant. Build APK sur tag → reporté à F.5.
 
 ---
 
@@ -299,9 +299,9 @@ lib/
 | B | 6 | 6 | 0 |
 | C | 6 | 6 | 0 |
 | D | 6 | 5 | 1 |
-| E | 5 | 0 | 5 |
+| E | 5 | 2 | 3 |
 | F | 5 | 3 | 2 |
-| **Total** | **33** | **25** | **8** |
+| **Total** | **33** | **27** | **6** |
 
 ---
 

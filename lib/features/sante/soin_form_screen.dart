@@ -293,7 +293,7 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
   Widget _section(String t) => Padding(
         padding: const EdgeInsets.only(bottom: 8, top: 4),
         child: Text(t,
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: context.cuTextPrimary)),
       );
 
   Widget _datePicker(String label, String? value, Function(String) onPick) {

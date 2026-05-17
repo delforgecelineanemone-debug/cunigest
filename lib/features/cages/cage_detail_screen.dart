@@ -156,7 +156,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
     if (_cage?.qrPayload() == null) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text('QR — Cage ${_cage!.numero}'),
         content: SizedBox(
           width: 240,
@@ -181,7 +181,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Fermer'),
           ),
         ],
@@ -380,7 +380,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
                           const SizedBox(height: 2),
                           Text('Occupation : $occ / $cap',
                               style: TextStyle(
-                                  fontSize: 13, color: Colors.grey.shade700)),
+                                  fontSize: 13, color: context.cuTextPrimary)),
                           if (_batiment != null && _clapier != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
@@ -388,7 +388,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
                                 '${_batiment!.nom} • ${_clapier!.nom}',
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey.shade600),
+                                    color: context.cuTextSecondary),
                               ),
                             ),
                         ],
@@ -418,7 +418,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Center(
                     child: Text('Cage vide.',
-                        style: TextStyle(color: Colors.grey.shade600)),
+                        style: TextStyle(color: context.cuTextSecondary)),
                   ),
                 ),
               )
@@ -450,7 +450,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Center(
                     child: Text('Aucun mouvement enregistré.',
-                        style: TextStyle(color: Colors.grey.shade600)),
+                        style: TextStyle(color: context.cuTextSecondary)),
                   ),
                 ),
               )
@@ -618,7 +618,7 @@ class _LapinPickerSheetState extends State<_LapinPickerSheet> {
               child: filtered.isEmpty
                   ? Center(
                       child: Text('Aucun résultat.',
-                          style: TextStyle(color: Colors.grey.shade600)),
+                          style: TextStyle(color: context.cuTextSecondary)),
                     )
                   : ListView.builder(
                       controller: scroll,

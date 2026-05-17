@@ -369,7 +369,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   Widget _section(String t) => Padding(
         padding: const EdgeInsets.only(bottom: 8, top: 4),
         child: Text(t,
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: context.cuTextPrimary)),
       );
 
   Widget _datePicker(String label, String value, Function(String) onPick) {
@@ -398,7 +398,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
     if (_venteConsommation && _delaiActif != null) {
       final ok = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('🚫 Vente bloquée'),
           content: Text(
               'Ce lapin est sous délai d\'attente médicament jusqu\'au ${formatDate(_delaiActif!.finDelaiAttente?.toIso8601String().substring(0, 10))}.\n\n'
@@ -406,10 +406,10 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
               'Si vous confirmez quand même, vous prenez la responsabilité de cette infraction.'),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(dialogCtx, false),
                 child: const Text('Annuler')),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Forcer'),
             ),

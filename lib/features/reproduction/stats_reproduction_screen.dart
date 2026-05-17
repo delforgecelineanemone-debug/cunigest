@@ -84,13 +84,13 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
         Center(
           child: Column(
             children: [
-              Icon(Icons.bar_chart, size: 80, color: Colors.grey.shade300),
+              Icon(Icons.bar_chart, size: 80, color: context.cuTextDisabled),
               const SizedBox(height: 16),
               Text(
                 'Aucune saillie enregistrée.\n'
                 'Les statistiques apparaîtront après votre première saillie.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: context.cuTextSecondary),
               ),
             ],
           ),
@@ -241,7 +241,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
                               fontSize: 13, fontWeight: FontWeight.w600)),
                       Text(sousTitre,
                           style:
-                              TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                              TextStyle(fontSize: 11, color: context.cuTextSecondary)),
                     ],
                   ),
                 ),
@@ -255,7 +255,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
             const SizedBox(height: 8),
             Text(
               explication,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+              style: TextStyle(fontSize: 11, color: context.cuTextSecondary),
             ),
           ],
         ),
@@ -268,7 +268,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icone, size: 18, color: color ?? Colors.grey.shade600),
+          Icon(icone, size: 18, color: color ?? context.cuTextSecondary),
           const SizedBox(width: 10),
           Expanded(
               child: Text(label, style: const TextStyle(fontSize: 14))),

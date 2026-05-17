@@ -96,7 +96,6 @@ class _HubTabBar extends StatelessWidget implements PreferredSizeWidget {
         isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight;
 
     return Container(
-      color: bg,
       decoration: BoxDecoration(
         color: bg,
         border: Border(bottom: BorderSide(color: border)),

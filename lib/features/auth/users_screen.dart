@@ -203,7 +203,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final pinCtrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text('Nouveau PIN pour ${u.nom}'),
         content: TextField(
           controller: pinCtrl,
@@ -218,10 +218,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogCtx, false),
               child: const Text('Annuler')),
           ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Valider')),
         ],
       ),

@@ -247,9 +247,7 @@ class _DepensesScreenState extends State<DepensesScreen> {
                               : v.toStringAsFixed(0),
                           style: TextStyle(
                               fontSize: 10,
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600),
+                              color: context.cuTextSecondary),
                         ),
                       ),
                     ),
@@ -269,9 +267,7 @@ class _DepensesScreenState extends State<DepensesScreen> {
                               '$mois/${keys[i].substring(2, 4)}',
                               style: TextStyle(
                                   fontSize: 10,
-                                  color: isDark
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade600),
+                                  color: context.cuTextSecondary),
                             ),
                           );
                         },

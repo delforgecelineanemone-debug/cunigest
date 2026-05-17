@@ -311,7 +311,10 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         subtitle: Text(
           '${clapiers.length} clapier${clapiers.length > 1 ? "s" : ""} • $nbCages cage${nbCages > 1 ? "s" : ""}',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+          style: TextStyle(
+            color: context.cuTextSecondary,
+            fontSize: 12,
+          ),
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (v) {
@@ -345,7 +348,9 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
                 children: [
                   Text(
                     'Aucun clapier dans ce bâtiment.',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: context.cuTextSecondary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
@@ -364,6 +369,7 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
   }
 
   Widget _buildClapierTile(Batiment b, Clapier c) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cages = _cagesByClapier[c.id] ?? [];
     final occCount = cages
         .where((cg) => (_occByCage[cg.id] ?? 0) > 0)
@@ -371,17 +377,29 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark ? AppTheme.moduleAdmin.withValues(alpha: 0.12) : AppTheme.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? AppTheme.border.withValues(alpha: 0.3) : AppTheme.border.withValues(alpha: 0.6),
+        ),
       ),
       child: ExpansionTile(
         initiallyExpanded: true,
-        leading: const Icon(Icons.shelves, color: Colors.indigo),
-        title: Text(c.nom,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        leading: Icon(Icons.shelves, color: isDark ? Colors.indigo.shade200 : Colors.indigo),
+        title: Text(
+          c.nom,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
         subtitle: Text(
           '${cages.length} cage${cages.length > 1 ? "s" : ""} • $occCount occupée${occCount > 1 ? "s" : ""}',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+          style: TextStyle(
+            color: context.cuTextSecondary,
+            fontSize: 11,
+          ),
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (v) {
@@ -415,8 +433,12 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(8),
-                        child: Text('Aucune cage.',
-                            style: TextStyle(color: Colors.grey.shade600)),
+                        child: Text(
+                          'Aucune cage.',
+                          style: TextStyle(
+                            color: context.cuTextSecondary,
+                          ),
+                        ),
                       ),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.add),
@@ -491,7 +513,7 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
             ),
             Text(
               '$occ/$cap',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+              style: TextStyle(fontSize: 11, color: context.cuTextSecondary),
             ),
           ],
         ),

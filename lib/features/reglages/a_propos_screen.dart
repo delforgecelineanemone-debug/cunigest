@@ -51,13 +51,13 @@ class AProposScreen extends StatelessWidget {
                 Text(
                   'Version ${AppConfig.appVersion}',
                   style: TextStyle(
-                      fontSize: 13, color: Colors.grey.shade600),
+                      fontSize: 13, color: context.cuTextSecondary),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Gestion professionnelle d\'élevage cunicole',
                   style: TextStyle(
-                      fontSize: 13, color: Colors.grey.shade500),
+                      fontSize: 13, color: context.cuTextSecondary),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -149,7 +149,7 @@ class AProposScreen extends StatelessWidget {
               'Fait avec ❤️ pour les éleveurs cunicoles',
               textAlign: TextAlign.center,
               style:
-                  TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  TextStyle(fontSize: 11, color: context.cuTextSecondary),
             ),
           ),
           const SizedBox(height: 24),

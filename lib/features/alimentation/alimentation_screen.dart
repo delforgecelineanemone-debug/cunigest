@@ -199,7 +199,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
                           if (s.quantiteMin > 0)
                             Text(' / min ${s.quantiteMin} ${s.unite}',
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                style: TextStyle(fontSize: 12, color: context.cuTextSecondary)),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -276,9 +276,9 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: color ?? Colors.grey.shade500),
+        Icon(icon, size: 12, color: color ?? context.cuTextSecondary),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 11, color: color ?? Colors.grey.shade600)),
+        Text(text, style: TextStyle(fontSize: 11, color: color ?? context.cuTextSecondary)),
       ],
     );
   }
@@ -287,7 +287,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
     final ctrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text('Consommer "${stock.produit}"'),
         content: TextField(
           controller: ctrl,
@@ -296,8 +296,8 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Valider')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Annuler')),
+          ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Valider')),
         ],
       ),
     );

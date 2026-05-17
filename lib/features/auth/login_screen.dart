@@ -7,6 +7,7 @@
 // ──────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
+import 'package:gestion_cunicole/ui/cu_ui.dart';
 import '../../database/db_helper.dart';
 import '../../services/account_service.dart';
 import '../main_scaffold.dart';
@@ -104,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Text(
                   _emailAffiche,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 13, color: context.cuTextSecondary),
                 ),
               ),
               const SizedBox(height: 32),
@@ -154,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _afficherAideMotDePasseOublie() {
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Mot de passe oublié'),
         content: const Text(
           'Le mot de passe est stocké uniquement sur ce téléphone, '
@@ -168,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('OK'),
           ),
         ],

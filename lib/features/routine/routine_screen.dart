@@ -210,7 +210,7 @@ class _RoutineScreenState extends State<RoutineScreen> with SingleTickerProvider
   void _showBadgeUnlock(List<String> badges) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('🏆 Nouveau Badge !', textAlign: TextAlign.center),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -221,7 +221,7 @@ class _RoutineScreenState extends State<RoutineScreen> with SingleTickerProvider
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Super ! 🎉'),
           ),
         ],
@@ -253,7 +253,7 @@ class _RoutineScreenState extends State<RoutineScreen> with SingleTickerProvider
             Text(
               '${_badges.length} / ${BadgeEleveur.tousLesBadges.length} débloqués',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: context.cuTextSecondary),
             ),
             const SizedBox(height: 16),
             ...BadgeEleveur.tousLesBadges.map((bd) {
@@ -539,13 +539,13 @@ class _ProgressCard extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.arrow_upward,
-                    size: 12, color: Colors.grey.shade500),
+                    size: 12, color: context.cuTextSecondary),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     'Niveau ${profil.niveau + 1} dans ${profil.pointsProchainNiveau - profil.pointsDansNiveau} points',
                     style: TextStyle(
-                        fontSize: 11, color: Colors.grey.shade500),
+                        fontSize: 11, color: context.cuTextSecondary),
                   ),
                 ),
               ],
@@ -658,7 +658,7 @@ class _TacheItem extends StatelessWidget {
                       Text(
                         t.description!,
                         style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade600),
+                            fontSize: 12, color: context.cuTextSecondary),
                       ),
                     Row(
                       children: [
@@ -682,7 +682,7 @@ class _TacheItem extends StatelessWidget {
                             fontSize: 11,
                             color: estFait
                                 ? Colors.green
-                                : Colors.grey.shade500,
+                                : context.cuTextSecondary,
                             fontWeight: estFait
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -697,7 +697,7 @@ class _TacheItem extends StatelessWidget {
                 Text(
                   t.heureRappel!,
                   style:
-                      TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                      TextStyle(fontSize: 11, color: context.cuTextSecondary),
                 ),
             ],
           ),

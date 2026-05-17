@@ -90,7 +90,7 @@ class QrDisplayScreen extends StatelessWidget {
               Text(
                 'Imprimez ce QR code et collez-le\nsur la cage de ${lapin.displayName}',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                style: TextStyle(color: context.cuTextPrimary, fontSize: 14),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(

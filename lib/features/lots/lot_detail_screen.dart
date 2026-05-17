@@ -500,10 +500,20 @@ class _LotKpiCard extends StatelessWidget {
                 const Text('📊 Indicateurs',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const Spacer(),
-                Text(lot.statut == 'termine' ? '✅ Terminé' : '🟢 En cours',
+                Text(
+                    lot.statut == 'termine'
+                        ? '✅ Terminé'
+                        : lot.statut == 'individualise'
+                            ? '🏷️ Individualisé'
+                            : '🟢 En cours',
                     style: TextStyle(
-                        color: lot.statut == 'termine' ? Colors.grey : Colors.green,
-                        fontSize: 12, fontWeight: FontWeight.bold)),
+                        color: lot.statut == 'termine'
+                            ? Colors.grey
+                            : lot.statut == 'individualise'
+                                ? AppTheme.moduleRepro
+                                : Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
               ],
             ),
             const Divider(),
@@ -530,7 +540,7 @@ class _LotKpiCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text('Poids initial : ${lot.poidsInitial!.toStringAsFixed(1)} kg',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    style: TextStyle(fontSize: 12, color: context.cuTextSecondary)),
               ),
           ],
         ),
@@ -572,7 +582,7 @@ class _LotRentabiliteCard extends StatelessWidget {
                 child: Text(
                   'Aucune dépense ou vente n\'est imputée à ce lot. '
                   'Va dans Dépenses / Ventes et coche "Imputer au lot ${lot.code}".',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: context.cuTextSecondary),
                 ),
               )
             else ...[
@@ -627,7 +637,7 @@ class _Kpi extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            Text(label, style: TextStyle(fontSize: 11, color: context.cuTextSecondary)),
             Text(value, style: TextStyle(fontSize: 16,
                 fontWeight: FontWeight.bold, color: color ?? Colors.black87)),
           ],

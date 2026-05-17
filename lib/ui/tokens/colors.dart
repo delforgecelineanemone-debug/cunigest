@@ -75,3 +75,33 @@ abstract final class CuColors {
   static const cageDesinfection = Color(0xFF7B1FA2);
   static const cageMaintenance = Color(0xFF424242);
 }
+
+/// Helpers d'accès aux couleurs sémantiques en fonction du thème courant.
+///
+/// Permet d'écrire `context.cuTextSecondary` au lieu de
+/// `Theme.of(context).brightness == Brightness.dark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight`.
+extension CuColorsContext on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  // Texte
+  Color get cuTextPrimary =>
+      isDark ? CuColors.textPrimaryDark : CuColors.textPrimaryLight;
+  Color get cuTextSecondary =>
+      isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight;
+  Color get cuTextDisabled =>
+      isDark ? CuColors.textDisabledDark : CuColors.textDisabledLight;
+
+  // Surfaces
+  Color get cuSurface => isDark ? CuColors.cardDark : CuColors.cardLight;
+  Color get cuRaised => isDark ? CuColors.raisedDark : CuColors.raisedLight;
+  Color get cuBg => isDark ? CuColors.bgDark : CuColors.bgLight;
+
+  // Bordures
+  Color get cuBorder => isDark ? CuColors.borderDark : CuColors.borderLight;
+
+  // États sémantiques
+  Color get cuSuccess => isDark ? CuColors.successDark : CuColors.success;
+  Color get cuWarning => isDark ? CuColors.warningDark : CuColors.warning;
+  Color get cuDanger => isDark ? CuColors.dangerDark : CuColors.danger;
+  Color get cuInfo => isDark ? CuColors.infoDark : CuColors.info;
+}

@@ -357,7 +357,7 @@ class _Result extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? (highlight ? AppTheme.primary : Colors.grey.shade700);
+    final c = color ?? (highlight ? AppTheme.primary : context.cuTextPrimary);
     return Card(
       color: highlight ? AppTheme.primary.withValues(alpha: 0.08) : null,
       child: ListTile(

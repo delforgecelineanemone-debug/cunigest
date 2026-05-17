@@ -120,7 +120,9 @@ class AppTheme {
           borderRadius: CuRadius.fullAll,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        labelStyle: CuTypography.textTheme.labelMedium,
+        labelStyle: CuTypography.textTheme.labelMedium?.copyWith(
+          color: isDark ? CuColors.textPrimaryDark : CuColors.textPrimaryLight,
+        ),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: navBg,
@@ -161,8 +163,12 @@ class AppTheme {
       dialogTheme: DialogThemeData(
         shape: CuRadius.lgShape,
         backgroundColor: cardColor,
-        titleTextStyle: CuTypography.textTheme.titleLarge,
-        contentTextStyle: CuTypography.textTheme.bodyMedium,
+        titleTextStyle: CuTypography.textTheme.titleLarge?.copyWith(
+          color: isDark ? CuColors.textPrimaryDark : CuColors.textPrimaryLight,
+        ),
+        contentTextStyle: CuTypography.textTheme.bodyMedium?.copyWith(
+          color: isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight,
+        ),
       ),
     );
   }

@@ -104,7 +104,7 @@ class _LotIndividualisationScreenState
     final ctrl = TextEditingController(text: _nbAIndividualiser.toString());
     final res = await showDialog<int>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Nombre à individualiser'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -124,13 +124,13 @@ class _LotIndividualisationScreenState
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Annuler')),
           ElevatedButton(
             onPressed: () {
               final v = int.tryParse(ctrl.text);
               if (v != null && v > 0 && v <= widget.lot.nombreInitial) {
-                Navigator.pop(context, v);
+                Navigator.pop(dialogCtx, v);
               }
             },
             child: const Text('OK'),

@@ -210,11 +210,11 @@ class _AlertesScreenState extends State<AlertesScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(Icons.calendar_today, size: 11, color: Colors.grey.shade500),
+                            Icon(Icons.calendar_today, size: 11, color: context.cuTextSecondary),
                             const SizedBox(width: 3),
                             Text(
                               formatDate(a.dateAlerte),
-                              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                              style: TextStyle(fontSize: 11, color: context.cuTextSecondary),
                             ),
                             if (a.estEnRetard) ...[
                               const SizedBox(width: 8),
@@ -238,7 +238,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
                 const SizedBox(height: 8),
                 Text(
                   a.message!,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  style: TextStyle(fontSize: 13, color: context.cuTextPrimary),
                 ),
               ],
               const SizedBox(height: 8),

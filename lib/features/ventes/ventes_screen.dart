@@ -203,7 +203,7 @@ class _VentesScreenState extends State<VentesScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade500),
+                Icon(Icons.calendar_today, size: 14, color: context.cuTextSecondary),
                 const SizedBox(width: 4),
                 Text(formatDate(v.dateVente)),
                 const SizedBox(width: 12),
@@ -214,7 +214,7 @@ class _VentesScreenState extends State<VentesScreen> {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Icon(Icons.person, size: 14, color: Colors.grey.shade500),
+                  Icon(Icons.person, size: 14, color: context.cuTextSecondary),
                   const SizedBox(width: 4),
                   Text('Client: ${v.acheteur}'),
                 ],
@@ -222,7 +222,7 @@ class _VentesScreenState extends State<VentesScreen> {
             ],
             if (v.poids != null) ...[
               const SizedBox(height: 2),
-              Text('Poids total: ${v.poids} kg', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+              Text('Poids total: ${v.poids} kg', style: TextStyle(color: context.cuTextSecondary, fontSize: 12)),
             ]
           ],
         ),

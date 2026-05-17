@@ -393,6 +393,7 @@ class _JoursProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // Durée cible typique engraissement lapin : 70 jours
     const cible = 70;
     final progress = (jours / cible).clamp(0.0, 1.0);
@@ -409,13 +410,13 @@ class _JoursProgressBar extends StatelessWidget {
             Text(
               'J+$jours',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: CuColors.textSecondaryLight,
+                    color: isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight,
                   ),
             ),
             Text(
               'Objectif J+$cible',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: CuColors.textSecondaryLight,
+                    color: isDark ? CuColors.textSecondaryDark : CuColors.textSecondaryLight,
                   ),
             ),
           ],

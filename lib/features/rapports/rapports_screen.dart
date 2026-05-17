@@ -329,7 +329,7 @@ class _MonthDashboard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${_nomMoisFr(DateTime.now().month)} ${DateTime.now().year}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: context.cuTextSecondary),
                 ),
               ],
             ),
@@ -381,7 +381,7 @@ class _MonthDashboard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
                     'Aucune vente avec acheteur ce mois.',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    style: TextStyle(color: context.cuTextSecondary, fontSize: 12),
                   ),
                 )
               else
@@ -481,7 +481,7 @@ class _TopClientRow extends StatelessWidget {
           ),
           Text(
             '${formatMontant(client['total'] as double)} • $nbVentes vente${nbVentes > 1 ? "s" : ""}',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 12, color: context.cuTextSecondary),
           ),
         ],
       ),
@@ -499,7 +499,7 @@ class _ChartNaissances extends StatelessWidget {
     if (naissances6Mois.isEmpty) {
       return Center(
         child: Text('Pas de données',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+            style: TextStyle(color: context.cuTextSecondary, fontSize: 12)),
       );
     }
     final entries = naissances6Mois.entries.toList();
@@ -540,7 +540,7 @@ class _ChartNaissances extends StatelessWidget {
               reservedSize: 30,
               getTitlesWidget: (v, _) => Text(
                 v.toInt().toString(),
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 10, color: context.cuTextSecondary),
               ),
             ),
           ),
@@ -557,7 +557,7 @@ class _ChartNaissances extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(_nomMoisFrCourt(mois),
                       style: TextStyle(
-                          fontSize: 10, color: Colors.grey.shade600)),
+                          fontSize: 10, color: context.cuTextSecondary)),
                 );
               },
             ),

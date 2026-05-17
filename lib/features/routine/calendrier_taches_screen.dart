@@ -240,7 +240,7 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
                             child: Text(
                               'Aucune tâche le ${_dateLisible(_selected)}.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey.shade600),
+                              style: TextStyle(color: context.cuTextSecondary),
                             ),
                           ),
                         )

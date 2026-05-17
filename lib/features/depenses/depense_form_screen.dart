@@ -151,7 +151,7 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
               tileColor: Theme.of(context).cardColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
-                side: BorderSide(color: Colors.grey.shade300),
+                side: BorderSide(color: context.cuBorder),
               ),
               leading: const Icon(Icons.calendar_today),
               title: const Text('Date'),

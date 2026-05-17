@@ -427,7 +427,7 @@ class _LapinHeaderCard extends StatelessWidget {
                   Text(lapin.displayName,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   Text(lapin.numeroBague,
-                      style: TextStyle(color: Colors.grey.shade600)),
+                      style: TextStyle(color: context.cuTextSecondary)),
                   const SizedBox(height: 6),
                   Wrap(spacing: 8, runSpacing: 4, children: [
                     _Badge(label: lapin.statutLabel, color: statutColor(lapin.statut)),
@@ -536,7 +536,7 @@ class _InfoCard extends StatelessWidget {
             children: [
               Icon(cageStatutIcon(cage!.statut), size: 18, color: color),
               const SizedBox(width: 10),
-              Text('Cage : ', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+              Text('Cage : ', style: TextStyle(color: context.cuTextSecondary, fontSize: 13)),
               Expanded(
                 child: Text(
                   '${cage!.numero} (${batiment?.nom ?? "?"} • ${clapier?.nom ?? "?"})',
@@ -592,7 +592,7 @@ class _GenealogieCard extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 10),
-          Text('$label : ', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+          Text('$label : ', style: TextStyle(color: ctx.cuTextSecondary, fontSize: 13)),
           Expanded(
             child: parent != null
                 ? InkWell(
@@ -750,7 +750,7 @@ class _PeseesCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 4, left: 8),
                   child: Text('+ ${pesees.length - 5} pesée(s) plus anciennes',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      style: TextStyle(fontSize: 12, color: context.cuTextSecondary)),
                 ),
             ],
           ],
@@ -826,13 +826,13 @@ class _RentabiliteCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Text(
                   'Aucun coût ni vente enregistré pour ce lapin. Renseigne le prix d\'achat (formulaire) ou impute des dépenses pour voir la rentabilité.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: context.cuTextSecondary),
                 ),
               )
             else ...[
-              _Ligne('Prix d\'achat', prixAchat, prixAchat > 0 ? null : Colors.grey.shade500),
-              _Ligne('Coût des soins', coutSoins, coutSoins > 0 ? null : Colors.grey.shade500),
-              _Ligne('Dépenses imputées', depenses, depenses > 0 ? null : Colors.grey.shade500),
+              _Ligne('Prix d\'achat', prixAchat, prixAchat > 0 ? null : context.cuTextSecondary),
+              _Ligne('Coût des soins', coutSoins, coutSoins > 0 ? null : context.cuTextSecondary),
+              _Ligne('Dépenses imputées', depenses, depenses > 0 ? null : context.cuTextSecondary),
               const Divider(height: 16),
               _Ligne('Coût total', coutTotal, AppTheme.moduleStock, bold: true),
               _Ligne('Recettes', ventes, AppTheme.moduleFinance, bold: true),
@@ -903,13 +903,13 @@ class _TimelineCard extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 8),
             for (var i = 0; i < items.length; i++)
-              _buildRow(items[i], isLast: i == items.length - 1 && reste == 0),
+              _buildRow(context, items[i], isLast: i == items.length - 1 && reste == 0),
             if (reste > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 6, left: 30),
                 child: Text(
                   '+ $reste événement${reste > 1 ? "s" : ""} plus ancien${reste > 1 ? "s" : ""}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 12, color: context.cuTextSecondary),
                 ),
               ),
           ],
@@ -918,7 +918,7 @@ class _TimelineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(_TimelineEvent e, {required bool isLast}) {
+  Widget _buildRow(BuildContext context, _TimelineEvent e, {required bool isLast}) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,9 +947,9 @@ class _TimelineCard extends StatelessWidget {
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   if (e.subtitle.isNotEmpty)
                     Text(e.subtitle,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                        style: TextStyle(fontSize: 11, color: context.cuTextSecondary)),
                   Text(formatDate(e.date.toIso8601String().substring(0, 10)),
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      style: TextStyle(fontSize: 11, color: context.cuTextSecondary)),
                 ],
               ),
             ),
@@ -1032,7 +1032,7 @@ class _SoinsSection extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Center(
                   child: Text('Aucun soin enregistré',
-                      style: TextStyle(color: Colors.grey.shade500))),
+                      style: TextStyle(color: context.cuTextSecondary))),
             ),
           )
         else
@@ -1101,9 +1101,9 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.grey.shade500),
+          Icon(icon, size: 18, color: context.cuTextSecondary),
           const SizedBox(width: 10),
-          Text('$label : ', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+          Text('$label : ', style: TextStyle(color: context.cuTextSecondary, fontSize: 13)),
           Expanded(child: Text(value,
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
         ],

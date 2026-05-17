@@ -409,7 +409,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   Widget _section(String t) => Padding(
       padding: const EdgeInsets.only(bottom: 10, top: 4),
       child: Text(t,
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)));
+          style: TextStyle(fontWeight: FontWeight.bold, color: context.cuTextPrimary)));
 
   Widget _datePicker(String label, String? value, Function(String) onPick) {
     return InkWell(
@@ -486,17 +486,17 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
     if (_consanguiniteWarning != null && widget.saillie == null) {
       final ok = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('⚠️ Consanguinité détectée'),
           content: Text(
               'Lien : $_consanguiniteWarning\n\nVoulez-vous quand même enregistrer cette saillie ?'),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(dialogCtx, false),
                 child: const Text('Annuler')),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Enregistrer quand même'),
             ),
           ],

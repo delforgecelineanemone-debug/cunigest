@@ -374,7 +374,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
                   : null,
             ),
             child: _photoPath == null
-                ? Icon(Icons.pets, color: Colors.grey.shade400, size: 60)
+                ? Icon(Icons.pets, color: context.cuTextSecondary, size: 60)
                 : null,
           ),
           Container(
@@ -654,7 +654,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       padding: const EdgeInsets.only(bottom: 10, top: 4),
       child: Text(title,
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700)),
+              color: context.cuTextPrimary)),
     );
   }
 }

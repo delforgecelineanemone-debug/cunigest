@@ -116,12 +116,12 @@ class _SyncScreenState extends State<SyncScreen> {
                       const SizedBox(height: 2),
                       Text(sousLabel,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600)),
+                              fontSize: 12, color: context.cuTextSecondary)),
                       if (_config.email != null && _config.email!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(_config.email!,
                             style: TextStyle(
-                                fontSize: 11, color: Colors.grey.shade500)),
+                                fontSize: 11, color: context.cuTextSecondary)),
                       ],
                     ],
                   ),

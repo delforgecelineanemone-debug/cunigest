@@ -66,11 +66,11 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   Future<void> _choisirTheme() async {
     final choix = await showDialog<String>(
       context: context,
-      builder: (_) => SimpleDialog(
+      builder: (dialogCtx) => SimpleDialog(
         title: const Text('Apparence'),
         children: kThemeModes
             .map((m) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, m),
+                  onPressed: () => Navigator.pop(dialogCtx, m),
                   child: Row(
                     children: [
                       Icon(
@@ -98,11 +98,11 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   Future<void> _choisirDevise() async {
     final choix = await showDialog<String>(
       context: context,
-      builder: (_) => SimpleDialog(
+      builder: (dialogCtx) => SimpleDialog(
         title: const Text('Devise'),
         children: kDevises
             .map((d) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(context, d),
+                  onPressed: () => Navigator.pop(dialogCtx, d),
                   child: Row(
                     children: [
                       const Icon(Icons.payments_outlined),
@@ -402,7 +402,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700)),
+                color: context.cuTextPrimary)),
       );
 
   Future<void> _exporter() async {
@@ -435,12 +435,12 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
       setState(() => _busy = false);
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Données de test'),
           content: Text(msg),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogCtx),
                 child: const Text('OK')),
           ],
         ),
@@ -692,12 +692,12 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   Future<void> _changerTolerance() async {
     final choisi = await showDialog<int>(
       context: context,
-      builder: (_) => SimpleDialog(
+      builder: (dialogCtx) => SimpleDialog(
         title: const Text('Tolérance du streak'),
         children: [
           for (final n in [0, 1, 2, 3])
             SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, n),
+              onPressed: () => Navigator.pop(dialogCtx, n),
               child: Text(n == 0
                   ? 'Aucune (streak strict)'
                   : '$n jour${n > 1 ? "s" : ""} de pause autorisé${n > 1 ? "s" : ""}'),

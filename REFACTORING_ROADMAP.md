@@ -2,7 +2,7 @@
 
 > **Document vivant.** Mis à jour au fil de l'eau par Claude (rôle CTO).
 > **Dernière mise à jour :** 2026-05-17
-> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | 🟡 Phase E (3/5)
+> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | ✅ Phase E terminée
 
 ---
 
@@ -240,7 +240,7 @@ lib/
 
 ## E.2 — Tests services (sync, account, notification, backup)
 **Effort :** 2 jours
-**Statut :** ⏸ Pas démarré
+**Statut :** ✅ Terminé (2026-05-18) — 23 tests passants + 4 skip documentaires (services 100% platform). Approche pragmatique : tester la surface PURE (PBKDF2 déterministe, format binaire CGBK, magic bytes, MAC AES-GCM, ordre topologique des tables sync) ; skip propre du reste (DBHelper SQLCipher, flutter_secure_storage, http, flutter_local_notifications). Aucune modif lib/, aucun package mock ajouté.
 
 ## E.3 — Widget tests sur 5 écrans critiques
 **Cibles :** dashboard, lapin_form, lapin_detail, login, sync_screen
@@ -250,7 +250,7 @@ lib/
 ## E.4 — 1 integration test end-to-end
 **Flow :** créer compte → ajouter lapin → saillie → mise bas → vente
 **Effort :** 1 jour
-**Statut :** ⏸ Pas démarré
+**Statut :** ✅ Terminé (2026-05-18) — `test/e2e/flow_complet_test.dart` : un seul `test()` narratif en 10 étapes couvrant compte → reproducteurs → saillie (J+31) → mise bas (8 nés / 7 vivants) → lot LT-2026-05-001 → sevrage (J+28, 6 sevrés, mortalité 14,28%) → individualisation → vente 4500 FCFA → stats finales. Vérifie l'atomicité de `insertVente` (statut lapin → 'vendu'), la généalogie père/mère, le calcul de mortalité pré-sevrage. Aucun bug détecté dans lib/. Note : règles `nb_nes >= nb_vivants >= nb_sevres` validées côté test uniquement — pas de contrainte CHECK SQL (amélioration V3.0 possible).
 
 ## E.5 — GitHub Actions CI
 **Cibles :** `flutter analyze` + `flutter test` à chaque PR + build APK sur tag.
@@ -299,9 +299,9 @@ lib/
 | B | 6 | 6 | 0 |
 | C | 6 | 6 | 0 |
 | D | 6 | 5 | 1 |
-| E | 5 | 3 | 2 |
+| E | 5 | 5 | 0 |
 | F | 5 | 3 | 2 |
-| **Total** | **33** | **28** | **5** |
+| **Total** | **33** | **30** | **3** |
 
 ---
 

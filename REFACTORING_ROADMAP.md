@@ -2,7 +2,7 @@
 
 > **Document vivant.** Mis à jour au fil de l'eau par Claude (rôle CTO).
 > **Dernière mise à jour :** 2026-05-17
-> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | 🟡 Phase E (2/5)
+> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | 🟡 Phase E (3/5)
 
 ---
 
@@ -245,7 +245,7 @@ lib/
 ## E.3 — Widget tests sur 5 écrans critiques
 **Cibles :** dashboard, lapin_form, lapin_detail, login, sync_screen
 **Effort :** 2 jours
-**Statut :** ⏸ Pas démarré
+**Statut :** ✅ Terminé (2026-05-18) — 5/5 écrans couverts par 19 widget tests (login: 4, lapin_form: 5, sync: 3, dashboard: 3, lapin_detail: 4). Pattern « UI synchrone » sans hooks debug : `FlutterError.onError = (_){}` pour ignorer les erreurs async DB en `initState()`, `pump()` sans `pumpAndSettle()` pour ne pas attendre les Futures, `ProviderScope` requis pour `CuAppBar`. Tests structurels (AppBar, RefreshIndicator, validation UI locale, valeurs pré-remplies en édition, règles métier comme « sexe par défaut = femelle »). Total 187/187 OK. Tests avec données mockées (KPIs dashboard, timeline lapin_detail) reportés à itération future.
 
 ## E.4 — 1 integration test end-to-end
 **Flow :** créer compte → ajouter lapin → saillie → mise bas → vente
@@ -299,9 +299,9 @@ lib/
 | B | 6 | 6 | 0 |
 | C | 6 | 6 | 0 |
 | D | 6 | 5 | 1 |
-| E | 5 | 2 | 3 |
+| E | 5 | 3 | 2 |
 | F | 5 | 3 | 2 |
-| **Total** | **33** | **27** | **6** |
+| **Total** | **33** | **28** | **5** |
 
 ---
 

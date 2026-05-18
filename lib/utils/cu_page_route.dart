@@ -4,9 +4,8 @@
 import 'package:flutter/material.dart';
 
 class CuPageRoute<T> extends PageRouteBuilder<T> {
-  CuPageRoute({required WidgetBuilder builder, RouteSettings? settings})
+  CuPageRoute({required WidgetBuilder builder, super.settings})
       : super(
-          settings: settings,
           pageBuilder: (context, _, __) => builder(context),
           transitionDuration: const Duration(milliseconds: 280),
           reverseTransitionDuration: const Duration(milliseconds: 220),

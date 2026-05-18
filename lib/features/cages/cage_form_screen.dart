@@ -186,7 +186,7 @@ class _CageFormScreenState extends State<CageFormScreen> {
             ),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 }

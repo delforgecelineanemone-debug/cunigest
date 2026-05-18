@@ -213,7 +213,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
               child: Center(child: CircularProgressIndicator()),
             ),
         ],
-      ),
+      ).responsive(),
     );
   }
 

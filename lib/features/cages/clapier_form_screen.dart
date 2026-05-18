@@ -131,7 +131,7 @@ class _ClapierFormScreenState extends State<ClapierFormScreen> {
             ),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 }

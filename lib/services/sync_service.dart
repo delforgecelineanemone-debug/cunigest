@@ -173,6 +173,16 @@ class SyncService {
     await repo.updateConfig(cfg.copyWith(clearAuth: true, enabled: false));
   }
 
+  /// Renouvelle l'access_token via le refresh_token (version publique).
+  /// Lit la config courante et tente le refresh — utilisée par CloudAuthService
+  /// pour le refresh proactif au démarrage.
+  Future<bool> refreshTokenIfPossible() async {
+    final cfg = await _config();
+    if (cfg.refreshToken == null || cfg.refreshToken!.isEmpty) return false;
+    if (cfg.serverUrl == null || cfg.apiKey == null) return false;
+    return _refreshToken(cfg);
+  }
+
   /// Renouvelle l'access_token via le refresh_token.
   /// Appelé automatiquement quand un appel renvoie 401.
   Future<bool> _refreshToken(SyncConfig cfg) async {

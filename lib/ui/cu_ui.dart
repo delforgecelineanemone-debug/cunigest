@@ -1,5 +1,6 @@
 /// CuniUI — Design System barrel export
 /// Usage : import 'package:gestion_cunicole/ui/cu_ui.dart';
+library;
 
 // ── Tokens ──
 export 'tokens/colors.dart';
@@ -25,3 +26,6 @@ export 'organisms/cu_app_bar.dart';
 export 'organisms/cu_lapin_tile.dart';
 export 'organisms/cu_empty_state.dart';
 export 'organisms/cu_speed_dial.dart';
+
+// ── Layouts ──
+export 'layouts/cu_page_wrapper.dart';

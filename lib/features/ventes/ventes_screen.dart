@@ -154,7 +154,7 @@ class _VentesScreenState extends State<VentesScreen> {
                       ),
           ),
         ],
-      ),
+      ).responsive(),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: CuColors.accentFinance,
         foregroundColor: Colors.white,

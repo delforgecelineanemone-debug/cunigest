@@ -344,7 +344,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

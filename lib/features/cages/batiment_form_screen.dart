@@ -126,7 +126,7 @@ class _BatimentFormScreenState extends State<BatimentFormScreen> {
             ),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 }

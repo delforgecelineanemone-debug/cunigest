@@ -64,7 +64,7 @@ class _SyncScreenState extends State<SyncScreen> {
                 _infoCard(),
                 const SizedBox(height: 16),
               ],
-            ),
+            ).responsive(),
     );
   }
 

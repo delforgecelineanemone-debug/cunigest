@@ -70,7 +70,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
                 padding: const EdgeInsets.all(16),
                 children: _buildContent(),
               ),
-            ),
+            ).responsive(),
     );
   }
 

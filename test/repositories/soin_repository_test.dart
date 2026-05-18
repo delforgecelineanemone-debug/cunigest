@@ -27,12 +27,12 @@ void main() {
     await db.close();
   });
 
-  String _isoOffset(int days) => DateTime.now()
+  String isoOffset(int days) => DateTime.now()
       .subtract(Duration(days: days))
       .toIso8601String()
       .substring(0, 10);
 
-  String _isoFuture(int days) => DateTime.now()
+  String isoFuture(int days) => DateTime.now()
       .add(Duration(days: days))
       .toIso8601String()
       .substring(0, 10);
@@ -43,7 +43,7 @@ void main() {
       // ne l'a pas fait à temps mais il faut quand même le voir).
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Vaccination VHD',
-        dateSoin: _isoOffset(40), dateRappel: _isoOffset(5),
+        dateSoin: isoOffset(40), dateRappel: isoOffset(5),
       ));
       final r = await repo.getRappelsProchains(7);
       expect(r.length, 1);
@@ -52,7 +52,7 @@ void main() {
     test('exclut les rappels au-delà de la fenêtre', () async {
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Vaccination Myxomatose',
-        dateSoin: _isoOffset(1), dateRappel: _isoFuture(30),
+        dateSoin: isoOffset(1), dateRappel: isoFuture(30),
       ));
       final r = await repo.getRappelsProchains(7);
       expect(r, isEmpty);
@@ -60,7 +60,7 @@ void main() {
 
     test('exclut les soins sans date_rappel', () async {
       await repo.insertSoin(Soin(
-        lapinId: lapinId, typeSoin: 'Pesée', dateSoin: _isoOffset(0),
+        lapinId: lapinId, typeSoin: 'Pesée', dateSoin: isoOffset(0),
       ));
       final r = await repo.getRappelsProchains(30);
       expect(r, isEmpty);
@@ -68,11 +68,11 @@ void main() {
 
     test('triés par date_rappel ASC', () async {
       await repo.insertSoin(Soin(
-          lapinId: lapinId, typeSoin: 'A', dateSoin: _isoOffset(10),
-          dateRappel: _isoFuture(5)));
+          lapinId: lapinId, typeSoin: 'A', dateSoin: isoOffset(10),
+          dateRappel: isoFuture(5)));
       await repo.insertSoin(Soin(
-          lapinId: lapinId, typeSoin: 'B', dateSoin: _isoOffset(10),
-          dateRappel: _isoFuture(2)));
+          lapinId: lapinId, typeSoin: 'B', dateSoin: isoOffset(10),
+          dateRappel: isoFuture(2)));
       final r = await repo.getRappelsProchains(7);
       expect(r.map((s) => s.typeSoin).toList(), ['B', 'A']);
     });
@@ -88,7 +88,7 @@ void main() {
       // Antibiotique il y a 5 jours, délai 28j → encore 23 jours
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Antibiotique',
-        dateSoin: _isoOffset(5), delaiAttenteJours: 28,
+        dateSoin: isoOffset(5), delaiAttenteJours: 28,
       ));
       final s = await repo.getSoinDelaiAttenteActif(lapinId);
       expect(s, isNotNull);
@@ -99,7 +99,7 @@ void main() {
       // Antibiotique il y a 30 jours, délai 28 → expiré depuis 2j
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Antibiotique',
-        dateSoin: _isoOffset(30), delaiAttenteJours: 28,
+        dateSoin: isoOffset(30), delaiAttenteJours: 28,
       ));
       expect(await repo.getSoinDelaiAttenteActif(lapinId), isNull);
     });
@@ -108,11 +108,11 @@ void main() {
       // 2 soins actifs simultanément, on doit avoir le dernier à expirer
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Antiparasitaire',
-        dateSoin: _isoOffset(2), delaiAttenteJours: 14, // expire J+12
+        dateSoin: isoOffset(2), delaiAttenteJours: 14, // expire J+12
       ));
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Antibiotique',
-        dateSoin: _isoOffset(1), delaiAttenteJours: 28, // expire J+27
+        dateSoin: isoOffset(1), delaiAttenteJours: 28, // expire J+27
       ));
       final s = await repo.getSoinDelaiAttenteActif(lapinId);
       expect(s!.typeSoin, 'Antibiotique');
@@ -121,7 +121,7 @@ void main() {
     test('soin sans délai d\'attente → ignoré', () async {
       await repo.insertSoin(Soin(
         lapinId: lapinId, typeSoin: 'Pesée',
-        dateSoin: _isoOffset(1), delaiAttenteJours: null,
+        dateSoin: isoOffset(1), delaiAttenteJours: null,
       ));
       expect(await repo.getSoinDelaiAttenteActif(lapinId), isNull);
     });

@@ -62,6 +62,11 @@ dependencies:
   # ── Authentification locale (V2 multi-utilisateur) ──
   crypto: ^3.0.5
 
+  # ── Verrou local biométrie + PIN (V3.0 — Auth refactor) ──
+  local_auth: ^2.3.0
+  local_auth_android: ^1.0.46
+  local_auth_darwin: ^1.4.0
+
   # ── Réseau / détection connectivité (D.5) ──
   connectivity_plus: ^6.1.0
 

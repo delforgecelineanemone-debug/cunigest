@@ -253,7 +253,7 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
                         ),
                 ),
               ],
-            ),
+            ).responsive(),
     );
   }
 

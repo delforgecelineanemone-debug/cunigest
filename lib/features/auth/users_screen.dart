@@ -49,7 +49,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final estAdmin = session.isAdmin || !session.isAuthenticated;
 
     return Scaffold(
-      appBar: CuAppBar(title: 'Utilisateurs', emoji: '👥', showActions: false),
+      appBar: const CuAppBar(title: 'Utilisateurs', emoji: '👥', showActions: false),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -101,7 +101,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       )),
                 const SizedBox(height: 80),
               ],
-            ),
+            ).responsive(),
       floatingActionButton: estAdmin
           ? FloatingActionButton.extended(
               onPressed: _creerUtilisateur,

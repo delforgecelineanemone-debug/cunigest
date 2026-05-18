@@ -166,7 +166,7 @@ class _DepensesScreenState extends State<DepensesScreen> {
                       const SizedBox(height: 80),
                     ],
                   ),
-                ),
+                ).responsive(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

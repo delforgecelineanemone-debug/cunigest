@@ -11,7 +11,6 @@
 
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -64,7 +63,7 @@ String _pbkdf2HashIsolate(({String password, List<int> salt}) args) {
   final derived = blocks.take(_kKeyLength).toList();
   final saltB64 = base64Url.encode(salt);
   final hashB64 = base64Url.encode(derived);
-  return '$_kPbkdf2Prefix${_kIterations}\$$saltB64\$$hashB64';
+  return '$_kPbkdf2Prefix$_kIterations\$$saltB64\$$hashB64';
 }
 
 class AccountService {

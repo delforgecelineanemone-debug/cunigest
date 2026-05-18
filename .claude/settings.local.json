@@ -26,7 +26,23 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\\\\lib\\\\utils\" -File)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(find \"C:\\\\Users\\\\GUIFO\\\\AppData\\\\Local\\\\Pub\\\\Cache\\\\hosted\\\\pub.dev\" -path \"*sqflite_sqlcipher*sqflite.dart\" 2>/dev/null | head -3)",
+      "Read(//c/dev/flutter/packages/flutter_test/lib/src/**)",
+      "Read(//c//**)",
+      "Bash(git diff *)",
+      "Bash(git checkout *)",
+      "Bash(git -C \"C:\\\\Users\\\\GUIFO\\\\Desktop\\\\dev\\\\cunicole_app\" log --all --oneline)",
+      "Bash(grep -n \"      \\),$\" \"lib/features/reproduction/saillie_form_screen.dart\")",
+      "Bash(grep -n \"      \\),$\" \"lib/features/sante/soin_form_screen.dart\")",
+      "Bash(grep -n \"      \\),$\" \"lib/features/ventes/vente_form_screen.dart\")",
+      "Bash(grep -n \"      \\),$\" \"lib/features/depenses/depense_form_screen.dart\")",
+      "Bash(grep -n \"^    \\);$\\\\|^      \\),$\" lib/features/onboarding_screen.dart)",
+      "Bash(grep -n \"^    \\);$\\\\|^      \\),$\" lib/features/auth/login_screen.dart)",
+      "Bash(grep -n \"^    \\);$\\\\|^      \\),$\" lib/features/lots/lot_individualisation_screen.dart)"
     ]
   }
 }

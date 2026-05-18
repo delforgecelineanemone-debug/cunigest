@@ -468,7 +468,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
             const SizedBox(height: 80),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

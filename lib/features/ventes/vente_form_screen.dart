@@ -131,7 +131,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CuAppBar(
+      appBar: const CuAppBar(
         title: 'Nouvelle vente',
         accent: CuColors.accentFinance,
         showActions: false,
@@ -309,7 +309,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

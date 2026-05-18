@@ -352,7 +352,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

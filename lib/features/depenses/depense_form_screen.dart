@@ -285,7 +285,7 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
             ],
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 }

@@ -12,6 +12,7 @@ import '../providers/state_providers.dart';
 import '../state/app_state.dart';
 import '../ui/cu_ui.dart';
 import '../utils/breakpoints.dart';
+import 'auth/cloud_reconnect_banner.dart';
 import 'lapins/lapins_list_screen.dart';
 import 'sante/sante_screen.dart';
 import 'ventes/ventes_screen.dart';
@@ -110,6 +111,10 @@ class _Body extends StatelessWidget {
           _DashHeader(nom: nom, isDark: isDark),
 
           const SizedBox(height: CuSpacing.lg),
+
+          // ── Bannière cloud déconnecté (V3.0 Auth refactor) ──
+          // Affichée uniquement si le refresh proactif au boot a échoué.
+          const CloudReconnectBanner(),
 
           // ── KPIs ──
           Padding(

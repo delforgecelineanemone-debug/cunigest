@@ -376,7 +376,7 @@ class _LapinDetailScreenState extends State<LapinDetailScreen> {
           _SoinsSection(soins: _soins, lapin: lapin, onRefresh: _load),
           const SizedBox(height: 80),
         ],
-      ),
+      ).responsive(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.push(context,

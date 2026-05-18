@@ -130,7 +130,7 @@ class CuLapinTile extends StatelessWidget {
                         Icon(sexeIcon, size: 14, color: sexeColor),
                         const Spacer(),
                         if (alerte)
-                          Icon(Icons.warning_amber,
+                          const Icon(Icons.warning_amber,
                               size: 16, color: CuColors.warning),
                         const SizedBox(width: CuSpacing.xs),
                         CuBadge(

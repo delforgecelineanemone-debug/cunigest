@@ -207,7 +207,7 @@ class _SanteScreenState extends State<SanteScreen> {
                       ),
           ),
         ],
-      ),
+      ).responsive(),
     );
   }
 
@@ -467,7 +467,7 @@ class _DelaiAttenteIndicator extends StatelessWidget {
     final passe = restants <= 0;
 
     if (passe) {
-      return CuBadge(
+      return const CuBadge(
         label: '✓ Délai d\'attente écoulé',
         color: CuColors.success,
       );

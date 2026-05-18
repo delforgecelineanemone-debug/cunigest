@@ -18,14 +18,14 @@ class CalculatricesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
+    return const DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: CuAppBar(
           title: 'Calculatrices',
           emoji: '🧮',
           showActions: false,
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabs: [
               Tab(icon: Icon(Icons.grass), text: 'Ration'),
@@ -34,7 +34,7 @@ class CalculatricesScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
             _RationCalc(),
             _PrixRevientCalc(),

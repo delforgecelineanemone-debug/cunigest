@@ -7,6 +7,7 @@ import '../database/db_helper.dart';
 import '../models/reglages.dart';
 import '../providers/state_providers.dart';
 import '../services/account_service.dart';
+import '../services/auth/local_lock_service.dart';
 import '../ui/cu_ui.dart';
 import '../widgets/common_widgets.dart';
 import 'main_scaffold.dart';
@@ -63,7 +64,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await _creerCompte();
       return;
     }
-    if (_page < 3) {
+    if (_page < 4) {
       _pageCtrl.nextPage(
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOut,
@@ -118,6 +119,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   _bienvenue(),
                   _creationCompte(),
                   _choixTheme(),
+                  _verrou(),
                   _conseils(),
                 ],
               ),
@@ -127,7 +129,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               padding: const EdgeInsets.only(bottom: CuSpacing.md),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(4, (i) {
+                children: List.generate(5, (i) {
                   final actif = i == _page;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -150,7 +152,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   CuSpacing.xl, 0, CuSpacing.xl, CuSpacing.xl),
               child: Row(
                 children: [
-                  if (_page >= 2 && _page < 3)
+                  if (_page >= 2 && _page < 4)
                     TextButton(
                       onPressed: _busy ? null : _terminer,
                       style: TextButton.styleFrom(
@@ -174,12 +176,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         )
                       : CuButton(
-                          label: _page == 3
+                          label: _page == 4
                               ? 'Commencer'
                               : (_page == 1 && !_compteCree
                                   ? 'Créer mon compte'
                                   : 'Suivant'),
-                          icon: _page == 3
+                          icon: _page == 4
                               ? Icons.check
                               : (_page == 1 && !_compteCree
                                   ? Icons.person_add
@@ -192,7 +194,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 
@@ -352,7 +354,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 17, color: CuColors.info),
+                  const Icon(Icons.info_outline, size: 17, color: CuColors.info),
                   const SizedBox(width: CuSpacing.sm),
                   Expanded(
                     child: Text(
@@ -471,7 +473,180 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // ─── Page 3 : Conseils ──────────────────────────────────────
+  // ─── Page 3 : Verrou rapide (V3.0 Auth refactor) ────────────
+
+  Widget _verrou() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(CuSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(CuSpacing.lg),
+            decoration: BoxDecoration(
+              color: CuColors.primary.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.fingerprint,
+                size: 72, color: CuColors.primary),
+          ),
+          const SizedBox(height: CuSpacing.xl),
+          Text(
+            'Ouverture rapide',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: CuSpacing.sm),
+          Text(
+            'Active l\'empreinte ou Face ID pour ouvrir CuniGest en une '
+            'seconde, sans saisir ton mot de passe. Tu peux modifier ça '
+            'plus tard dans Réglages → Sécurité.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: CuColors.textSecondaryLight,
+                  height: 1.5,
+                ),
+          ),
+          const SizedBox(height: CuSpacing.x2l),
+          CuButton(
+            label: 'Activer la biométrie',
+            icon: Icons.fingerprint,
+            onPressed: _busy ? null : _activerBiometrieOnboarding,
+            size: CuButtonSize.lg,
+          ),
+          const SizedBox(height: CuSpacing.sm),
+          TextButton(
+            onPressed: _busy
+                ? null
+                : () => _pageCtrl.nextPage(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOut,
+                    ),
+            child: const Text('Plus tard'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _activerBiometrieOnboarding() async {
+    final lock = LocalLockService.instance;
+    final available = await lock.isBiometryAvailable();
+    if (!mounted) return;
+    if (!available) {
+      showErrorSnackBar(
+        context,
+        'Biométrie non disponible sur cet appareil. Tu pourras configurer un PIN dans Réglages.',
+      );
+      return;
+    }
+    // PIN de secours requis. On utilise les 4 derniers chiffres d'un nombre
+    // dérivé du mot de passe, ce qui évite un dialog supplémentaire dans
+    // l'onboarding. L'utilisateur pourra changer son PIN ensuite.
+    // Mais c'est trop opaque → on demande explicitement un PIN.
+    final pin = await _saisirPinOnboarding();
+    if (pin == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await lock.setupPin(pin);
+      final ok = await lock.enableBiometry();
+      if (!mounted) return;
+      setState(() => _busy = false);
+      if (ok) {
+        showSuccessSnackBar(context, 'Biométrie activée 🎉');
+        _pageCtrl.nextPage(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+        );
+      } else {
+        showErrorSnackBar(context,
+            'Activation annulée. Tu peux réessayer depuis Réglages → Sécurité.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showErrorSnackBar(context, 'Erreur : $e');
+    }
+  }
+
+  Future<String?> _saisirPinOnboarding() async {
+    final ctrl1 = TextEditingController();
+    final ctrl2 = TextEditingController();
+    String? erreur;
+    final res = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Choisis un PIN de secours'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Si la biométrie échoue (gants, doigt mouillé…), le PIN te permettra d\'entrer.',
+                style: TextStyle(fontSize: 12.5, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl1,
+                autofocus: true,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                decoration: const InputDecoration(
+                  labelText: 'PIN (4 à 8 chiffres)',
+                  prefixIcon: Icon(Icons.pin),
+                ),
+              ),
+              TextField(
+                controller: ctrl2,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                decoration: const InputDecoration(
+                  labelText: 'Confirme le PIN',
+                  prefixIcon: Icon(Icons.pin),
+                ),
+              ),
+              if (erreur != null) ...[
+                const SizedBox(height: 8),
+                Text(erreur!, style: const TextStyle(color: Colors.red)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final a = ctrl1.text;
+                final b = ctrl2.text;
+                if (a.length < 4) {
+                  setLocal(() => erreur = 'Minimum 4 chiffres');
+                  return;
+                }
+                if (a != b) {
+                  setLocal(() => erreur = 'Les PIN ne correspondent pas');
+                  return;
+                }
+                Navigator.pop(ctx, a);
+              },
+              child: const Text('Valider'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl1.dispose();
+    ctrl2.dispose();
+    return res;
+  }
+
+  // ─── Page 4 : Conseils ──────────────────────────────────────
 
   Widget _conseils() {
     return SingleChildScrollView(

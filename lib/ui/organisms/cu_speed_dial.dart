@@ -89,7 +89,7 @@ class _CuSpeedDialState extends State<CuSpeedDial>
                     ),
                   ),
                 );
-              }).toList().reversed.toList(),
+              }).toList().reversed,
 
             // FAB principal
             FloatingActionButton(

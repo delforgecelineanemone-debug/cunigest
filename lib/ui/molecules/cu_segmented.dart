@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../tokens/colors.dart';
 import '../tokens/radius.dart';
-import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
 
 /// Sélecteur segmenté animé (style iOS) pour filtrage rapide.

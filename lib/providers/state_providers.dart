@@ -10,6 +10,7 @@
 // ──────────────────────────────────────────────────────────────
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/auth/session_manager.dart';
 import '../state/app_state.dart';
 
 final sessionProvider =
@@ -26,3 +27,9 @@ final reglagesProvider =
 
 final alertesCountProvider =
     ChangeNotifierProvider<AlertesCountState>((ref) => AlertesCountState());
+
+/// Verrou local : statut de la session (locked/unlocked).
+/// Le SessionManager est un singleton qui observe le cycle de vie
+/// — un seul observer global pour toute l'app.
+final sessionManagerProvider =
+    ChangeNotifierProvider<SessionManager>((ref) => SessionManager.instance);

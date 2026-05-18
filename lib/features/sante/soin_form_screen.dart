@@ -286,7 +286,7 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

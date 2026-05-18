@@ -371,7 +371,7 @@ class _LotIndividualisationScreenState
                   ),
                 ),
               ],
-            ),
+            ).responsive(),
       bottomNavigationBar: _loading
           ? null
           : Padding(

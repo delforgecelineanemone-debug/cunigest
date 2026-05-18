@@ -263,7 +263,7 @@ class _CagesHomeScreenState extends State<CagesHomeScreen> {
                       const SizedBox(height: 80),
                     ],
                   ),
-                ),
+                ).responsive(),
       floatingActionButton: _batiments.isEmpty
           ? null
           : FloatingActionButton.extended(

@@ -24,6 +24,7 @@ import '../../widgets/common_widgets.dart';
 import '../auth/users_screen.dart';
 import '../sync/sync_screen.dart';
 import 'a_propos_screen.dart';
+import 'securite_connexion_screen.dart';
 
 class ReglagesScreen extends ConsumerStatefulWidget {
   const ReglagesScreen({super.key});
@@ -232,6 +233,28 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                 ),
 
                 const SizedBox(height: 16),
+                // ── Section Sécurité & Connexion (V3.0 Auth refactor) ──
+                _sectionTitle('🔐 Sécurité & Connexion'),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.lock_outline,
+                        color: AppTheme.primary),
+                    title: const Text('Verrou de l\'app'),
+                    subtitle: const Text(
+                        'Empreinte, Face ID ou PIN — local, sans réseau'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SecuriteConnexionScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
                 // ── Section Notifications ──
                 _sectionTitle('🔔 Notifications'),
                 Card(
@@ -392,7 +415,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                 ),
                 const SizedBox(height: 24),
               ],
-            ),
+            ).responsive(),
     );
   }
 

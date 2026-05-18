@@ -18,7 +18,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' hide Hmac;
 import 'package:flutter/foundation.dart';
@@ -412,7 +411,7 @@ class BackupService {
   /// une Map {tableName: [row, ...]} sérialisable en JSON.
   Future<Map<String, dynamic>> _dumpTables(Database db) async {
     final tables = await db.rawQuery(
-      "SELECT name FROM sqlite_master "
+      'SELECT name FROM sqlite_master '
       "WHERE type='table' "
       "AND name NOT LIKE 'sqlite_%' "
       "AND name NOT LIKE 'android_%'",

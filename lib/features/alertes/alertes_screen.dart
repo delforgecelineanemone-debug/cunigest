@@ -101,7 +101,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
                       ),
           ),
         ],
-      ),
+      ).responsive(),
     );
   }
 

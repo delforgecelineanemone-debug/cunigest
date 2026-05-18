@@ -108,7 +108,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
                       ),
           ),
         ],
-      ),
+      ).responsive(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

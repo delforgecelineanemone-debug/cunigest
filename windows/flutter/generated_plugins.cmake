@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   flutter_secure_storage_windows
   flutter_timezone
+  local_auth_windows
   printing
   sentry_flutter
   share_plus

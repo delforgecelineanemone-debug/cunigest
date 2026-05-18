@@ -66,7 +66,7 @@ String pbkdf2HashForTest(String password, List<int> salt) {
   final derived = blocks.take(_kKeyLength).toList();
   final saltB64 = base64Url.encode(salt);
   final hashB64 = base64Url.encode(derived);
-  return '$_kPbkdf2Prefix${_kIterations}\$$saltB64\$$hashB64';
+  return '$_kPbkdf2Prefix$_kIterations\$$saltB64\$$hashB64';
 }
 
 void main() {

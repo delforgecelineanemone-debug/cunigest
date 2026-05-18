@@ -181,7 +181,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
             const SizedBox(height: 16),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

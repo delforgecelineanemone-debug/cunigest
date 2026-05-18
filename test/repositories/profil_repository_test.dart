@@ -4,7 +4,6 @@
 // tolérance, et debloquerBadge doit être idempotent.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gestion_cunicole/models/profil.dart';
 import 'package:gestion_cunicole/models/reglages.dart';
 import 'package:gestion_cunicole/repositories/profil_repository.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -24,7 +23,7 @@ void main() {
     await db.close();
   });
 
-  String _isoOffset(int days) =>
+  String isoOffset(int days) =>
       DateTime.now().subtract(Duration(days: days)).toIso8601String().substring(0, 10);
 
   group('mettreAJourScore — streak', () {
@@ -46,7 +45,7 @@ void main() {
     test('hier activité → streak passe à 2', () async {
       // Pré-remplir profil avec activité d'hier
       final profil = await repo.getProfil();
-      profil.derniereActivite = _isoOffset(1);
+      profil.derniereActivite = isoOffset(1);
       profil.streakActuel = 5;
       profil.meilleurStreak = 5;
       profil.scoreTotal = 100;
@@ -59,7 +58,7 @@ void main() {
 
     test('écart > tolérance → streak reset à 1', () async {
       final profil = await repo.getProfil();
-      profil.derniereActivite = _isoOffset(5);
+      profil.derniereActivite = isoOffset(5);
       profil.streakActuel = 10;
       profil.meilleurStreak = 10;
       await repo.updateProfil(profil);

@@ -172,7 +172,7 @@ class _RoutineScreenState extends State<RoutineScreen> with SingleTickerProvider
                   ],
                 ],
               ),
-            ),
+            ).responsive(),
     );
   }
 

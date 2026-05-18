@@ -181,7 +181,7 @@ class _LotFormScreenState extends State<LotFormScreen> {
             ),
           ],
         ),
-      ),
+      ).responsive(),
     );
   }
 

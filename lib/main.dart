@@ -17,9 +17,13 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'providers/state_providers.dart';
 import 'utils/theme.dart';
 import 'features/onboarding_screen.dart';
-import 'features/auth/login_screen.dart';
+import 'features/auth/lock_screen.dart';
+import 'features/main_scaffold.dart';
 import 'database/db_helper.dart';
 import 'services/account_service.dart';
+import 'services/auth/cloud_auth_service.dart';
+import 'services/auth/local_lock_service.dart';
+import 'services/auth/session_manager.dart';
 import 'services/notification_service.dart';
 import 'services/sync_service.dart';
 import 'services/error_logger_service.dart';
@@ -103,10 +107,10 @@ class CuniGestApp extends ConsumerWidget {
                 minimumSize: const WidgetStatePropertyAll(Size(64, 56)),
               ),
             ),
-            iconButtonTheme: IconButtonThemeData(
+            iconButtonTheme: const IconButtonThemeData(
               style: ButtonStyle(
-                minimumSize: const WidgetStatePropertyAll(Size(56, 56)),
-                iconSize: const WidgetStatePropertyAll(28),
+                minimumSize: WidgetStatePropertyAll(Size(56, 56)),
+                iconSize: WidgetStatePropertyAll(28),
               ),
             ),
           )
@@ -118,20 +122,65 @@ class CuniGestApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: mode,
       debugShowCheckedModeBanner: false,
-      // Mode soleil : +25 % sur la taille du texte pour la lisibilité extérieure.
-      builder: r.modeSoleil
-          ? (ctx, child) {
-              final mq = MediaQuery.of(ctx);
-              final boosted = (mq.textScaler.scale(1.0) * 1.25).clamp(1.1, 2.0);
-              return MediaQuery(
-                data: mq.copyWith(textScaler: TextScaler.linear(boosted)),
-                child: child!,
-              );
-            }
-          : null,
+      // Le builder wrap chaque route avec :
+      //   1. Mode soleil (textScaler +25 % si activé)
+      //   2. AuthGate (overlay LockScreen quand la session est verrouillée)
+      builder: (ctx, child) {
+        Widget wrapped = child!;
+        if (r.modeSoleil) {
+          final mq = MediaQuery.of(ctx);
+          final boosted = (mq.textScaler.scale(1.0) * 1.25).clamp(1.1, 2.0);
+          wrapped = MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(boosted)),
+            child: wrapped,
+          );
+        }
+        return _AuthGate(child: wrapped);
+      },
       home: const SplashScreen(),
     );
   }
+}
+
+/// Superpose le LockScreen sur toute l'app dès que la session
+/// passe en `locked` (retour foreground après délai dépassé).
+///
+/// Au démarrage (status == unknown), n'affiche rien : le splash et
+/// le routage initial gèrent le 1er affichage du verrou.
+class _AuthGate extends ConsumerWidget {
+  const _AuthGate({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionManagerProvider);
+    // Le splash et le routage initial s'occupent déjà du premier verrou.
+    // Cet overlay ne s'active que pour les re-locks après foreground.
+    final showLock = session.isLocked && !_isInitialBoot(child);
+    return Stack(
+      children: [
+        child,
+        if (showLock)
+          const Positioned.fill(
+            child: Material(child: LockScreen(fromBoot: false)),
+          ),
+      ],
+    );
+  }
+
+  /// Heuristique : pendant le boot (SplashScreen affichée), on ne
+  /// superpose pas — le splash gère le routage initial vers
+  /// LockScreen ou MainScaffold.
+  bool _isInitialBoot(Widget child) {
+    // child est toujours un Navigator englobant les routes ; on
+    // utilise un flag statique mis à jour par SplashScreen.
+    return !_AuthGateState.bootCompleted;
+  }
+}
+
+/// État partagé pour signaler la fin du splash.
+abstract class _AuthGateState {
+  static bool bootCompleted = false;
 }
 
 /// Écran d'accueil affiché pendant 2.5s au lancement.
@@ -211,6 +260,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       debugPrint('SPLASH ⚠ connectivity : $e');
     }
 
+    // Refresh proactif silencieux du token Supabase — non bloquant.
+    // L'app reste utilisable même si ça échoue (offline-first).
+    // ignore: discarded_futures
+    CloudAuthService.instance.proactiveRefresh().then((h) {
+      debugPrint('SPLASH ☁ cloud health = ${h.name}');
+    });
+
     try {
       _setStatus('Chargement des données…');
       if (mounted) {
@@ -229,35 +285,48 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       debugPrint('SPLASH ⚠ state : $e');
     }
 
-    // Routage V2.6 — compte cuniculteur unique :
-    //   - Pas de compte local créé    → Onboarding (création obligatoire)
-    //   - Compte créé                 → Login (mot de passe)
-    //   - (le mode "solo legacy" sans compte est supprimé)
+    // ─── Routage V3.0 — Auth refactor ──────────────────────────
+    // Le mot de passe cloud n'est PLUS demandé à chaque ouverture.
+    // Logique :
+    //   - Pas de compte local créé        → Onboarding
+    //   - Compte + verrou local actif     → LockScreen (PIN ou biométrie)
+    //   - Compte + aucun verrou (défaut)  → MainScaffold direct ⚡
+    //
+    // Le SessionManager est initialisé pour observer le cycle de vie.
     bool compteExiste = false;
     try {
       compteExiste = await AccountService.instance.compteExiste();
     } catch (e) {
       debugPrint('SPLASH ⚠ compte check : $e');
     }
-    // Marqueur secondaire (legacy) : ancien flag d'onboarding
     bool onboardingDone = true;
     try {
       final r = await DBHelper.instance.getReglages();
       onboardingDone = r.onboardingDone;
     } catch (_) {/* ignore */}
 
+    LockMode lockMode = LockMode.none;
+    try {
+      await SessionManager.instance.evaluateInitial();
+      lockMode = await LocalLockService.instance.currentMode();
+    } catch (e) {
+      debugPrint('SPLASH ⚠ lock mode : $e');
+    }
+
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
 
     final Widget destination;
-    if (!compteExiste) {
+    if (!compteExiste || !onboardingDone) {
       destination = const OnboardingScreen();
-    } else if (!onboardingDone) {
-      // Compte présent mais onboarding pas terminé (cas rare : quitté en cours)
-      destination = const OnboardingScreen();
+    } else if (lockMode == LockMode.none) {
+      // Pas de verrou local : ouverture directe, comme WhatsApp/Notion.
+      destination = const MainScaffold();
     } else {
-      destination = const LoginScreen();
+      destination = const LockScreen();
     }
+    // Active l'AuthGate pour les re-locks après foreground.
+    _AuthGateState.bootCompleted = true;
 
     Navigator.pushReplacement(
       context,

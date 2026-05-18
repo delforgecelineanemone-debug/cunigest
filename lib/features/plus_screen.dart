@@ -96,20 +96,20 @@ class PlusScreen extends ConsumerWidget {
         padding: EdgeInsets.fromLTRB(hPad, CuSpacing.lg, hPad, CuSpacing.x3l),
         children: [
           if (elevage.isNotEmpty) ...[
-            _SectionHeader(label: 'Élevage', icon: Icons.pets),
+            const _SectionHeader(label: 'Élevage', icon: Icons.pets),
             _TileGrid(tiles: elevage),
             const SizedBox(height: CuSpacing.xl),
           ],
           if (finances.isNotEmpty) ...[
-            _SectionHeader(label: 'Finances', icon: Icons.euro_outlined),
+            const _SectionHeader(label: 'Finances', icon: Icons.euro_outlined),
             _TileGrid(tiles: finances),
             const SizedBox(height: CuSpacing.xl),
           ],
-          _SectionHeader(label: 'Outils', icon: Icons.build_outlined),
+          const _SectionHeader(label: 'Outils', icon: Icons.build_outlined),
           _TileGrid(tiles: outils),
           if (admin.isNotEmpty) ...[
             const SizedBox(height: CuSpacing.xl),
-            _SectionHeader(label: 'Administration', icon: Icons.admin_panel_settings_outlined),
+            const _SectionHeader(label: 'Administration', icon: Icons.admin_panel_settings_outlined),
             _TileGrid(tiles: admin),
           ],
         ],

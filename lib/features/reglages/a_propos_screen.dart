@@ -154,7 +154,7 @@ class AProposScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
-      ),
+      ).responsive(),
     );
   }
 }

@@ -283,7 +283,7 @@ class _QuickActionsSheet extends StatelessWidget {
     final items = [
       _QuickItem(Icons.pets, 'Nouveau lapin', CuColors.primary,
           (_) => const LapinFormScreen()),
-      _QuickItem(Icons.favorite, 'Nouvelle saillie', CuColors.accentRepro,
+      const _QuickItem(Icons.favorite, 'Nouvelle saillie', CuColors.accentRepro,
           null),
       _QuickItem(Icons.medical_services, 'Nouveau soin', CuColors.accentHealth,
           (_) => const SoinFormScreen()),

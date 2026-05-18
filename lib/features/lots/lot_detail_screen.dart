@@ -120,7 +120,7 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
                   const SizedBox(height: 80),
                 ],
               ),
-            ),
+            ).responsive(),
       floatingActionButton: _lot.statut == 'en_cours'
           ? FloatingActionButton.extended(
               onPressed: _menuAction,

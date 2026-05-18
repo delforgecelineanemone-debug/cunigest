@@ -24,7 +24,7 @@ void main() {
     await db.close();
   });
 
-  String _isoDayOffset(int days) => DateTime.now()
+  String isoDayOffset(int days) => DateTime.now()
       .subtract(Duration(days: days))
       .toIso8601String()
       .substring(0, 10);
@@ -54,7 +54,7 @@ void main() {
         () async {
       final id = await repo.insertLot(Lot(
           code: 'L1',
-          dateCreation: _isoDayOffset(10),
+          dateCreation: isoDayOffset(10),
           nombreInitial: 30,
           poidsInitial: 18.0));
       final s = await repo.getStats(id);
@@ -70,12 +70,12 @@ void main() {
       // gain = 9kg = 9000g ; 9000 / (10 * 30) = 30 g/j/lapereau
       final id = await repo.insertLot(Lot(
           code: 'L2',
-          dateCreation: _isoDayOffset(10),
+          dateCreation: isoDayOffset(10),
           nombreInitial: 30,
           poidsInitial: 18.0));
       await repo.insertPesee(Pesee(
           lotId: id,
-          datePesee: _isoDayOffset(0),
+          datePesee: isoDayOffset(0),
           poidsTotal: 27.0,
           nombre: 30));
 
@@ -87,17 +87,17 @@ void main() {
       // gain 9kg, aliment 27kg → IC = 27/9 = 3.0
       final id = await repo.insertLot(Lot(
           code: 'L3',
-          dateCreation: _isoDayOffset(10),
+          dateCreation: isoDayOffset(10),
           nombreInitial: 30,
           poidsInitial: 18.0));
       await repo.insertPesee(Pesee(
           lotId: id,
-          datePesee: _isoDayOffset(0),
+          datePesee: isoDayOffset(0),
           poidsTotal: 27.0,
           nombre: 30));
       await repo.insertDistribution(DistributionAliment(
           lotId: id,
-          dateDistribution: _isoDayOffset(5),
+          dateDistribution: isoDayOffset(5),
           quantiteKg: 27.0));
 
       final s = await repo.getStats(id);
@@ -109,17 +109,17 @@ void main() {
         () async {
       final id = await repo.insertLot(Lot(
           code: 'L4',
-          dateCreation: _isoDayOffset(5),
+          dateCreation: isoDayOffset(5),
           nombreInitial: 20,
           poidsInitial: 12.0));
       await repo.insertPesee(Pesee(
           lotId: id,
-          datePesee: _isoDayOffset(0),
+          datePesee: isoDayOffset(0),
           poidsTotal: 12.0,
           nombre: 20));
       await repo.insertDistribution(DistributionAliment(
           lotId: id,
-          dateDistribution: _isoDayOffset(2),
+          dateDistribution: isoDayOffset(2),
           quantiteKg: 10.0));
 
       final s = await repo.getStats(id);

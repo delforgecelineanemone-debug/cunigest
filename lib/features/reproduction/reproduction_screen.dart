@@ -210,7 +210,7 @@ class _ReproductionScreenState extends State<ReproductionScreen> {
                       ),
           ),
         ],
-      ),
+      ).responsive(),
     );
   }
 
@@ -351,7 +351,7 @@ class _SaillieCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.favorite,
+                        const Icon(Icons.favorite,
                             color: CuColors.accentRepro, size: 14),
                         const SizedBox(width: 6),
                         Expanded(

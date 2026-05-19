@@ -178,6 +178,24 @@ void main() {
     });
   });
 
+  group('Validators.normaliserNom', () {
+    test('null → null', () => expect(Validators.normaliserNom(null), isNull));
+    test('vide → null', () => expect(Validators.normaliserNom(''), isNull));
+    test('espaces seuls → null',
+        () => expect(Validators.normaliserNom('   '), isNull));
+    test('majuscules → capitalize',
+        () => expect(Validators.normaliserNom('BLANC'), 'Blanc'));
+    test('minuscules → capitalize',
+        () => expect(Validators.normaliserNom('blanc'), 'Blanc'));
+    test('avec espaces autour → trim + capitalize',
+        () => expect(Validators.normaliserNom('  Blanc  '), 'Blanc'));
+    test('accents → préservés',
+        () => expect(Validators.normaliserNom('néo-zélandais'), 'Néo-zélandais'));
+    test('multi-mots minuscules → seule la 1ère MAJ',
+        () => expect(Validators.normaliserNom('nouvelle zelande'),
+            'Nouvelle zelande'));
+  });
+
   group('Validators.compose', () {
     test('chaîne de validators → premier message', () {
       final v = Validators.compose([

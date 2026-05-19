@@ -395,6 +395,7 @@ class _DepensesScreenState extends State<DepensesScreen>
             IconButton(
               icon: const Icon(Icons.delete_outline,
                   color: Colors.red, size: 20),
+              tooltip: 'Supprimer cette dépense', // V2.5 — Sprint 5 a11y
               onPressed: () => _supprimer(d),
             ),
           ],

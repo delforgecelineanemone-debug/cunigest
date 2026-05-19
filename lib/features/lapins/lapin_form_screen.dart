@@ -275,10 +275,11 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       nom: _nom.text.trim().isEmpty ? null : _nom.text.trim(),
       // _sexe est garanti non-null ici car le validator FormField a passé.
       sexe: _sexe!,
-      race: _race.text.trim().isEmpty ? null : _race.text.trim(),
+      // V2.5 — Sprint 5 : normalisation Race/Couleur (anti-doublons "Blanc"/"blanc"/"BLANC").
+      race: Validators.normaliserNom(_race.text),
       dateNaissance: _dateNaissance,
       poids: _poids.text.isEmpty ? null : double.tryParse(_poids.text),
-      couleur: _couleur.text.trim().isEmpty ? null : _couleur.text.trim(),
+      couleur: Validators.normaliserNom(_couleur.text),
       statut: _statut,
       cageId: widget.lapin == null ? _cageId : oldCageId, // création OK ; édition gérée ensuite
       cageLegacy: widget.lapin?.cageLegacy,

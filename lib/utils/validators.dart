@@ -242,6 +242,23 @@ class Validators {
   }
 
   // ──────────────────────────────────────────────────────────
+  // Normalisation de chaînes (anti-doublons casse)
+  // ──────────────────────────────────────────────────────────
+  /// Normalise une chaîne libre (race, couleur, type) pour éviter les
+  /// doublons "Blanc" / "blanc" / "BLANC" / " Blanc " dans la base.
+  /// Renvoie `null` si la chaîne est vide après trim.
+  ///
+  /// Stratégie : trim + lowercase + capitalize première lettre.
+  /// Exemples : "  BLANC " → "Blanc" ; "néo-zélandais" → "Néo-zélandais".
+  static String? normaliserNom(String? v) {
+    if (v == null) return null;
+    final trimmed = v.trim();
+    if (trimmed.isEmpty) return null;
+    final lower = trimmed.toLowerCase();
+    return lower[0].toUpperCase() + lower.substring(1);
+  }
+
+  // ──────────────────────────────────────────────────────────
   // Combinateur — applique plusieurs validators
   // ──────────────────────────────────────────────────────────
   /// Renvoie le premier message d'erreur ; null si tous OK.

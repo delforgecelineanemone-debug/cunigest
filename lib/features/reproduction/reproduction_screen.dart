@@ -108,6 +108,7 @@ class _ReproductionScreenState extends State<ReproductionScreen>
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
       appBar: const CuAppBar(
         title: 'Reproduction',
+        emoji: '💕', // V2.5 — Sprint 4 : emoji thématique
         accent: CuColors.accentRepro,
         automaticallyImplyLeading: false,
       ),

@@ -329,20 +329,49 @@ class _LapinDetailScreenState extends State<LapinDetailScreen> {
       appBar: CuAppBar(
         title: lapin.displayName,
         showActions: false,
+        // V2.5 — Sprint 4 : Delete déplacé dans un menu overflow (2 taps)
+        // pour éviter qu'un mis-tap sur Edit déclenche la suppression
+        // (auparavant 4 IconButtons collés à 32dp = risque accidentel).
         extraActions: [
-          IconButton(icon: const Icon(Icons.qr_code), tooltip: 'QR code',
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => QrDisplayScreen(lapin: lapin)))),
-          IconButton(icon: const Icon(Icons.account_tree), tooltip: 'Pedigree PDF (4 gén.)',
+          IconButton(
+              icon: const Icon(Icons.qr_code),
+              tooltip: 'QR code',
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => QrDisplayScreen(lapin: lapin)))),
+          IconButton(
+              icon: const Icon(Icons.account_tree),
+              tooltip: 'Pedigree PDF (4 gén.)',
               onPressed: _genererPedigree),
-          IconButton(icon: const Icon(Icons.edit),
+          IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: 'Modifier',
               onPressed: () async {
-                final r = await Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => LapinFormScreen(lapin: lapin)));
+                final r = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => LapinFormScreen(lapin: lapin)));
                 if (r == true) _load();
               }),
-          IconButton(icon: const Icon(Icons.delete_outline),
-              onPressed: _confirmerSuppression),
+          PopupMenuButton<String>(
+            tooltip: 'Plus d\'actions',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              if (v == 'delete') _confirmerSuppression();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(children: [
+                  Icon(Icons.delete_outline, color: AppTheme.error),
+                  SizedBox(width: 12),
+                  Text('Supprimer',
+                      style: TextStyle(color: AppTheme.error)),
+                ]),
+              ),
+            ],
+          ),
         ],
       ),
       body: ListView(

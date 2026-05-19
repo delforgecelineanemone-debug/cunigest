@@ -120,6 +120,7 @@ class _SanteScreenState extends State<SanteScreen>
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
       appBar: const CuAppBar(
         title: 'Santé & Soins',
+        emoji: '💊', // V2.5 — Sprint 4 : emoji thématique
         accent: CuColors.accentHealth,
       ),
       floatingActionButton: FloatingActionButton.extended(

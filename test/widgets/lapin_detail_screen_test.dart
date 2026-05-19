@@ -8,8 +8,12 @@
 //
 // On teste donc le squelette structurel :
 //   - AppBar : displayName du lapin (nom > bague)
-//   - 4 icônes d'action présentes (QR, pedigree, edit, delete)
+//   - 3 icônes directes (QR, pedigree, edit) + menu overflow (delete)
 //   - Aucun crash au build
+//
+// V2.5 — Sprint 4 : Delete a été déplacé dans un PopupMenuButton pour
+// éviter les mis-tap (avant 4 IconButtons collés à 32dp). Le test
+// vérifie maintenant la présence du menu overflow.
 //
 // Les tests avec données chargées (soins, généalogie, timeline)
 // seront faits dans une itération future avec hooks debug ou
@@ -64,7 +68,8 @@ void main() {
     expect(find.text('M-2026-042'), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('4 icônes d\'action présentes (QR, pedigree, edit, delete)',
+  testWidgets(
+      '3 icônes directes (QR, pedigree, edit) + menu overflow pour delete',
       (tester) async {
     final lapin = Lapin(
       id: 1,
@@ -76,7 +81,10 @@ void main() {
     expect(find.byIcon(Icons.qr_code), findsOneWidget);
     expect(find.byIcon(Icons.account_tree), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsOneWidget);
-    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+    // Delete dans le menu overflow (icône more_vert visible).
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    // Delete pas visible sans ouverture du menu.
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
   });
 
   testWidgets('le Scaffold se construit sans crash', (tester) async {

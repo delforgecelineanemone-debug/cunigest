@@ -269,10 +269,14 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            // V2.5 — Sprint 4 : CTA unifié via CuButton.
+            CuButton(
+              label: isEdit ? 'Mettre à jour' : 'Enregistrer',
+              icon: isEdit ? Icons.save : Icons.check,
+              variant: CuButtonVariant.primary,
+              size: CuButtonSize.lg,
+              fullWidth: true,
               onPressed: _save,
-              icon: const Icon(Icons.save),
-              label: Text(isEdit ? 'Mettre à jour' : 'Enregistrer'),
             ),
             if (isEdit) ...[
               const SizedBox(height: 12),

@@ -177,11 +177,15 @@ class _StockFormScreenState extends State<StockFormScreen> {
               decoration: const InputDecoration(labelText: 'Notes', prefixIcon: Icon(Icons.notes)),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            // V2.5 — Sprint 4 : CTA unifié via CuButton.
+            CuButton(
+              label: widget.stock != null ? 'Enregistrer les modifications' : 'Ajouter au stock',
+              icon: widget.stock != null ? Icons.save : Icons.add_box,
+              variant: CuButtonVariant.primary,
+              size: CuButtonSize.lg,
+              fullWidth: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(widget.stock != null ? 'Enregistrer les modifications' : 'Ajouter au stock'),
             ),
             const SizedBox(height: 16),
           ],

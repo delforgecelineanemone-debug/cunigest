@@ -4,9 +4,11 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/lapin.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/breakpoints.dart';
 import '../../utils/cu_page_route.dart';
+import '../../utils/reactive_state_mixin.dart';
 import 'lapin_detail_screen.dart';
 import 'lapin_form_screen.dart';
 
@@ -21,8 +23,16 @@ class LapinsListScreen extends StatefulWidget {
   State<LapinsListScreen> createState() => _LapinsListScreenState();
 }
 
-class _LapinsListScreenState extends State<LapinsListScreen> {
+class _LapinsListScreenState extends State<LapinsListScreen>
+    with ReactiveStateMixin<LapinsListScreen> {
   final _db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.lapins, DataTopics.cages];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
 
   List<Lapin> _lapins = [];
   List<Lapin> _filtered = [];
@@ -147,7 +157,8 @@ class _LapinsListScreenState extends State<LapinsListScreen> {
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
       appBar: widget.embedded
           ? null
-          : const CuAppBar(title: 'Lapins'),
+          // V2.5 — Sprint 4 : emoji thématique pour cohérence visuelle.
+          : const CuAppBar(title: 'Lapins', emoji: '🐇'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouterLapin,
         icon: const Icon(Icons.add),

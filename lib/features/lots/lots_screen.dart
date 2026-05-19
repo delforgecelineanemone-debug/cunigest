@@ -4,8 +4,10 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/lot.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/breakpoints.dart';
+import '../../utils/reactive_state_mixin.dart';
 import 'lot_detail_screen.dart';
 import 'lot_form_screen.dart';
 
@@ -19,7 +21,15 @@ class LotsScreen extends StatefulWidget {
   State<LotsScreen> createState() => _LotsScreenState();
 }
 
-class _LotsScreenState extends State<LotsScreen> {
+class _LotsScreenState extends State<LotsScreen>
+    with ReactiveStateMixin<LotsScreen> {
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.lots, DataTopics.pesees, DataTopics.distributionsAliment];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
+
   List<Lot> _lots = [];
   Map<int, LotStats> _stats = {};
   bool _loading = true;
@@ -69,7 +79,8 @@ class _LotsScreenState extends State<LotsScreen> {
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
       appBar: widget.embedded
           ? null
-          : const CuAppBar(title: 'Lots d\'engraissement'),
+          // V2.5 — Sprint 4 : emoji thématique pour cohérence visuelle.
+          : const CuAppBar(title: 'Lots d\'engraissement', emoji: '📦'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ajouter,
         icon: const Icon(Icons.add),

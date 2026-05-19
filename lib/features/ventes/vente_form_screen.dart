@@ -323,17 +323,15 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
                   labelText: 'Notes', prefixIcon: Icon(Icons.notes)),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: CuColors.accentFinance),
+            // V2.5 — Sprint 4 : CTA unifié via CuButton (design system).
+            CuButton(
+              label: 'Enregistrer la vente',
+              icon: Icons.check,
+              variant: CuButtonVariant.primary,
+              size: CuButtonSize.lg,
+              fullWidth: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Text('Enregistrer la vente'),
             ),
             const SizedBox(height: 16),
           ],

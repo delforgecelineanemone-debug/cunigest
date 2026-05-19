@@ -31,6 +31,7 @@ class SaillieFormScreen extends StatefulWidget {
 
 class _SaillieFormScreenState extends State<SaillieFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final db = DBHelper.instance;
 
   int? _mereId;
@@ -90,6 +91,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   void dispose() {
     _etatNidCtrl.dispose();
     _notesCtrl.dispose();
+    _formCtrl.dispose();
     super.dispose();
   }
 
@@ -111,10 +113,12 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.saillie != null;
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: isEdit ? 'Modifier la saillie' : 'Nouvelle saillie', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -275,25 +279,23 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
                   });
                 }),
               const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: _intField('Nés total', _nbNes, (v) {
-                  setState(() {
-                    _nbNes = v;
-                    _recalcMorts();
-                  });
-                })),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: _intField('Vivants', _nbVivants, (v) {
-                  setState(() {
-                    _nbVivants = v;
-                    _recalcMorts();
-                  });
-                }, maxValue: _nbNes)),
-                const SizedBox(width: 10),
-                Expanded(child: _mortsField()),
-              ]),
+              // V2.5 — Sprint 3 : disposition verticale = saisie une main
+              // sur mobile (3 champs en Row sont trop serrés au pouce).
+              _intField('Nés total', _nbNes, (v) {
+                setState(() {
+                  _nbNes = v;
+                  _recalcMorts();
+                });
+              }),
+              const SizedBox(height: 12),
+              _intField('Vivants', _nbVivants, (v) {
+                setState(() {
+                  _nbVivants = v;
+                  _recalcMorts();
+                });
+              }, maxValue: _nbNes),
+              const SizedBox(height: 12),
+              _mortsField(),
             ],
 
             if (_statut == 'sevrage' || _statut == 'termine') ...[
@@ -301,24 +303,20 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
               _datePicker('Date de sevrage (auto: J+28)', _dateSevrage,
                   (d) => setState(() => _dateSevrage = d)),
               const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: _intField('Sevrés', _nbSevres, (v) => _nbSevres = v)),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: TextFormField(
-                  initialValue: _poidsSevrageTotal?.toString() ?? '',
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                      labelText: 'Poids total portée (kg)',
-                      suffixText: 'kg',
-                      helperText: 'Poids cumulé de tous les sevrés.',
-                      helperMaxLines: 2),
-                  validator: Validators.poidsLot,
-                  onChanged: (v) =>
-                      _poidsSevrageTotal = v.isEmpty ? null : double.tryParse(v.replaceAll(',', '.')),
-                )),
-              ]),
+              _intField('Sevrés', _nbSevres, (v) => _nbSevres = v),
+              const SizedBox(height: 12),
+              TextFormField(
+                initialValue: _poidsSevrageTotal?.toString() ?? '',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                    labelText: 'Poids total portée (kg)',
+                    suffixText: 'kg',
+                    helperText: 'Poids cumulé de tous les sevrés.',
+                    helperMaxLines: 2),
+                validator: Validators.poidsLot,
+                onChanged: (v) =>
+                    _poidsSevrageTotal = v.isEmpty ? null : double.tryParse(v.replaceAll(',', '.')),
+              ),
             ],
 
             const SizedBox(height: 12),
@@ -602,6 +600,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
       db.genererAlertesReproduction().ignore();
 
       if (mounted) {
+        _formCtrl.markClean();
         showSuccessSnackBar(
             context,
             messageLot != null

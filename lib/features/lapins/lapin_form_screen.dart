@@ -46,6 +46,7 @@ class LapinFormScreen extends StatefulWidget {
 
 class _LapinFormScreenState extends State<LapinFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final db = DBHelper.instance;
 
   late TextEditingController _bague;
@@ -180,6 +181,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     for (final c in [_bague, _nom, _race, _couleur, _poids, _notes, _prixAchat]) {
       c.dispose();
     }
+    _formCtrl.dispose();
     super.dispose();
   }
 
@@ -320,6 +322,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       }
 
       if (mounted) {
+        _formCtrl.markClean(); // V2.5 — Sprint 3 : autorise le pop
         showSuccessSnackBar(
             context,
             widget.lapin == null
@@ -350,10 +353,13 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.lapin != null;
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: isEdit ? 'Modifier le lapin' : 'Nouveau lapin', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        // V2.5 — Sprint 3 : marque le form "dirty" dès la 1ère modif.
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -551,8 +557,13 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         }
       },
       child: InputDecorator(
-        decoration: const InputDecoration(
-            labelText: 'Date de naissance', prefixIcon: Icon(Icons.cake)),
+        decoration: InputDecoration(
+          labelText: 'Date de naissance',
+          prefixIcon: const Icon(Icons.cake),
+          // V2.5 — Sprint 3 : âge auto-calculé sous le champ.
+          helperText: _ageAutoCalcule(),
+          helperMaxLines: 1,
+        ),
         child: Text(
           _dateNaissance != null ? formatDate(_dateNaissance) : 'Sélectionner',
           style: TextStyle(color: _dateNaissance != null ? Colors.black87 : Colors.grey),
@@ -561,6 +572,24 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     ),
     const SizedBox(height: 12),
   ];
+
+  /// V2.5 — Sprint 3 : âge lisible (ex: "2 ans 3 mois", "45 jours").
+  String? _ageAutoCalcule() {
+    if (_dateNaissance == null) return null;
+    final dn = DateTime.tryParse(_dateNaissance!);
+    if (dn == null) return null;
+    final now = DateTime.now();
+    final jours = now.difference(dn).inDays;
+    if (jours < 0) return null;
+    if (jours < 60) return 'Âge : $jours jours';
+    final mois = ((jours / 30.44).floor());
+    if (mois < 12) return 'Âge : $mois mois';
+    final ans = mois ~/ 12;
+    final moisRest = mois % 12;
+    return moisRest > 0
+        ? 'Âge : $ans an${ans > 1 ? "s" : ""} $moisRest mois'
+        : 'Âge : $ans an${ans > 1 ? "s" : ""}';
+  }
 
   List<Widget> _buildGenealogieSection() => [
     _sectionTitle('Généalogie (optionnel)'),

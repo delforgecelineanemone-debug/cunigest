@@ -18,6 +18,7 @@ class StockFormScreen extends StatefulWidget {
 
 class _StockFormScreenState extends State<StockFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final db = DBHelper.instance;
 
   final _produitCtrl = TextEditingController();
@@ -77,15 +78,18 @@ class _StockFormScreenState extends State<StockFormScreen> {
     for (final c in [_produitCtrl, _quantiteCtrl, _quantiteMinCtrl, _fournisseurCtrl, _coutCtrl, _notesCtrl]) {
       c.dispose();
     }
+    _formCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: widget.stock != null ? 'Modifier le stock' : 'Nouveau stock', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -251,6 +255,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
     }
 
     if (mounted) {
+      _formCtrl.markClean();
       showSuccessSnackBar(context, 'Stock sauvegardé avec succès !');
       Navigator.pop(context, true);
     }

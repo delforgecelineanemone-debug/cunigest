@@ -11,7 +11,11 @@ enum CuButtonSize { sm, md, lg }
 
 /// Bouton principal CuniUI.
 /// Variants : primary | secondary | ghost | danger
-/// Tailles : sm (40) | md (48) | lg (56 — terrain/gants)
+/// Tailles : sm (48 — Material min) | md (52) | lg (56 — terrain/gants)
+///
+/// V2.5 — Sprint 3 : sm passé de 40dp → 48dp pour respecter la guideline
+/// Material 3 (cible tactile min 48x48). Avant : risque de mis-tap en
+/// usage terrain (fatigue, mains pleines).
 class CuButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -36,14 +40,15 @@ class CuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // V2.5 — Sprint 3 : hauteurs ≥ 48dp (cible tactile Material min).
     final height = switch (size) {
-      CuButtonSize.sm => 40.0,
-      CuButtonSize.md => 48.0,
+      CuButtonSize.sm => 48.0,
+      CuButtonSize.md => 52.0,
       CuButtonSize.lg => 56.0,
     };
 
     final fontSize = switch (size) {
-      CuButtonSize.sm => 13.0,
+      CuButtonSize.sm => 14.0,
       CuButtonSize.md => 15.0,
       CuButtonSize.lg => 16.0,
     };

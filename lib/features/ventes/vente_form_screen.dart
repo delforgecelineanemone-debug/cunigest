@@ -31,6 +31,7 @@ class VenteFormScreen extends StatefulWidget {
 
 class _VenteFormScreenState extends State<VenteFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final db = DBHelper.instance;
 
   bool _venteIndividuelle = true;
@@ -76,6 +77,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
     ]) {
       c.dispose();
     }
+    _formCtrl.dispose();
     super.dispose();
   }
 
@@ -135,14 +137,16 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: const CuAppBar(
         title: 'Nouvelle vente',
         accent: CuColors.accentFinance,
         showActions: false,
       ),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -280,8 +284,17 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
                   suffixText: AppTheme.devise),
               // Validator centralisé : refuse négatif, zéro, montant aberrant.
               validator: Validators.prix,
-              onChanged: (_) => _prixTotalManuel = true,
+              onChanged: (_) {
+                _prixTotalManuel = true;
+                setState(() {}); // rebuild bandeau marge brute
+              },
             ),
+            // V2.5 — Sprint 3 : bandeau marge brute si prix d'achat du
+            // reproducteur connu (vente individuelle uniquement).
+            if (_margeAffichable()) ...[
+              const SizedBox(height: 8),
+              _bandeauMarge(),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _acheteurCtrl,
@@ -326,6 +339,51 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
           ],
         ),
       ).responsive(),
+    );
+  }
+
+  /// V2.5 — Sprint 3 : marge brute = prix vente - prix d'achat
+  /// (uniquement si lapin individuel ET prix d'achat connu).
+  bool _margeAffichable() {
+    if (!_venteIndividuelle || _lapinId == null) return false;
+    final lapin = widget.lapinsMap[_lapinId];
+    if (lapin?.prixAchat == null) return false;
+    final prix = double.tryParse(_prixCtrl.text.replaceAll(',', '.'));
+    return prix != null && prix > 0;
+  }
+
+  Widget _bandeauMarge() {
+    final lapin = widget.lapinsMap[_lapinId];
+    final achat = lapin!.prixAchat!;
+    final prix = double.parse(_prixCtrl.text.replaceAll(',', '.'));
+    final marge = prix - achat;
+    final positif = marge >= 0;
+    final color = positif ? CuColors.primary : AppTheme.error;
+    final signe = positif ? '+' : '';
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(positif ? Icons.trending_up : Icons.trending_down,
+              size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Marge brute : $signe${marge.toStringAsFixed(0)} ${AppTheme.devise} '
+              '(achat : ${achat.toStringAsFixed(0)} ${AppTheme.devise})',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -455,6 +513,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
     try {
       await db.insertVente(vente);
       if (mounted) {
+        _formCtrl.markClean();
         showSuccessSnackBar(context, 'Vente enregistrée !');
         Navigator.pop(context, true);
       }

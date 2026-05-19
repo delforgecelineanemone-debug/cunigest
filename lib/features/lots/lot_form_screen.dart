@@ -20,6 +20,7 @@ class LotFormScreen extends StatefulWidget {
 
 class _LotFormScreenState extends State<LotFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final _codeCtrl = TextEditingController();
   final _cageCtrl = TextEditingController();
   final _nombreCtrl = TextEditingController();
@@ -69,16 +70,19 @@ class _LotFormScreenState extends State<LotFormScreen> {
     for (final c in [_codeCtrl, _cageCtrl, _nombreCtrl, _poidsCtrl, _notesCtrl]) {
       c.dispose();
     }
+    _formCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.lot != null;
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: isEdit ? 'Modifier le lot' : 'Nouveau lot', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -209,6 +213,7 @@ class _LotFormScreenState extends State<LotFormScreen> {
         await repo.update(lot);
       }
       if (mounted) {
+        _formCtrl.markClean();
         showSuccessSnackBar(context, 'Lot enregistré !');
         Navigator.pop(context, true);
       }

@@ -33,6 +33,7 @@ class SoinFormScreen extends StatefulWidget {
 
 class _SoinFormScreenState extends State<SoinFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final db = DBHelper.instance;
 
   int? _lapinId;
@@ -113,15 +114,18 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
     ]) {
       c.dispose();
     }
+    _formCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: widget.soin != null ? 'Modifier le soin' : 'Nouveau soin', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -179,59 +183,44 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
             const SizedBox(height: 12),
 
             _section('💊 Traitement'),
-            Row(
-              children: [
-                Expanded(
-                  child: Autocomplete<String>(
-                    initialValue: TextEditingValue(text: _produitCtrl.text),
-                    optionsBuilder: (v) => CunicoleRef.medicaments.where(
-                        (m) => m.toLowerCase().contains(v.text.toLowerCase())),
-                    onSelected: (v) => _produitCtrl.text = v,
-                    fieldViewBuilder: (_, ctrl, focus, onSubmit) => TextFormField(
-                      controller: ctrl,
-                      focusNode: focus,
-                      onEditingComplete: onSubmit,
-                      onChanged: (v) => _produitCtrl.text = v,
-                      decoration: const InputDecoration(
-                          labelText: 'Produit utilisé',
-                          prefixIcon: Icon(Icons.medication)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _doseCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Dose', prefixIcon: Icon(Icons.colorize)),
-                  ),
-                ),
-              ],
+            // V2.5 — Sprint 3 : disposition verticale = saisie une main.
+            Autocomplete<String>(
+              initialValue: TextEditingValue(text: _produitCtrl.text),
+              optionsBuilder: (v) => CunicoleRef.medicaments.where(
+                  (m) => m.toLowerCase().contains(v.text.toLowerCase())),
+              onSelected: (v) => _produitCtrl.text = v,
+              fieldViewBuilder: (_, ctrl, focus, onSubmit) => TextFormField(
+                controller: ctrl,
+                focusNode: focus,
+                onEditingComplete: onSubmit,
+                onChanged: (v) => _produitCtrl.text = v,
+                decoration: const InputDecoration(
+                    labelText: 'Produit utilisé',
+                    prefixIcon: Icon(Icons.medication)),
+              ),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _vetoCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Vétérinaire', prefixIcon: Icon(Icons.person)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _coutCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                        labelText: 'Coût (${AppTheme.devise})',
-                        prefixIcon: const Icon(Icons.euro_symbol),
-                        suffixText: AppTheme.devise),
-                    // Coût optionnel — si saisi, refuse négatif.
-                    validator: (v) => Validators.prix(v, requisField: false),
-                  ),
-                ),
-              ],
+            TextFormField(
+              controller: _doseCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Dose', prefixIcon: Icon(Icons.colorize)),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _vetoCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Vétérinaire', prefixIcon: Icon(Icons.person)),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _coutCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                  labelText: 'Coût (${AppTheme.devise})',
+                  prefixIcon: const Icon(Icons.euro_symbol),
+                  suffixText: AppTheme.devise),
+              // Coût optionnel — si saisi, refuse négatif.
+              validator: (v) => Validators.prix(v, requisField: false),
             ),
             const SizedBox(height: 12),
 
@@ -265,7 +254,39 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
               // Bornes : 0-120 jours. Évite délai aberrant qui bloquerait
               // la vente du lapin à vie.
               validator: Validators.delaiAttenteJours,
+              // V2.5 — Sprint 3 : reconstruit le bandeau "fin délai" en live.
+              onChanged: (_) => setState(() {}),
             ),
+            // V2.5 — Sprint 3 : bandeau auto fin du délai d'attente
+            // (= date soin + délai). Évite le calcul mental à l'éleveur.
+            if (_finDelaiAttente() != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: CuColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: CuColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_available,
+                        size: 18, color: CuColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Vente possible à partir du ${_finDelaiAttente()}',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: CuColors.primary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             TextFormField(
@@ -297,6 +318,20 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
         child: Text(t,
             style: TextStyle(fontWeight: FontWeight.bold, color: context.cuTextPrimary)),
       );
+
+  /// V2.5 — Sprint 3 : calcule la date de fin du délai d'attente
+  /// (date_soin + délai jours). Évite à l'éleveur de compter.
+  /// Renvoie une string formatée (jj/mm/aaaa) ou null si invalide.
+  String? _finDelaiAttente() {
+    final delaiStr = _delaiCtrl.text.trim();
+    if (delaiStr.isEmpty) return null;
+    final delai = int.tryParse(delaiStr);
+    if (delai == null || delai <= 0) return null;
+    final ds = DateTime.tryParse(_dateSoin);
+    if (ds == null) return null;
+    final fin = ds.add(Duration(days: delai));
+    return '${fin.day.toString().padLeft(2, '0')}/${fin.month.toString().padLeft(2, '0')}/${fin.year}';
+  }
 
   Widget _datePicker(String label, String? value, Function(String) onPick) {
     final display = value != null ? formatDate(value) : 'Non définie';
@@ -366,6 +401,7 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
         await db.updateSoin(soin);
       }
       if (mounted) {
+        _formCtrl.markClean();
         showSuccessSnackBar(context, 'Soin enregistré avec succès !');
         Navigator.pop(context, true);
       }

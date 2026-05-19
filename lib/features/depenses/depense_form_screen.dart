@@ -23,6 +23,7 @@ class DepenseFormScreen extends StatefulWidget {
 
 class _DepenseFormScreenState extends State<DepenseFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _formCtrl = CuFormController(); // V2.5 — Sprint 3 : anti-perte de saisie
   final _montantCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
@@ -77,6 +78,7 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
     _montantCtrl.dispose();
     _descCtrl.dispose();
     _notesCtrl.dispose();
+    _formCtrl.dispose();
     super.dispose();
   }
 
@@ -103,16 +105,19 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
       await repo.update(base);
     }
     if (!mounted) return;
+    _formCtrl.markClean();
     Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.depense != null;
-    return Scaffold(
+    return CuFormScaffold(
+      controller: _formCtrl,
       appBar: CuAppBar(title: isEdit ? 'Modifier dépense' : 'Nouvelle dépense', showActions: false),
-      body: Form(
+      child: Form(
         key: _formKey,
+        onChanged: _formCtrl.markDirty,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

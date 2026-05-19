@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/vente.dart';
 import '../../models/lapin.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'vente_form_screen.dart';
@@ -20,8 +22,16 @@ class VentesScreen extends StatefulWidget {
   State<VentesScreen> createState() => _VentesScreenState();
 }
 
-class _VentesScreenState extends State<VentesScreen> {
+class _VentesScreenState extends State<VentesScreen>
+    with ReactiveStateMixin<VentesScreen> {
   final db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.ventes, DataTopics.lapins];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
   List<Vente> _ventes = [];
   Map<int, Lapin> _lapinsMap = {};
   Map<String, dynamic> _stats = {};
@@ -228,17 +238,27 @@ class _VentesScreenState extends State<VentesScreen> {
         ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline, color: Colors.red),
+          tooltip: 'Supprimer',
           onPressed: () async {
             final ok = await showConfirmDialog(
               context,
               title: 'Supprimer cette vente ?',
-              message: 'Attention, le lapin associé (s\'il y en a un) restera avec le statut "vendu".',
+              message:
+                  'Vous aurez 5 secondes pour annuler après confirmation. '
+                  'Le lapin associé restera avec le statut "vendu".',
               confirmColor: AppTheme.error,
             );
-            if (ok) {
-              await db.deleteVente(v.id!);
-              _load();
-            }
+            if (!ok || !mounted) return;
+            // V2.5 — UX Sprint 2 : suppression annulable.
+            // ignore: use_build_context_synchronously
+            await UndoHelper.deleteWithUndo(
+              context: context,
+              label: 'Vente du ${v.dateVente}',
+              delete: () => db.deleteVente(v.id!),
+              restore: () => db.insertVente(v).then((_) {}),
+              onUndone: _load,
+            );
+            _load();
           },
         ),
       ),

@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../database/db_helper.dart';
 import '../../models/depense.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'depense_form_screen.dart';
@@ -21,8 +23,15 @@ class DepensesScreen extends StatefulWidget {
   State<DepensesScreen> createState() => _DepensesScreenState();
 }
 
-class _DepensesScreenState extends State<DepensesScreen> {
+class _DepensesScreenState extends State<DepensesScreen>
+    with ReactiveStateMixin<DepensesScreen> {
   static const int _pageSize = 80;
+
+  @override
+  List<String> get watchedTopics => const [DataTopics.depenses];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
 
   List<Depense> _depenses = [];
   double _totalMois = 0;
@@ -117,11 +126,21 @@ class _DepensesScreenState extends State<DepensesScreen> {
     final ok = await showConfirmDialog(
       context,
       title: 'Supprimer cette dépense ?',
-      message: '${formatMontant(d.montant)} — ${depenseCategorieLabel(d.categorie)}',
+      message:
+          '${formatMontant(d.montant)} — ${depenseCategorieLabel(d.categorie)}\n\n'
+          'Vous aurez 5 secondes pour annuler après confirmation.',
     );
-    if (!ok) return;
+    if (!ok || !mounted) return;
     final repo = await DBHelper.instance.depenses;
-    await repo.delete(d.id!);
+    // V2.5 — UX Sprint 2 : undo SnackBar 5s.
+    if (!mounted) return;
+    await UndoHelper.deleteWithUndo(
+      context: context,
+      label: 'Dépense ${formatMontant(d.montant)}',
+      delete: () => repo.delete(d.id!).then((_) {}),
+      restore: () => repo.insert(d).then((_) {}),
+      onUndone: _load,
+    );
     _load();
   }
 

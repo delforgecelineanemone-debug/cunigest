@@ -29,3 +29,7 @@ export 'organisms/cu_speed_dial.dart';
 
 // ── Layouts ──
 export 'layouts/cu_page_wrapper.dart';
+
+// ── Widgets composites ──
+export 'widgets/cu_form_scaffold.dart';
+export 'widgets/undo_helper.dart';

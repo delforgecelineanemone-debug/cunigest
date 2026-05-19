@@ -27,7 +27,9 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
   final _descCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
 
-  String _categorie = 'aliment';
+  // V2.5 — UX Sprint 1 : SANS défaut. Imputation comptable doit être
+  // un choix explicite (sinon tous les rapports financiers sont biaisés).
+  String? _categorie;
   DateTime _date = DateTime.now();
 
   // V2.5 — Imputation optionnelle (Phase 4)
@@ -86,7 +88,8 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
     final base = Depense(
       id: widget.depense?.id,
       dateDepense: _date.toIso8601String().substring(0, 10),
-      categorie: _categorie,
+      // Garanti non-null par le validator (form.validate() en haut de _save).
+      categorie: _categorie!,
       montant: montant,
       description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
@@ -137,14 +140,19 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
               decoration: const InputDecoration(
                 labelText: 'Catégorie *',
                 prefixIcon: Icon(Icons.category),
+                helperText:
+                    'Choix obligatoire — utilisé pour les rapports financiers.',
+                helperMaxLines: 2,
               ),
+              hint: const Text('— Sélectionnez —'),
               items: kDepenseCategories
                   .map((c) => DropdownMenuItem(
                         value: c,
                         child: Text(depenseCategorieLabel(c)),
                       ))
                   .toList(),
-              onChanged: (v) => setState(() => _categorie = v ?? _categorie),
+              validator: (v) => v == null ? 'Catégorie obligatoire' : null,
+              onChanged: (v) => setState(() => _categorie = v),
             ),
             const SizedBox(height: 12),
             ListTile(

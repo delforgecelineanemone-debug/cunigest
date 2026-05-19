@@ -16,6 +16,7 @@ import '../../models/saillie.dart';
 import '../../models/soin.dart';
 import '../../services/pdf_service.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/growth_chart.dart';
 import '../cages/cage_detail_screen.dart';
@@ -261,11 +262,13 @@ class _LapinDetailScreenState extends State<LapinDetailScreen> {
       ),
     );
     if (ok != true) return;
-    final poids = double.tryParse(ctrl.text.replaceAll(',', '.'));
-    if (poids == null || poids <= 0) {
-      if (mounted) showErrorSnackBar(context, 'Poids invalide');
+    // V2.5 — UX Sprint 1 : validation centralisée (bornes 10g-12kg).
+    final erreur = Validators.poidsLapin(ctrl.text, requisField: true);
+    if (erreur != null) {
+      if (mounted) showErrorSnackBar(context, erreur);
       return;
     }
+    final poids = double.parse(ctrl.text.replaceAll(',', '.'));
     final repo = await db.peseesLapin;
     await repo.insert(PeseeLapin(
       lapinId: lapin.id!, datePesee: selDate.toIso8601String().substring(0, 10),
@@ -300,15 +303,22 @@ class _LapinDetailScreenState extends State<LapinDetailScreen> {
   Future<void> _confirmerSuppression() async {
     final ok = await showConfirmDialog(context,
         title: 'Supprimer ce lapin ?',
-        message: 'Êtes-vous sûr de vouloir supprimer ${lapin.displayName} ? Cette action est irréversible.',
+        message:
+            'Vous aurez 5 secondes pour annuler après confirmation. '
+            'Au-delà, ${lapin.displayName} sera définitivement supprimé.',
         confirmColor: AppTheme.error);
-    if (ok && mounted) {
-      try {
-        await db.deleteLapin(lapin.id!);
-        if (mounted) Navigator.pop(context, true);
-      } catch (_) {
-        if (mounted) showErrorSnackBar(context, 'Suppression impossible.');
-      }
+    if (!ok || !mounted) return;
+    // V2.5 — UX Sprint 2 : undo SnackBar 5s avant pop.
+    bool annule = false;
+    await UndoHelper.deleteWithUndo(
+      context: context,
+      label: lapin.displayName,
+      delete: () => db.deleteLapin(lapin.id!).then((_) {}),
+      restore: () => db.insertLapin(lapin).then((_) {}),
+      onUndone: () => annule = true,
+    );
+    if (!annule && mounted) {
+      Navigator.pop(context, true);
     }
   }
 

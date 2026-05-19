@@ -22,6 +22,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
+import '../../services/business_rules_service.dart';
 import '../../services/image_service.dart';
 import '../../database/db_helper.dart';
 import '../../models/batiment.dart';
@@ -30,6 +31,7 @@ import '../../models/clapier.dart';
 import '../../models/lapin.dart';
 import '../../services/id_generator_service.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../ui/cu_ui.dart';
 import '../../data/cunicole_reference.dart';
@@ -54,7 +56,9 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   late TextEditingController _notes;
   late TextEditingController _prixAchat; // V2.5 — Phase 4 (optionnel)
 
-  String _sexe = 'femelle';
+  // V2.5 — UX Sprint 1 : sexe SANS défaut (choix explicite obligatoire).
+  // En édition, hydraté depuis le lapin existant.
+  String? _sexe;
   String _statut = 'actif';
   String? _dateNaissance;
   int? _pereId;
@@ -246,6 +250,18 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // V2.5 — UX Sprint 2 : détection doublon bague AVANT submit.
+    // Évite l'erreur DB tardive ; message clair côté utilisateur.
+    final erreurBague = await BusinessRules.bagueDejaUtilisee(
+      bague: _bague.text,
+      lapinIdEnEdition: widget.lapin?.id,
+    );
+    if (erreurBague != null) {
+      if (mounted) showErrorSnackBar(context, erreurBague);
+      return;
+    }
+
     setState(() => _saving = true);
 
     final oldCageId = widget.lapin?.cageId;
@@ -255,7 +271,8 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       id: widget.lapin?.id,
       numeroBague: _bague.text.trim(),
       nom: _nom.text.trim().isEmpty ? null : _nom.text.trim(),
-      sexe: _sexe,
+      // _sexe est garanti non-null ici car le validator FormField a passé.
+      sexe: _sexe!,
       race: _race.text.trim().isEmpty ? null : _race.text.trim(),
       dateNaissance: _dateNaissance,
       poids: _poids.text.isEmpty ? null : double.tryParse(_poids.text),
@@ -415,21 +432,53 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
           labelText: 'Nom (optionnel)', prefixIcon: Icon(Icons.badge)),
     ),
     const SizedBox(height: 12),
-    Row(
-      children: [
-        const Text('Sexe :', style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(width: 16),
-        Expanded(
-          child: SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'male', label: Text('♂ Mâle'), icon: Icon(Icons.male)),
-              ButtonSegment(value: 'femelle', label: Text('♀ Femelle'), icon: Icon(Icons.female)),
+    // V2.5 — UX Sprint 1 : sexe = champ OBLIGATOIRE sans défaut.
+    // Anti-corruption silencieuse : éviter qu'un mâle soit enregistré
+    // par défaut "femelle" en cas de clic rapide.
+    FormField<String>(
+      initialValue: _sexe,
+      validator: (v) => v == null ? 'Sexe obligatoire' : null,
+      builder: (state) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('Sexe * :',
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                        value: 'male',
+                        label: Text('♂ Mâle'),
+                        icon: Icon(Icons.male)),
+                    ButtonSegment(
+                        value: 'femelle',
+                        label: Text('♀ Femelle'),
+                        icon: Icon(Icons.female)),
+                  ],
+                  selected: _sexe == null ? <String>{} : {_sexe!},
+                  emptySelectionAllowed: true,
+                  onSelectionChanged: (s) {
+                    setState(() => _sexe = s.isEmpty ? null : s.first);
+                    state.didChange(_sexe);
+                  },
+                ),
+              ),
             ],
-            selected: {_sexe},
-            onSelectionChanged: (s) => setState(() => _sexe = s.first),
           ),
-        ),
-      ],
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 12),
+              child: Text(
+                state.errorText!,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error, fontSize: 12),
+              ),
+            ),
+        ],
+      ),
     ),
     const SizedBox(height: 12),
     Autocomplete<String>(
@@ -462,11 +511,11 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       controller: _poids,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: const InputDecoration(
-          labelText: 'Poids (kg)', prefixIcon: Icon(Icons.monitor_weight), suffixText: 'kg'),
-      validator: (v) {
-        if (v != null && v.isNotEmpty && double.tryParse(v) == null) return 'Nombre invalide';
-        return null;
-      },
+          labelText: 'Poids (kg)',
+          prefixIcon: Icon(Icons.monitor_weight),
+          suffixText: 'kg'),
+      // Bornes : 10 g à 12 kg (race géante). Bloque négatifs et aberrations.
+      validator: Validators.poidsLapin,
     ),
     const SizedBox(height: 12),
     InkWell(
@@ -625,6 +674,8 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         helperText: 'À renseigner pour les reproducteurs achetés (sert au calcul de rentabilité).',
         helperMaxLines: 2,
       ),
+      // Prix optionnel — mais si saisi, doit être > 0 (anti-erreur signe).
+      validator: (v) => Validators.prix(v, requisField: false),
     ),
     const SizedBox(height: 12),
   ];

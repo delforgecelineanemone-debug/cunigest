@@ -13,7 +13,9 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/soin.dart';
 import '../../models/lapin.dart';
+import '../../services/business_rules_service.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../ui/cu_ui.dart';
 import '../../data/cunicole_reference.dart';
@@ -221,10 +223,12 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
                   child: TextFormField(
                     controller: _coutCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                        labelText: 'Coût (€)',
-                        prefixIcon: Icon(Icons.euro_symbol),
-                        suffixText: '€'),
+                    decoration: InputDecoration(
+                        labelText: 'Coût (${AppTheme.devise})',
+                        prefixIcon: const Icon(Icons.euro_symbol),
+                        suffixText: AppTheme.devise),
+                    // Coût optionnel — si saisi, refuse négatif.
+                    validator: (v) => Validators.prix(v, requisField: false),
                   ),
                 ),
               ],
@@ -253,16 +257,14 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Délai d\'attente',
-                helperText: 'Nombre de jours (laisser vide si non applicable)',
+                helperText:
+                    'Nombre de jours (laisser vide si non applicable, max 120 j).',
                 prefixIcon: Icon(Icons.timer),
                 suffixText: 'jours',
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return null;
-                final n = int.tryParse(v);
-                if (n == null || n < 0) return 'Nombre invalide';
-                return null;
-              },
+              // Bornes : 0-120 jours. Évite délai aberrant qui bloquerait
+              // la vente du lapin à vie.
+              validator: Validators.delaiAttenteJours,
             ),
             const SizedBox(height: 12),
 
@@ -329,6 +331,18 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // V2.5 — UX Sprint 2 : vérifier que le lapin ciblé est éligible.
+    // Le statut a pu changer (mort/vendu) depuis l'ouverture du form.
+    if (!_toutElevage && _lapinId != null) {
+      final lapin = widget.lapinsMap?[_lapinId];
+      final erreur = BusinessRules.peutRecevoirSoin(lapin);
+      if (erreur != null) {
+        if (mounted) showErrorSnackBar(context, erreur);
+        return;
+      }
+    }
+
     setState(() => _saving = true);
 
     final soin = Soin(

@@ -9,7 +9,9 @@
 // sont silencieusement ignorés (FlutterError.onError écarté).
 //
 // Règles métier vérifiées :
-// - Mode création : sexe par défaut = 'femelle' (base de la production)
+// - Mode création : sexe = CHOIX EXPLICITE obligatoire (V2.5 — UX Sprint 1).
+//   Anti-corruption silencieuse : pas de défaut "femelle" qui ferait
+//   enregistrer un mâle comme femelle en cas de clic rapide.
 // - Photo : OPTIONNELLE (jamais bloquante — préférence utilisateur)
 // - Champ "Numéro de bague *" marqué obligatoire (astérisque)
 // ─────────────────────────────────────────────────────────────
@@ -46,20 +48,22 @@ void main() {
 
       expect(find.text('Numéro de bague *'), findsOneWidget);
       expect(find.text('Nom (optionnel)'), findsOneWidget);
-      expect(find.text('Sexe :'), findsOneWidget);
+      expect(find.text('Sexe * :'), findsOneWidget);
       expect(find.text('♂ Mâle'), findsOneWidget);
       expect(find.text('♀ Femelle'), findsOneWidget);
     });
 
     testWidgets(
-        'sexe par défaut = femelle (règle métier : on enregistre les reproductrices)',
+        'sexe SANS défaut (V2.5 — UX : choix explicite obligatoire)',
         (tester) async {
       await pumpForm(tester);
 
       final segmented = tester.widget<SegmentedButton<String>>(
         find.byType(SegmentedButton<String>),
       );
-      expect(segmented.selected, {'femelle'});
+      // Aucune sélection initiale : l'éleveur DOIT choisir.
+      expect(segmented.selected, isEmpty);
+      expect(segmented.emptySelectionAllowed, isTrue);
     });
   });
 

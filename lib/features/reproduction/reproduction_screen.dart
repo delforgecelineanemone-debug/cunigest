@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/saillie.dart';
 import '../../models/lapin.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/cu_page_route.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'saillie_form_screen.dart';
@@ -18,8 +20,16 @@ class ReproductionScreen extends StatefulWidget {
   State<ReproductionScreen> createState() => _ReproductionScreenState();
 }
 
-class _ReproductionScreenState extends State<ReproductionScreen> {
+class _ReproductionScreenState extends State<ReproductionScreen>
+    with ReactiveStateMixin<ReproductionScreen> {
   final db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.saillies, DataTopics.lapins];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
   List<Saillie> _saillies = [];
   Map<int, Lapin> _lapinsMap = {};
   bool _loading = true;
@@ -239,13 +249,20 @@ class _ReproductionScreenState extends State<ReproductionScreen> {
     final ok = await showConfirmDialog(
       context,
       title: 'Supprimer cette saillie ?',
-      message: 'Cette saillie sera supprimée définitivement.',
+      message:
+          'Vous aurez 5 secondes pour annuler après confirmation.',
       confirmColor: CuColors.danger,
     );
-    if (ok) {
-      await db.deleteSaillie(s.id!);
-      _load();
-    }
+    if (!ok || !mounted) return;
+    // V2.5 — UX Sprint 2 : undo SnackBar 5s.
+    await UndoHelper.deleteWithUndo(
+      context: context,
+      label: 'Saillie du ${s.dateSaillie}',
+      delete: () => db.deleteSaillie(s.id!).then((_) {}),
+      restore: () => db.insertSaillie(s).then((_) {}),
+      onUndone: _load,
+    );
+    _load();
   }
 
   Future<Map<int, Lapin>> _lapinsActifsMap() async {

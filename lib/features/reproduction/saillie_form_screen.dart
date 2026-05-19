@@ -14,7 +14,9 @@ import '../../models/lot.dart';
 import '../../models/saillie.dart';
 import '../../models/lapin.dart';
 import '../../services/id_generator_service.dart';
+import '../../services/business_rules_service.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../ui/cu_ui.dart';
 
@@ -234,12 +236,10 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
                 DropdownMenuItem(value: 'termine', child: Text('✅ Terminé')),
                 DropdownMenuItem(value: 'echec', child: Text('❌ Échec (non gestante)')),
               ],
-              onChanged: (v) => setState(() {
-                _statut = v!;
-                if (_statut != 'en_attente' && _statut != 'echec') {
-                  _palpationPositive = true;
-                }
-              }),
+              // V2.5 — UX Sprint 1 : NE PLUS auto-cocher la palpation.
+              // Donnée vétérinaire = l'éleveur doit la confirmer lui-même
+              // (ex: une mise bas peut survenir sans palpation préalable).
+              onChanged: (v) => setState(() => _statut = v!),
             ),
             const SizedBox(height: 8),
             SwitchListTile(
@@ -310,9 +310,13 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
                   initialValue: _poidsSevrageTotal?.toString() ?? '',
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
-                      labelText: 'Poids total (kg)', suffixText: 'kg'),
+                      labelText: 'Poids total portée (kg)',
+                      suffixText: 'kg',
+                      helperText: 'Poids cumulé de tous les sevrés.',
+                      helperMaxLines: 2),
+                  validator: Validators.poidsLot,
                   onChanged: (v) =>
-                      _poidsSevrageTotal = v.isEmpty ? null : double.tryParse(v),
+                      _poidsSevrageTotal = v.isEmpty ? null : double.tryParse(v.replaceAll(',', '.')),
                 )),
               ]),
             ],
@@ -443,12 +447,15 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
       keyboardType: TextInputType.number,
       decoration: InputDecoration(labelText: label),
       onChanged: (v) => onChanged(int.tryParse(v)),
+      // V2.5 — UX Sprint 1 : bornes réalistes (0-30) + maxValue contextuelle
+      // (ex: vivants <= nés). Évite saisies aberrantes type "999 nés".
       validator: (v) {
-        if (v == null || v.isEmpty) return null;
-        final n = int.tryParse(v);
-        if (n == null) return 'Nombre invalide';
-        if (n < 0) return '≥ 0';
-        if (maxValue != null && n > maxValue) return '≤ $maxValue';
+        final base = Validators.nombreLapinsPortee(v);
+        if (base != null) return base;
+        if (v != null && v.isNotEmpty && maxValue != null) {
+          final n = int.tryParse(v);
+          if (n != null && n > maxValue) return '≤ $maxValue';
+        }
         return null;
       },
     );
@@ -482,8 +489,33 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // V2.5 — UX Sprint 2 : règles métier vérifiées AVANT submit.
+    // 1) Femelle pas déjà gestante (évite chevauchement de cycles).
+    if (_mereId != null) {
+      final erreurGestation = await BusinessRules.femelleDejaGestante(
+        mereId: _mereId!,
+        saillieIdEnEdition: widget.saillie?.id,
+      );
+      if (erreurGestation != null) {
+        if (mounted) showErrorSnackBar(context, erreurGestation);
+        return;
+      }
+    }
+    // 2) Cohérence date mise bas réelle vs date saillie.
+    final erreurDates = BusinessRules.miseBasCoherente(
+      dateSaillieIso: _dateSaillie,
+      dateMiseBasReelleIso: _dateMiseBasReelle,
+    );
+    if (erreurDates != null) {
+      if (mounted) showErrorSnackBar(context, erreurDates);
+      return;
+    }
+    // 3) Cohérence nés/vivants/morts (déjà couverte par Validators
+    //    sur les champs eux-mêmes via _intField + maxValue).
+
     // Si consanguinité détectée, demander confirmation
     if (_consanguiniteWarning != null && widget.saillie == null) {
+      if (!mounted) return;
       final ok = await showDialog<bool>(
         context: context,
         builder: (dialogCtx) => AlertDialog(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/stock.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../ui/cu_ui.dart';
 
@@ -112,11 +113,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                     controller: _quantiteCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Quantité *', prefixIcon: Icon(Icons.numbers)),
-                    validator: (v) {
-                      if (v!.isEmpty) return 'Obligatoire';
-                      if (double.tryParse(v.replaceAll(',', '.')) == null) return 'Invalide';
-                      return null;
-                    },
+                    validator: Validators.quantiteStock,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -139,6 +136,8 @@ class _StockFormScreenState extends State<StockFormScreen> {
                 prefixIcon: const Icon(Icons.warning_amber),
                 helperText: 'Recevez une alerte quand le stock passe sous ce seuil',
               ),
+              // Optionnel — si saisi, doit être >= 0.
+              validator: (v) => Validators.prixOuZero(v, requisField: false),
             ),
             const SizedBox(height: 12),
 
@@ -161,6 +160,8 @@ class _StockFormScreenState extends State<StockFormScreen> {
                     controller: _coutCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: InputDecoration(labelText: 'Prix /$_unite (${AppTheme.devise})', prefixIcon: const Icon(Icons.euro)),
+                    // Prix optionnel — refuse négatif si saisi.
+                    validator: (v) => Validators.prix(v, requisField: false),
                   ),
                 ),
               ],

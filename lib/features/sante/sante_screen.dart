@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/soin.dart';
 import '../../models/lapin.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'soin_form_screen.dart';
@@ -16,8 +18,16 @@ class SanteScreen extends StatefulWidget {
   State<SanteScreen> createState() => _SanteScreenState();
 }
 
-class _SanteScreenState extends State<SanteScreen> {
+class _SanteScreenState extends State<SanteScreen>
+    with ReactiveStateMixin<SanteScreen> {
   final db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.soins, DataTopics.lapins];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
   List<Soin> _soins = [];
   Map<int, Lapin> _lapinsMap = {};
   List<Soin> _rappels = [];
@@ -237,13 +247,19 @@ class _SanteScreenState extends State<SanteScreen> {
     final ok = await showConfirmDialog(
       context,
       title: 'Supprimer ce soin ?',
-      message: 'Ce soin sera supprimé définitivement.',
+      message: 'Vous aurez 5 secondes pour annuler après confirmation.',
       confirmColor: CuColors.danger,
     );
-    if (ok) {
-      await db.deleteSoin(s.id!);
-      _load();
-    }
+    if (!ok || !mounted) return;
+    // V2.5 — UX Sprint 2 : undo SnackBar 5s.
+    await UndoHelper.deleteWithUndo(
+      context: context,
+      label: 'Soin du ${s.dateSoin}',
+      delete: () => db.deleteSoin(s.id!).then((_) {}),
+      restore: () => db.insertSoin(s).then((_) {}),
+      onUndone: _load,
+    );
+    _load();
   }
 
   Future<Map<int, Lapin>> _lapinsActifsMap() async {

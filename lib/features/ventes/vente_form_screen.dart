@@ -17,6 +17,7 @@ import '../../models/vente.dart';
 import '../../models/lapin.dart';
 import '../../models/soin.dart';
 import '../../utils/theme.dart';
+import '../../utils/validators.dart';
 import '../../widgets/common_widgets.dart';
 import '../../ui/cu_ui.dart';
 
@@ -36,7 +37,10 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   int? _lapinId;
   int? _lotIdSel;          // V2.5 — vente attribuée à un lot (mode "Lot anonyme")
   List<Lot> _lotsDispo = const [];
-  String _typeVente = Vente.typesVente.first;
+  // V2.5 — UX Sprint 1 : SANS défaut. Choix explicite obligatoire.
+  // Évite qu'un lapin soit vendu "abattu" au lieu de "vivant" par accident
+  // (impact réglementaire délai d'attente médicament).
+  String? _typeVente;
   String _dateVente = DateTime.now().toIso8601String().substring(0, 10);
 
   final _acheteurCtrl = TextEditingController();
@@ -120,7 +124,8 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
   /// 'abattu' = vente carcasse → bloqué par délai d'attente médicament.
   /// 'vivant' / 'lapereau' = lapin vivant → autorisé même sous délai.
   bool get _venteConsommation {
-    final t = _typeVente.toLowerCase();
+    if (_typeVente == null) return false;
+    final t = _typeVente!.toLowerCase();
     return t == 'abattu' ||
         t.contains('viande') ||
         t.contains('abattage') ||
@@ -196,23 +201,22 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
                 decoration: const InputDecoration(
                     labelText: 'Nombre de lapins vendus *',
                     prefixIcon: Icon(Icons.numbers)),
-                validator: (v) =>
-                    (v == null || int.tryParse(v) == null || int.parse(v) <= 0)
-                        ? 'Quantité invalide'
-                        : null,
+                validator: Validators.quantiteEntiere,
                 onChanged: (_) => _recalcPrixTotal(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _prixUnitaireCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Prix unitaire',
-                  prefixIcon: Icon(Icons.sell_outlined),
-                  suffixText: '€',
+                  prefixIcon: const Icon(Icons.sell_outlined),
+                  suffixText: AppTheme.devise,
                   helperText: 'Optionnel — calcule le prix total automatiquement',
                   helperMaxLines: 2,
                 ),
+                // Optionnel mais si saisi : > 0.
+                validator: (v) => Validators.prix(v, requisField: false),
                 onChanged: (_) => _recalcPrixTotal(),
               ),
               if (_lotsDispo.isNotEmpty) ...[
@@ -248,12 +252,18 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
             DropdownButtonFormField<String>(
               initialValue: _typeVente,
               decoration: const InputDecoration(
-                  labelText: 'État du produit *', prefixIcon: Icon(Icons.category)),
+                  labelText: 'État du produit *',
+                  prefixIcon: Icon(Icons.category),
+                  helperText:
+                      'Choix obligatoire — détermine si la vente est soumise au délai d\'attente médicament.',
+                  helperMaxLines: 2),
+              hint: const Text('— Sélectionnez —'),
               items: Vente.typesVente
                   .map((t) =>
                       DropdownMenuItem(value: t, child: Text(Vente.typesVenteLabels[t]!)))
                   .toList(),
-              onChanged: (v) => setState(() => _typeVente = v!),
+              validator: (v) => v == null ? 'État obligatoire' : null,
+              onChanged: (v) => setState(() => _typeVente = v),
             ),
             const SizedBox(height: 12),
 
@@ -264,11 +274,12 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
             TextFormField(
               controller: _prixCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                   labelText: 'Prix total *',
-                  prefixIcon: Icon(Icons.attach_money),
-                  suffixText: '€'),
-              validator: (v) => (v == null || v.isEmpty) ? 'Obligatoire' : null,
+                  prefixIcon: const Icon(Icons.attach_money),
+                  suffixText: AppTheme.devise),
+              // Validator centralisé : refuse négatif, zéro, montant aberrant.
+              validator: Validators.prix,
               onChanged: (_) => _prixTotalManuel = true,
             ),
             const SizedBox(height: 12),
@@ -284,7 +295,12 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
               decoration: const InputDecoration(
                   labelText: 'Poids total (kg)',
                   prefixIcon: Icon(Icons.monitor_weight),
-                  suffixText: 'kg'),
+                  suffixText: 'kg',
+                  helperText:
+                      'Poids vif si vivant, carcasse si abattu — selon le type ci-dessus.',
+                  helperMaxLines: 2),
+              // Optionnel mais si saisi : borné réaliste (lot possible).
+              validator: Validators.poidsLot,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -425,7 +441,8 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
       lapinId: _venteIndividuelle ? _lapinId : null,
       lotId: _venteIndividuelle ? null : _lotIdSel,
       dateVente: _dateVente,
-      typeVente: _typeVente,
+      // Garanti non-null par le validator du formulaire (validate() en haut de _save).
+      typeVente: _typeVente!,
       acheteur: _acheteurCtrl.text.trim().isEmpty ? null : _acheteurCtrl.text.trim(),
       prixVente: double.parse(_prixCtrl.text.replaceAll(',', '.')),
       poids: _poidsCtrl.text.isEmpty

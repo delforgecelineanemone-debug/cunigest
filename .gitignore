@@ -1,4 +1,8 @@
-# Miscellaneous
+# ═══════════════════════════════════════════
+# CuniGest — .gitignore
+# ═══════════════════════════════════════════
+
+# ── Miscellaneous ──
 *.class
 *.log
 *.pyc
@@ -10,16 +14,26 @@
 .svn/
 migrate_working_dir/
 
-# IntelliJ related
+# ── Binaries (ne JAMAIS committer) ──
+*.exe
+*.dll
+*.so
+*.dylib
+
+# ── AI / Assistants ──
+.claude/
+.gemini/
+
+# ── IntelliJ / Android Studio ──
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# VS Code related
+# ── VS Code ──
 .vscode/
 
-# Flutter/Dart/Pub related
+# ── Flutter / Dart / Pub ──
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
@@ -31,32 +45,33 @@ migrate_working_dir/
 /build/
 pubspec.lock
 
-# Symbolication related
+# ── Symbolication ──
 app.*.symbols
 
-# Obfuscation related
+# ── Obfuscation ──
 app.*.map.json
 
-# Android Studio will place build artifacts here
+# ── Android ──
 /android/app/debug
 /android/app/profile
 /android/app/release
 /android/key.properties
 /android/*.jks
 /android/*.keystore
+
+# ── Environnement ──
 .env
 .env.*
+sentry.properties
 
-# Platform-specific
+# ── Platform-specific ──
 /android/local.properties
 /android/.gradle/
 /ios/.symlinks/
 /ios/Pods/
 /ios/Runner.xcworkspace/
 
-sentry.properties
-
-# Fastlane — clé de service Google Play (NE JAMAIS committer)
+# ── Fastlane — clé de service (NE JAMAIS committer) ──
 fastlane/service-account.json
 **/service-account*.json
 fastlane/report.xml

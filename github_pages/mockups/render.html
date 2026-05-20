@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>CuniGest · render</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    html,body,#root{margin:0;padding:0;}
+    html,body{background:transparent;overflow:hidden;}
+    body{font-family:'Inter',system-ui,sans-serif;color:#29261b;-webkit-font-smoothing:antialiased;}
+    #root{display:flex;justify-content:center;align-items:flex-start;}
+    button{font-family:inherit;}
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    window.TweaksPanel = ({children}) => null;
+    window.TweakSection = ({children}) => null;
+    window.TweakToggle = () => null;
+    window.TweakRadio = () => null;
+    window.useTweaks = (d) => [d, () => {}];
+    window.DesignCanvas = ({children}) => <div>{children}</div>;
+    window.DCSection = ({children}) => <div>{children}</div>;
+    window.DCArtboard = ({children}) => <div>{children}</div>;
+    window.DCPostIt = () => null;
+  </script>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="tokens.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="screens-dashboard.jsx"></script>
+  <script type="text/babel" src="screens-cheptel.jsx"></script>
+  <script type="text/babel" src="screens-repro-taches.jsx"></script>
+  <script type="text/babel" src="screens-rabbit-forms.jsx"></script>
+  <script type="text/babel" src="screens-misc.jsx"></script>
+  <script type="text/babel" src="screens-states.jsx"></script>
+
+  <script type="text/babel">
+    function Render() {
+      const q = new URLSearchParams(location.search);
+      const screen = q.get('screen') || 'accueilV3';
+      const dark = q.get('dark') === '1';
+      const lang = q.get('lang') || 'fr';
+      const density = q.get('density') || 'regular';
+      const currency = q.get('currency') || 'FCFA';
+
+      const map = {
+        accueil: () => <AccueilV1 />,
+        accueilV2: () => <AccueilV2 />,
+        accueilV3: () => <AccueilV3 />,
+        cheptel: () => <ScreenCheptelFlat />,
+        repro: () => <ScreenRepro />,
+        taches: () => <ScreenTaches />,
+        plus: () => <ScreenPlus />,
+        lapin: () => <ScreenLapinDetail />,
+        mating: () => <ScreenMatingForm />,
+        sale: () => <ScreenSaleForm />,
+        alertes: () => <ScreenAlertes />,
+        reports: () => <ScreenReports />,
+        stock: () => <ScreenStock />,
+        reglages: () => <ScreenReglages />,
+        login: () => <ScreenLogin />,
+        onboarding: () => <ScreenOnboardingCompact />,
+      };
+      const node = (map[screen] || map.accueilV3)();
+      const fgWhite = ['accueil','cheptel','repro','taches','plus','lapin','mating','sale','alertes','reports','stock'].includes(screen);
+      const statusFg = fgWhite ? '#fff' : (dark ? '#fff' : '#0a0a0a');
+
+      return (
+        <ThemeProvider dark={dark} density={density} lang={lang} currency={currency} gants={false} soleil={false}>
+          <PhoneFrame dark={dark} statusFg={statusFg} label={null}>
+            {React.cloneElement(node, { onNav: () => {} })}
+          </PhoneFrame>
+        </ThemeProvider>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Render />);
+  </script>
+</body>
+</html>

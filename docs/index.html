@@ -144,6 +144,9 @@
   .tabular { font-variant-numeric: tabular-nums; }
   .btn-press:active { transform: translateY(1px); }
 
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   .dash-x {
     background-image: linear-gradient(to right, rgba(26,31,27,.22) 50%, transparent 0%);
     background-size: 8px 1px;
@@ -341,9 +344,9 @@
     </div>
 
     <!-- Grid -->
-    <div class="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-px bg-line rounded-2xl overflow-hidden shadow-card border border-line">
+    <div class="mt-10 flex overflow-x-auto lg:grid lg:grid-cols-4 gap-px bg-line rounded-2xl overflow-hidden shadow-card border border-line snap-x snap-mandatory hide-scrollbar pb-4 lg:pb-0">
       <!-- 1 Cheptel -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M12 20c0-3 2.5-5 6-5s6 2 6 5"/></svg>
         </div>
@@ -351,7 +354,7 @@
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Une fiche par lapin avec sa photo, sa race, sa cage et son <span class="text-ink">pedigree sur 3 générations</span>. L'app vous alerte si vous croisez parents et enfants.</p>
       </div>
       <!-- 2 Reproduction -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-repro text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 6.5-7 11-7 11z"/></svg>
         </div>
@@ -359,7 +362,7 @@
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Saillie, palpation à J+10, préparation du nid à J+27, mise bas à J+31, sevrage. <span class="text-ink">L'app compte les jours pour vous</span>.</p>
       </div>
       <!-- 3 Santé -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-health text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5 0 2.5-1 2.5-2.5S20.5 9 19 9c-1 0-1.5.5-2 1l-2-2c.5-.5 1-1 1-2 0-1.5-1-2.5-2.5-2.5S11 4.5 11 6c0 1 .5 1.5 1 2l-7 7c-.5-.5-1-1-2-1-1.5 0-2.5 1-2.5 2.5S1.5 19 3 19c1 0 1.5-.5 2-1l2 2c-.5.5-1 1-1 2 0 1.5 1 2.5 2.5 2.5S11 23.5 11 22c0-1-.5-1.5-1-2l7-7c.5.5 1 1 2 1z"/></svg>
         </div>
@@ -367,7 +370,7 @@
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Vaccins VHD/myxomatose, traitements, rappels. <span class="text-ink">Pendant le délai d'attente, l'app refuse la vente</span> — protection réglementaire automatique.</p>
       </div>
       <!-- 4 Tâches & Streak -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-warn text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
         </div>
@@ -376,7 +379,7 @@
       </div>
 
       <!-- 5 Lots & engraissement -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M9 20V4M15 20v-7M21 20v-12"/></svg>
         </div>
@@ -385,7 +388,7 @@
       </div>
 
       <!-- 6 Ventes & finances -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-finance text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 16h4"/></svg>
         </div>
@@ -394,7 +397,7 @@
       </div>
 
       <!-- 7 Cages QR -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-tools text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>
         </div>
@@ -403,7 +406,7 @@
       </div>
 
       <!-- 8 Modes terrain -->
-      <div class="bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
         <div class="w-10 h-10 rounded-xl bg-admin text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
         </div>
@@ -435,10 +438,10 @@
     </div>
 
     <!-- Four phones grid -->
-    <div class="mt-10 sm:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-14">
+    <div class="mt-10 sm:mt-20 flex overflow-x-auto lg:grid lg:grid-cols-4 snap-x snap-mandatory hide-scrollbar pb-8 lg:pb-0 gap-x-6 gap-y-14">
 
       <!-- Phone 1: Cheptel -->
-      <div data-reveal class="flex flex-col items-center">
+      <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
           <iframe loading="lazy" src="mockups/render.html?screen=cheptel" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
@@ -451,7 +454,7 @@
       </div>
 
       <!-- Phone 2: Reproduction -->
-      <div data-reveal class="flex flex-col items-center lg:-mt-10">
+      <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
           <iframe loading="lazy" src="mockups/render.html?screen=repro" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
@@ -464,7 +467,7 @@
       </div>
 
       <!-- Phone 3: Tâches -->
-      <div data-reveal class="flex flex-col items-center">
+      <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
           <iframe loading="lazy" src="mockups/render.html?screen=taches" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
@@ -477,7 +480,7 @@
       </div>
 
       <!-- Phone 4: Lapin fiche -->
-      <div data-reveal class="flex flex-col items-center lg:-mt-10">
+      <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
           <iframe loading="lazy" src="mockups/render.html?screen=lapin" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
@@ -774,8 +777,8 @@
       </h2>
     </div>
 
-    <div class="mt-10 sm:mt-16 grid md:grid-cols-3 gap-4 sm:gap-5">
-      <figure data-reveal class="bg-white rounded-3xl border border-line p-5 sm:p-7 shadow-card flex flex-col">
+    <div class="mt-10 sm:mt-16 flex overflow-x-auto md:grid md:grid-cols-3 snap-x snap-mandatory hide-scrollbar pb-8 md:pb-0 gap-4 sm:gap-5">
+      <figure data-reveal class="shrink-0 snap-center w-[85vw] sm:w-[320px] md:w-auto bg-white rounded-3xl border border-line p-5 sm:p-7 shadow-card flex flex-col">
         <svg width="28" height="22" viewBox="0 0 28 22" class="text-jade-500/30" fill="currentColor"><path d="M0 22V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12H0zm15 0V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12h-10z"/></svg>
         <blockquote class="mt-5 text-[17px] leading-[1.5] text-ink">
           J'ai 38 cages. Avant CuniGest je perdais une portée sur cinq parce que je notais les dates sur un cahier qui prenait l'eau.
@@ -790,7 +793,7 @@
         </figcaption>
       </figure>
 
-      <figure data-reveal class="bg-jade-500 text-white rounded-3xl p-5 sm:p-7 shadow-card flex flex-col">
+      <figure data-reveal class="shrink-0 snap-center w-[85vw] sm:w-[320px] md:w-auto bg-jade-500 text-white rounded-3xl p-5 sm:p-7 shadow-card flex flex-col">
         <svg width="28" height="22" viewBox="0 0 28 22" class="text-white/30" fill="currentColor"><path d="M0 22V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12H0zm15 0V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12h-10z"/></svg>
         <blockquote class="mt-5 text-[17px] leading-[1.5]">
           On gère 410 femelles reproductrices sur trois sites. Les soigneurs scannent les cages,
@@ -806,7 +809,7 @@
         </figcaption>
       </figure>
 
-      <figure data-reveal class="bg-white rounded-3xl border border-line p-5 sm:p-7 shadow-card flex flex-col">
+      <figure data-reveal class="shrink-0 snap-center w-[85vw] sm:w-[320px] md:w-auto bg-white rounded-3xl border border-line p-5 sm:p-7 shadow-card flex flex-col">
         <svg width="28" height="22" viewBox="0 0 28 22" class="text-jade-500/30" fill="currentColor"><path d="M0 22V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12H0zm15 0V12c0-5 2-9 7-11l2 2c-3 2-4 5-4 7h5v12h-10z"/></svg>
         <blockquote class="mt-5 text-[17px] leading-[1.5] text-ink">
           Je ne suis pas à l'aise avec la technologie. J'ai compris l'application en 10 minutes. Le mode soleil me sauve la vie en saison sèche,

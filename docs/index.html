@@ -37,50 +37,7 @@
     --jade: #0F8C66;
     --paper: #FAF9F5;
     --ink: #1A1F1B;
-    --repro: #7C5CDB;
-    --health: #E24B4A;
-    --feed: #D85A30;
-    --finance: #B47416;
-    --tools: #1565C0;
-    --warn: #E8A02C;
-    --admin: #546E7A;
   }
-  
-  /* Premium Soft Icon Wrappers */
-  .icon-wrap-jade { background-color: rgba(15, 140, 102, 0.12); color: var(--jade); }
-  .icon-wrap-repro { background-color: rgba(124, 92, 219, 0.12); color: var(--repro); }
-  .icon-wrap-health { background-color: rgba(226, 75, 74, 0.12); color: var(--health); }
-  .icon-wrap-warn { background-color: rgba(232, 160, 44, 0.12); color: var(--warn); }
-  .icon-wrap-feed { background-color: rgba(216, 90, 48, 0.12); color: var(--feed); }
-  .icon-wrap-finance { background-color: rgba(180, 116, 22, 0.12); color: var(--finance); }
-  .icon-wrap-tools { background-color: rgba(21, 101, 192, 0.12); color: var(--tools); }
-  .icon-wrap-admin { background-color: rgba(84, 110, 122, 0.12); color: var(--admin); }
-
-  /* Range input custom styles */
-  input[type="range"]::-webkit-slider-thumb {
-    background: var(--jade) !important;
-    border-radius: 9999px;
-    height: 16px;
-    width: 16px;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(26,31,27,0.15);
-    -webkit-appearance: none;
-    margin-top: -5px;
-  }
-  input[type="range"]::-moz-range-thumb {
-    background: var(--jade) !important;
-    border-radius: 9999px;
-    height: 16px;
-    width: 16px;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(26,31,27,0.15);
-  }
-  input[type="range"]::-webkit-slider-runnable-track {
-    background: #E5E3DC;
-    height: 6px;
-    border-radius: 9999px;
-  }
-
   html, body { background: var(--paper); color: var(--ink); }
   body { font-feature-settings: "ss01","cv11","cv02"; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
   .font-display { font-family:'Instrument Serif', Georgia, serif; letter-spacing:-0.005em; }
@@ -147,92 +104,11 @@
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Missing Tailwind Utilities ── */
-  .opacity-0 { opacity: 0; }
-  .pointer-events-none { pointer-events: none; }
-  .scale-95 { transform: scale(0.95); }
-  .scale-100 { transform: scale(1); }
-  .hidden { display: none; }
-
   .dash-x {
     background-image: linear-gradient(to right, rgba(26,31,27,.22) 50%, transparent 0%);
     background-size: 8px 1px;
     background-repeat: repeat-x;
     background-position: center;
-  }
-
-  /* ── Shimmer keyframe ── */
-  @keyframes shimmer { from { background-position:200% 0 } to { background-position:-200% 0 } }
-
-  /* ── Mobile drawer ── */
-  .mobile-drawer {
-    position: fixed; inset: 0; z-index: 50;
-    pointer-events: none; visibility: hidden;
-  }
-  .mobile-drawer.open { pointer-events: auto; visibility: visible; }
-  .mobile-drawer-backdrop {
-    position: absolute; inset: 0;
-    background: rgba(26,31,27,0.5);
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-    opacity: 0; transition: opacity .3s ease;
-  }
-  .mobile-drawer.open .mobile-drawer-backdrop { opacity: 1; }
-  .mobile-drawer-panel {
-    position: absolute; top: 0; right: 0; bottom: 0; width: 80%; max-width: 320px;
-    background: var(--paper);
-    border-left: 1px solid #E5E3DC;
-    transform: translateX(100%); transition: transform .35s cubic-bezier(.22,.61,.36,1);
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    box-shadow: -8px 0 40px rgba(26,31,27,0.15);
-  }
-  .mobile-drawer.open .mobile-drawer-panel { transform: translateX(0); }
-
-  /* ── Stagger delays ── */
-  [data-reveal-delay="1"] { transition-delay: .08s; }
-  [data-reveal-delay="2"] { transition-delay: .16s; }
-  [data-reveal-delay="3"] { transition-delay: .24s; }
-  [data-reveal-delay="4"] { transition-delay: .32s; }
-  [data-reveal-delay="5"] { transition-delay: .40s; }
-  [data-reveal-delay="6"] { transition-delay: .48s; }
-  [data-reveal-delay="7"] { transition-delay: .56s; }
-
-  /* ── FAQ Accordion ── */
-  .faq-answer {
-    max-height: 0; overflow: hidden; opacity: 0;
-    transition: max-height .4s cubic-bezier(.22,.61,.36,1), opacity .3s ease, padding .3s ease;
-    padding-top: 0; padding-bottom: 0;
-  }
-  .faq-item.open .faq-answer {
-    max-height: 200px; opacity: 1; padding-top: 0.75rem; padding-bottom: 0.25rem;
-  }
-  .faq-chevron {
-    transition: transform .3s ease;
-  }
-  .faq-item.open .faq-chevron {
-    transform: rotate(180deg);
-  }
-
-  /* ── Nav active state ── */
-  .nav-link { position: relative; }
-  .nav-link::after {
-    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
-    height: 2px; background: var(--jade); border-radius: 1px;
-    transform: scaleX(0); transition: transform .25s ease;
-  }
-  .nav-link.active::after { transform: scaleX(1); }
-
-  /* ── Counter animation ── */
-  @keyframes countPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
-  .count-animated { animation: countPulse .4s ease-out; }
-
-  /* ── Trust badge subtle glow ── */
-  .trust-badge {
-    background: linear-gradient(135deg, rgba(15,140,102,0.08) 0%, rgba(15,140,102,0.03) 100%);
-    border: 1px solid rgba(15,140,102,0.15);
   }
 </style>
 </head>
@@ -247,89 +123,23 @@
       <span class="hidden sm:inline-flex items-center gap-1 ml-1 text-[11px] font-medium px-1.5 py-0.5 rounded-md bg-jade-50 text-jade-700 border border-jade-100">v2.4 · Nouveau</span>
     </a>
 
-    <nav class="hidden md:flex items-center gap-7 text-[14px] text-ink-soft" role="navigation" aria-label="Navigation principale">
-      <a class="nav-link hover:text-ink transition" href="#features">Fonctionnalités</a>
-      <a class="nav-link hover:text-ink transition" href="#app">L'app</a>
-      <a class="nav-link hover:text-ink transition" href="#terrain">Terrain</a>
-      <a class="nav-link hover:text-ink transition" href="#offline">Sans internet</a>
-      <a class="nav-link hover:text-ink transition" href="#temoignages">Témoignages</a>
-      <a class="nav-link hover:text-ink transition" href="#faq">FAQ</a>
+    <nav class="hidden md:flex items-center gap-7 text-[14px] text-ink-soft">
+      <a class="hover:text-ink transition" href="#features">Fonctionnalités</a>
+      <a class="hover:text-ink transition" href="#app">L'app</a>
+      <a class="hover:text-ink transition" href="#terrain">Terrain</a>
+      <a class="hover:text-ink transition" href="#offline">Sans internet</a>
+      <a class="hover:text-ink transition" href="#temoignages">Témoignages</a>
     </nav>
 
     <div class="flex items-center gap-2">
       <a href="cunigest-privacy/" class="hidden sm:inline text-[13px] text-ink-muted hover:text-ink transition">Confidentialité</a>
-      <a href="#telecharger" class="hidden sm:inline-flex btn-press items-center gap-2 bg-jade-500 hover:bg-jade-600 text-white text-[13.5px] font-medium pl-3.5 pr-3 py-2 rounded-lg shadow-card transition">
+      <a href="#telecharger" class="btn-press inline-flex items-center gap-2 bg-jade-500 hover:bg-jade-600 text-white text-[13.5px] font-medium pl-3.5 pr-3 py-2 rounded-lg shadow-card transition">
         Obtenir l'application
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
       </a>
-      <!-- Hamburger button (mobile) -->
-      <button id="menu-open" class="md:hidden w-10 h-10 rounded-lg border border-line hover:bg-paper-raised flex items-center justify-center transition" aria-label="Ouvrir le menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-      </button>
     </div>
   </div>
 </header>
-
-<!-- ───────────────────────── MOBILE DRAWER ───────────────────────── -->
-<div id="mobile-drawer" class="mobile-drawer" aria-hidden="true">
-  <div class="mobile-drawer-backdrop" id="drawer-backdrop"></div>
-  <div class="mobile-drawer-panel">
-    <div class="flex items-center justify-between p-5 border-b border-line">
-      <div class="flex items-center gap-2.5">
-        <img src="assets/bunny-128.png" alt="CuniGest" class="w-8 h-8 object-contain" width="32" height="32" />
-        <span class="font-semibold tracking-tight text-ink text-[16px]">CuniGest</span>
-      </div>
-      <button id="menu-close" class="w-9 h-9 rounded-lg border border-line hover:bg-paper-raised flex items-center justify-center transition" aria-label="Fermer le menu">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <nav class="p-5 space-y-1" role="navigation" aria-label="Menu mobile">
-      <a href="#features" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-jade flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        </span>
-        Fonctionnalités
-      </a>
-      <a href="#app" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-repro flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 18h4"/></svg>
-        </span>
-        L'application
-      </a>
-      <a href="#terrain" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-warn flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        </span>
-        Modes terrain
-      </a>
-      <a href="#offline" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-feed flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-        </span>
-        Sans internet
-      </a>
-      <a href="#temoignages" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-finance flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </span>
-        Témoignages
-      </a>
-      <a href="#faq" class="drawer-link flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-ink hover:bg-paper-raised transition">
-        <span class="w-8 h-8 rounded-lg icon-wrap-tools flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
-        </span>
-        FAQ
-      </a>
-    </nav>
-    <div class="p-5 pt-2 border-t border-line mt-2">
-      <a href="#telecharger" class="drawer-link btn-press flex items-center justify-center gap-2.5 w-full bg-jade-500 hover:bg-jade-600 text-white font-medium py-3.5 rounded-xl shadow-glow transition">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-        Télécharger l'application
-      </a>
-      <a href="cunigest-privacy/" class="block text-center text-[13px] text-ink-muted hover:text-ink transition mt-3 py-2">Politique de confidentialité</a>
-    </div>
-  </div>
-</div>
 
 <a id="top"></a>
 
@@ -376,15 +186,15 @@
       <dl class="mt-8 sm:mt-12 grid grid-cols-2 sm:grid-cols-4 max-w-2xl gap-6 sm:gap-8 border-t border-line pt-6">
         <div>
           <dt class="text-[11px] uppercase tracking-[0.14em] text-ink-muted">Lapins suivis</dt>
-          <dd class="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink tabular" data-counter="12000" data-suffix="+">0</dd>
-        </div>
-        <div>
-          <dt class="text-[11px] uppercase tracking-[0.14em] text-ink-muted">Prix</dt>
-          <dd class="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight text-jade-600">Gratuit</dd>
+          <dd class="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink tabular">12 000+</dd>
         </div>
         <div>
           <dt class="text-[11px] uppercase tracking-[0.14em] text-ink-muted">Sans internet</dt>
           <dd class="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink">Toujours</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] uppercase tracking-[0.14em] text-ink-muted">Vos données</dt>
+          <dd class="mt-1 text-[22px] sm:text-[26px] font-semibold tracking-tight text-ink">Chez vous</dd>
         </div>
         <div>
           <dt class="text-[11px] uppercase tracking-[0.14em] text-ink-muted">Devise</dt>
@@ -399,12 +209,12 @@
 
       <div class="relative" style="width:280px;height:594px;">
         <div class="phone" style="width:280px;height:594px;">
-          <iframe loading="eager" src="mockups/render.html?screen=accueilV3" title="Aperçu de l'écran d'accueil CuniGest" style="transform:scale(0.69);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe loading="eager" src="mockups/render.html?screen=accueilV3" style="transform:scale(0.69);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
 
         <!-- Floating offline pill -->
-        <div class="absolute left-0 lg:-left-6 top-20 bg-white shadow-card border border-line rounded-xl px-3 py-2 flex items-center gap-2">
+        <div class="absolute -left-6 top-20 bg-white shadow-card border border-line rounded-xl px-3 py-2 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-jade-500 animate-pulse-soft"></span>
           <div>
             <div class="text-[10px] uppercase tracking-[0.14em] text-ink-muted">Connexion</div>
@@ -412,8 +222,8 @@
           </div>
         </div>
 
-        <!-- Floating online-backup card (hidden on small screens) -->
-        <div class="hidden sm:flex absolute -right-2 bottom-28 bg-ink text-white shadow-card rounded-xl px-3 py-2.5 items-center gap-2.5">
+        <!-- Floating online-backup card -->
+        <div class="absolute -right-2 bottom-28 bg-ink text-white shadow-card rounded-xl px-3 py-2.5 flex items-center gap-2.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15 6.7L3 16M3 12a9 9 0 0 1 15-6.7L21 8M3 3v5h5M21 21v-5h-5"/></svg>
           <div>
             <div class="text-[10px] uppercase tracking-[0.14em] opacity-60">Sauvegarde</div>
@@ -421,8 +231,8 @@
           </div>
         </div>
 
-        <!-- FCFA badge (hidden on small screens) -->
-        <div class="hidden sm:flex absolute right-0 lg:-right-6 top-32 bg-finance text-white shadow-card rounded-xl px-3 py-2 items-center gap-2">
+        <!-- FCFA badge -->
+        <div class="absolute -right-6 top-32 bg-finance text-white shadow-card rounded-xl px-3 py-2 flex items-center gap-2">
           <span class="text-[14px] font-semibold">F</span>
           <div>
             <div class="text-[10px] uppercase tracking-[0.14em] opacity-80">Devise</div>
@@ -438,7 +248,7 @@
     <div class="max-w-7xl mx-auto px-5 sm:px-8 py-4 flex items-center gap-6">
       <span class="hidden sm:inline text-[11px] uppercase tracking-[0.18em] text-ink-muted shrink-0">Pensé pour le terrain africain</span>
       <div class="flex-1 overflow-hidden">
-        <div class="marquee-track flex gap-9 whitespace-nowrap text-ink-soft text-[14px] font-medium" aria-hidden="true">
+        <div class="marquee-track flex gap-9 whitespace-nowrap text-ink-soft text-[14px] font-medium">
           <span>🐇 Pedigree sur 3 générations</span><span>·</span>
           <span>🔔 Rappels palpation J+10</span><span>·</span>
           <span>📋 GMQ &amp; indice de consommation</span><span>·</span>
@@ -493,32 +303,32 @@
     <!-- Grid -->
     <div class="mt-10 -mx-5 px-[7.5vw] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 lg:gap-px lg:bg-line lg:rounded-2xl lg:overflow-hidden lg:shadow-card lg:border lg:border-line snap-x snap-mandatory hide-scrollbar pb-4 lg:pb-0">
       <!-- 1 Cheptel -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="0">
-        <div class="w-10 h-10 rounded-xl icon-wrap-jade flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M12 20c0-3 2.5-5 6-5s6 2 6 5"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Cheptel</h3>
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Une fiche par lapin avec sa photo, sa race, sa cage et son <span class="text-ink">pedigree sur 3 générations</span>. L'app vous alerte si vous croisez parents et enfants.</p>
       </div>
       <!-- 2 Reproduction -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="1">
-        <div class="w-10 h-10 rounded-xl icon-wrap-repro flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-repro text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 6.5-7 11-7 11z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Reproduction</h3>
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Saillie, palpation à J+10, préparation du nid à J+27, mise bas à J+31, sevrage. <span class="text-ink">L'app compte les jours pour vous</span>.</p>
       </div>
       <!-- 3 Santé -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="2">
-        <div class="w-10 h-10 rounded-xl icon-wrap-health flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-health text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5 0 2.5-1 2.5-2.5S20.5 9 19 9c-1 0-1.5.5-2 1l-2-2c.5-.5 1-1 1-2 0-1.5-1-2.5-2.5-2.5S11 4.5 11 6c0 1 .5 1.5 1 2l-7 7c-.5-.5-1-1-2-1-1.5 0-2.5 1-2.5 2.5S1.5 19 3 19c1 0 1.5-.5 2-1l2 2c-.5.5-1 1-1 2 0 1.5 1 2.5 2.5 2.5S11 23.5 11 22c0-1-.5-1.5-1-2l7-7c.5.5 1 1 2 1z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Santé &amp; prophylaxie</h3>
         <p class="mt-2 text-[14.5px] leading-relaxed text-ink-muted">Vaccins VHD/myxomatose, traitements, rappels. <span class="text-ink">Pendant le délai d'attente, l'app refuse la vente</span> — protection réglementaire automatique.</p>
       </div>
       <!-- 4 Tâches & Streak -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="3">
-        <div class="w-10 h-10 rounded-xl icon-wrap-warn flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-warn text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Routine quotidienne</h3>
@@ -526,8 +336,8 @@
       </div>
 
       <!-- 5 Lots & engraissement -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="4">
-        <div class="w-10 h-10 rounded-xl icon-wrap-jade flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M9 20V4M15 20v-7M21 20v-12"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Lots d'engraissement</h3>
@@ -535,8 +345,8 @@
       </div>
 
       <!-- 6 Ventes & finances -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="5">
-        <div class="w-10 h-10 rounded-xl icon-wrap-finance flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-finance text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 16h4"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Ventes &amp; dépenses</h3>
@@ -544,8 +354,8 @@
       </div>
 
       <!-- 7 Cages QR -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="6">
-        <div class="w-10 h-10 rounded-xl icon-wrap-tools flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-tools text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Cages &amp; QR</h3>
@@ -553,8 +363,8 @@
       </div>
 
       <!-- 8 Modes terrain -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal data-reveal-delay="7">
-        <div class="w-10 h-10 rounded-xl icon-wrap-admin flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl bg-admin text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Pensée pour le terrain</h3>
@@ -596,52 +406,52 @@
       <!-- Phone 1: Cheptel -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=cheptel" title="Aperçu de l'écran cheptel" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe loading="lazy" src="mockups/render.html?screen=cheptel" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
           <div class="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-jade-300"><span class="w-1.5 h-1.5 rounded-full bg-jade-300"></span> 01 · Cheptel</div>
           <div class="mt-1.5 text-[15px] font-semibold">Vos lapins, en un coup d'œil</div>
-          <p class="mt-1 text-[13px] leading-relaxed text-white/70">Filtres par sexe, statut, race. Trois taps pour ouvrir une fiche.</p>
+          <p class="mt-1 text-[13px] leading-relaxed text-white/55">Filtres par sexe, statut, race. Trois taps pour ouvrir une fiche.</p>
         </div>
       </div>
 
       <!-- Phone 2: Reproduction -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=repro" title="Aperçu de l'écran reproduction" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe loading="lazy" src="mockups/render.html?screen=repro" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
           <div class="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em]" style="color:#A48FE8"><span class="w-1.5 h-1.5 rounded-full" style="background:#A48FE8"></span> 02 · Reproduction</div>
           <div class="mt-1.5 text-[15px] font-semibold">Le calendrier des portées</div>
-          <p class="mt-1 text-[13px] leading-relaxed text-white/70">Saillie, palpation, nid, mise bas, sevrage. Aucune date à retenir.</p>
+          <p class="mt-1 text-[13px] leading-relaxed text-white/55">Saillie, palpation, nid, mise bas, sevrage. Aucune date à retenir.</p>
         </div>
       </div>
 
       <!-- Phone 3: Tâches -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=taches" title="Aperçu de l'écran des tâches" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe loading="lazy" src="mockups/render.html?screen=taches" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
           <div class="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-yellow-300"><span class="w-1.5 h-1.5 rounded-full bg-yellow-300"></span> 03 · Routine</div>
           <div class="mt-1.5 text-[15px] font-semibold">La routine du jour</div>
-          <p class="mt-1 text-[13px] leading-relaxed text-white/70">Abreuvoirs, mamelles, nettoyage. Vous cochez en passant.</p>
+          <p class="mt-1 text-[13px] leading-relaxed text-white/55">Abreuvoirs, mamelles, nettoyage. Vous cochez en passant.</p>
         </div>
       </div>
 
       <!-- Phone 4: Lapin fiche -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=lapin" title="Aperçu de la fiche lapin" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe loading="lazy" src="mockups/render.html?screen=lapin" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
           <div class="inline-flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.16em] text-jade-300"><span class="w-1.5 h-1.5 rounded-full bg-jade-300"></span> 04 · Fiche lapin</div>
           <div class="mt-1.5 text-[15px] font-semibold">Tout sur Bella · #L-0042</div>
-          <p class="mt-1 text-[13px] leading-relaxed text-white/70">Sa photo, son pedigree, sa courbe de poids, son historique santé.</p>
+          <p class="mt-1 text-[13px] leading-relaxed text-white/55">Sa photo, son pedigree, sa courbe de poids, son historique santé.</p>
         </div>
       </div>
 
@@ -651,19 +461,19 @@
     <div class="mt-14 sm:mt-24 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto" data-reveal>
       <div class="border-l-2 border-jade-500 pl-4">
         <div class="text-[36px] font-semibold tabular leading-none">5</div>
-        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/70">Onglets, c'est tout</div>
+        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/55">Onglets, c'est tout</div>
       </div>
       <div class="border-l-2 border-repro pl-4">
         <div class="text-[36px] font-semibold tabular leading-none">J+31</div>
-        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/70">Mise bas calculée auto</div>
+        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/55">Mise bas calculée auto</div>
       </div>
       <div class="border-l-2 border-finance pl-4">
         <div class="text-[36px] font-semibold tabular leading-none">3</div>
-        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/70">Générations de pedigree</div>
+        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/55">Générations de pedigree</div>
       </div>
       <div class="border-l-2 border-health pl-4">
         <div class="text-[36px] font-semibold tabular leading-none">2</div>
-        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/70">Rôles · éleveur &amp; soigneur</div>
+        <div class="mt-2 text-[12px] uppercase tracking-[0.14em] text-white/55">Rôles · éleveur &amp; soigneur</div>
       </div>
     </div>
   </div>
@@ -909,9 +719,9 @@
             <div class="text-[12.5px] font-semibold text-ink">Sauvegarde en ligne</div>
             <div class="text-[11px] text-ink-muted">Vous décidez, vous désactivez quand vous voulez</div>
           </div>
-          <button id="toggle-backup" class="w-11 h-6 rounded-full bg-jade-500 relative transition-colors duration-200 focus:outline-none" aria-label="Activer ou désactiver la sauvegarde">
-            <span id="toggle-thumb" class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200" style="right: 2px;"></span>
-          </button>
+          <div class="w-11 h-6 rounded-full bg-jade-500 relative">
+            <span class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -957,7 +767,7 @@
           <div class="w-10 h-10 rounded-full bg-white text-jade-700 flex items-center justify-center font-semibold">FB</div>
           <div>
             <div class="text-[14px] font-semibold">Fatou Bâ</div>
-            <div class="text-[12.5px] text-jade-100">Coop. Lapinière du Sahel · Dakar</div>
+            <div class="text-[12.5px] text-white/70">Coop. Lapinière du Sahel · Dakar</div>
           </div>
         </figcaption>
       </figure>
@@ -981,126 +791,6 @@
 </section>
 
 
-<!-- ───────────────────────── CALCULATEUR ROI ───────────────────────── -->
-<section id="calculateur" class="py-14 sm:py-20 bg-paper-raised/30 border-y border-line">
-  <div class="max-w-5xl mx-auto px-5 sm:px-8">
-    <div class="grid lg:grid-cols-12 gap-10 items-center">
-      
-      <div class="lg:col-span-6" data-reveal>
-        <div class="text-[12px] uppercase tracking-[0.18em] text-jade-600 font-medium">Rentabilité</div>
-        <h2 class="mt-3 text-[30px] sm:text-[42px] leading-[1.1] tracking-[-0.02em] font-semibold text-ink">
-          Estimez les gains de<br />
-          <span class="font-display italic font-normal text-jade-600">votre élevage.</span>
-        </h2>
-        <p class="mt-4 text-[15px] sm:text-[16px] leading-relaxed text-ink-soft">
-          En éliminant le carnet papier et en automatisant le suivi des portées, CuniGest vous aide à réduire la mortalité des portées et à optimiser l'alimentation. Faites glisser le curseur pour voir votre retour sur investissement estimé.
-        </p>
-      </div>
-
-      <div class="lg:col-span-6" data-reveal>
-        <div class="bg-white border border-line rounded-3xl p-6 sm:p-8 shadow-card">
-          <!-- Sliders -->
-          <div class="space-y-6">
-            <div>
-              <div class="flex justify-between text-[13.5px] font-medium text-ink mb-2">
-                <span>Nombre de femelles reproductrices</span>
-                <span class="text-jade-600 font-semibold" id="female-count-val">30</span>
-              </div>
-              <input type="range" id="female-count" min="5" max="200" value="30" class="w-full h-1.5 bg-paper-raised rounded-lg appearance-none cursor-pointer accent-jade-500" />
-            </div>
-
-            <div>
-              <div class="flex justify-between text-[13.5px] font-medium text-ink mb-2">
-                <span>Prix moyen de vente d'un lapin</span>
-                <span class="text-jade-600 font-semibold" id="rabbit-price-val">3 500 FCFA</span>
-              </div>
-              <input type="range" id="rabbit-price" min="1500" max="6000" step="500" value="3500" class="w-full h-1.5 bg-paper-raised rounded-lg appearance-none cursor-pointer accent-jade-500" />
-            </div>
-          </div>
-
-          <!-- Divider -->
-          <div class="border-t border-line my-6"></div>
-
-          <!-- Results -->
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div class="bg-paper rounded-2xl p-4 border border-line">
-              <div class="text-[11px] uppercase tracking-wider text-ink-muted">Portées sauvées / an</div>
-              <div class="mt-1 text-[24px] sm:text-[28px] font-bold text-ink" id="litters-saved">6</div>
-            </div>
-            <div class="bg-jade-50/50 rounded-2xl p-4 border border-jade-100">
-              <div class="text-[11px] uppercase tracking-wider text-jade-700 font-medium">Gain estimé / an</div>
-              <div class="mt-1 text-[24px] sm:text-[28px] font-bold text-jade-600 font-sans" id="money-saved">147 000 F</div>
-            </div>
-          </div>
-          
-          <div class="mt-4 text-[11px] text-center text-ink-muted">
-            *Estimation basée sur une réduction moyenne de 15% des pertes de portées en élevage cunicole suivi par logiciel.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-<!-- ───────────────────────── FAQ ───────────────────────── -->
-<section id="faq" class="py-14 sm:py-24 max-w-4xl mx-auto px-5 sm:px-8">
-  <div class="text-center" data-reveal>
-    <div class="text-[12px] uppercase tracking-[0.18em] text-jade-600 font-medium">Questions fréquentes</div>
-    <h2 class="mt-3 text-[30px] sm:text-[42px] leading-[1.1] tracking-[-0.02em] font-semibold text-ink">
-      Tout ce que vous devez<br />
-      <span class="font-display italic font-normal text-ink-muted">savoir sur CuniGest.</span>
-    </h2>
-  </div>
-
-  <div class="mt-12 space-y-4" data-reveal>
-    <!-- FAQ 1 -->
-    <div class="faq-item bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm cursor-pointer hover:border-jade-200 transition">
-      <div class="flex items-center justify-between gap-4">
-        <h3 class="text-[16px] font-semibold text-ink">L'application est-elle gratuite ?</h3>
-        <span class="faq-chevron text-ink-muted shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-      </div>
-      <div class="faq-answer">
-        <p class="text-[14.5px] leading-relaxed text-ink-soft">Oui, l'application est actuellement 100% gratuite. Il n'y a pas de publicité, et nous ne revendons pas vos données. Notre objectif actuel est de construire le meilleur outil pour les éleveurs cunicoles.</p>
-      </div>
-    </div>
-    
-    <!-- FAQ 2 -->
-    <div class="faq-item bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm cursor-pointer hover:border-jade-200 transition">
-      <div class="flex items-center justify-between gap-4">
-        <h3 class="text-[16px] font-semibold text-ink">Mes données sont-elles sécurisées ?</h3>
-        <span class="faq-chevron text-ink-muted shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-      </div>
-      <div class="faq-answer">
-        <p class="text-[14.5px] leading-relaxed text-ink-soft">Vos données restent d'abord sur votre téléphone pour fonctionner sans internet. Elles sont ensuite sauvegardées de manière sécurisée et cryptée sur nos serveurs. Vous seul avez accès à votre élevage.</p>
-      </div>
-    </div>
-
-    <!-- FAQ 3 -->
-    <div class="faq-item bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm cursor-pointer hover:border-jade-200 transition">
-      <div class="flex items-center justify-between gap-4">
-        <h3 class="text-[16px] font-semibold text-ink">Que se passe-t-il si je n'ai pas internet au clapier ?</h3>
-        <span class="faq-chevron text-ink-muted shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-      </div>
-      <div class="faq-answer">
-        <p class="text-[14.5px] leading-relaxed text-ink-soft">Aucun problème. CuniGest est conçue en approche "Offline-First". Vous pouvez enregistrer des naissances, des poids ou des ventes sans aucune connexion. L'application synchronisera tout automatiquement dès que vous retrouverez le réseau.</p>
-      </div>
-    </div>
-
-    <!-- FAQ 4 -->
-    <div class="faq-item bg-white border border-line rounded-2xl p-5 sm:p-6 shadow-sm cursor-pointer hover:border-jade-200 transition">
-      <div class="flex items-center justify-between gap-4">
-        <h3 class="text-[16px] font-semibold text-ink">Y a-t-il une limite au nombre de lapins ?</h3>
-        <span class="faq-chevron text-ink-muted shrink-0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-      </div>
-      <div class="faq-answer">
-        <p class="text-[14.5px] leading-relaxed text-ink-soft">Non. Que vous ayez 5 femelles ou 500 reproducteurs, CuniGest fonctionnera de la même manière. L'interface reste fluide même avec un grand nombre de fiches animales.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ───────────────────────── CTA ───────────────────────── -->
 <section id="telecharger" class="py-14 sm:py-28">
   <div class="max-w-6xl mx-auto px-5 sm:px-8">
@@ -1111,8 +801,7 @@
 
       <div class="relative grid lg:grid-cols-5 gap-10 items-center">
         <div class="lg:col-span-3" data-reveal>
-        <div class="lg:col-span-3" data-reveal>
-          <div class="text-[12px] uppercase tracking-[0.18em] text-jade-300 font-medium">Bêta ouverte</div>
+          <div class="text-[12px] uppercase tracking-[0.18em] text-jade-300 font-medium">Disponible maintenant</div>
           <h2 class="mt-3 text-[32px] sm:text-[56px] leading-[1.05] tracking-[-0.025em] font-semibold">
             Installez CuniGest<br />
             <span class="font-display italic font-normal text-white/70">en moins d'une minute.</span>
@@ -1123,17 +812,16 @@
           </p>
 
           <div class="mt-9 flex flex-wrap items-center gap-3">
-            <a href="javascript:void(0)" class="js-open-modal btn-press inline-flex items-center gap-3 bg-white text-ink hover:bg-paper font-medium pl-4 pr-5 py-3.5 rounded-xl transition relative overflow-hidden group">
-              <div class="absolute inset-0 bg-jade-500/10 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300"></div>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="relative z-10 text-jade-600">
+            <a href="#" class="btn-press inline-flex items-center gap-3 bg-white text-ink hover:bg-paper font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M5 3v18l7-5 7 5V3z"/>
               </svg>
-              <span class="relative z-10">
+              <span>
                 <span class="block text-[10.5px] uppercase tracking-wider text-ink-muted">Télécharger</span>
                 <span class="block text-[15px] font-semibold leading-tight">Pour Android · v2.4</span>
               </span>
             </a>
-            <a href="javascript:void(0)" class="js-open-modal btn-press inline-flex items-center gap-3 border border-white/20 hover:bg-white/5 text-white font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
+            <a href="#" class="btn-press inline-flex items-center gap-3 border border-white/20 hover:bg-white/5 text-white font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
                 <path d="M4 4h4l3 7 3-7h4M5 20l4-9M19 20l-4-9"/>
               </svg>
@@ -1218,6 +906,7 @@
         <ul class="mt-4 space-y-2.5 text-[14px]">
           <li><a class="text-ink-soft hover:text-ink transition" href="cunigest-privacy/">Confidentialité</a></li>
           <li><a class="text-ink-soft hover:text-ink transition" href="mockups/">Maquettes design</a></li>
+          <li><a class="text-ink-soft hover:text-ink transition" href="#">Cahier des charges</a></li>
           <li><a class="text-ink-soft hover:text-ink transition" href="mailto:titanddev@gmail.com">Support</a></li>
         </ul>
       </div>
@@ -1225,7 +914,8 @@
       <div>
         <div class="text-[12px] uppercase tracking-wider text-ink-muted font-medium">Société</div>
         <ul class="mt-4 space-y-2.5 text-[14px]">
-          <li><a class="text-ink-soft hover:text-ink transition" href="https://github.com/delforgecelineanemone-debug/cunigest" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a class="text-ink-soft hover:text-ink transition" href="#">À propos</a></li>
+          <li><a class="text-ink-soft hover:text-ink transition" href="https://github.com" target="_blank" rel="noopener">GitHub</a></li>
           <li><a class="text-ink-soft hover:text-ink transition" href="mailto:titanddev@gmail.com">Contact</a></li>
         </ul>
       </div>
@@ -1240,265 +930,13 @@
   </div>
 </footer>
 
-<!-- Modal Bêta / Waitlist -->
-<div id="beta-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-  <div class="relative w-full max-w-md bg-paper border border-line rounded-[28px] p-6 sm:p-8 shadow-card transform scale-95 transition-transform duration-300">
-    <button type="button" id="close-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full border border-line hover:bg-paper-raised flex items-center justify-center transition z-10" aria-label="Fermer la modale">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-    <div class="text-center">
-      <div class="w-12 h-12 rounded-2xl bg-jade-50 text-jade-700 flex items-center justify-center mx-auto mb-4 text-xl">
-        🐇
-      </div>
-      <h3 class="text-[22px] font-semibold tracking-tight text-ink">Rejoindre la bêta CuniGest</h3>
-      <p class="mt-2 text-[14px] leading-relaxed text-ink-muted">
-        Soyez averti dès que l'application est disponible sur le Google Play Store et rejoignez nos testeurs sur iOS.
-      </p>
-    </div>
-    <form id="beta-form" class="mt-6 space-y-4">
-      <div>
-        <label for="email" class="block text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-1.5">Adresse e-mail</label>
-        <input type="email" id="email" required placeholder="nom@exemple.com" class="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-[14.5px] placeholder-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-jade-500/25 focus:border-jade-500 transition" />
-      </div>
-      <div>
-        <label for="elevage" class="block text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-1.5">Taille de votre élevage</label>
-        <select id="elevage" class="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-[14.5px] focus:outline-none focus:ring-2 focus:ring-jade-500/25 focus:border-jade-500 transition">
-          <option>Moins de 10 lapins (Familial)</option>
-          <option>10 à 50 lapins (Professionnel moyen)</option>
-          <option>Plus de 50 lapins (Grand élevage/Coopérative)</option>
-        </select>
-      </div>
-      <button type="submit" class="w-full btn-press py-3 rounded-xl bg-jade-500 hover:bg-jade-600 text-white font-medium text-[15px] shadow-card transition">
-        S'inscrire à l'accès anticipé
-      </button>
-    </form>
-    <div id="modal-success" class="hidden text-center py-4">
-      <div class="w-12 h-12 rounded-full bg-jade-50 text-jade-700 flex items-center justify-center mx-auto mb-3 text-lg">
-        ✓
-      </div>
-      <h4 class="text-[17px] font-semibold text-ink">Inscription réussie !</h4>
-      <p class="mt-1 text-[13.5px] text-ink-muted">Merci, nous vous contacterons très prochainement.</p>
-      <button type="button" id="close-modal-success" class="mt-6 w-full btn-press py-2.5 rounded-xl border border-line bg-white hover:bg-paper-raised text-ink font-medium text-[14.5px] transition">
-        Fermer
-      </button>
-    </div>
-  </div>
-</div>
-
 <script>
-  // 1. Reveal observer
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }
   }, { threshold: 0.10, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
-
-  // 2. Modal waitlist / bêta
-  const modal = document.getElementById('beta-modal');
-  const openModalBtns = document.querySelectorAll('.js-open-modal');
-  const closeModalBtn = document.getElementById('close-modal');
-  const closeModalSuccessBtn = document.getElementById('close-modal-success');
-  const betaForm = document.getElementById('beta-form');
-  const modalSuccess = document.getElementById('modal-success');
-  let autoCloseTimeout;
-
-  openModalBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      modal.classList.remove('opacity-0', 'pointer-events-none');
-      modal.firstElementChild.classList.remove('scale-95');
-      modal.firstElementChild.classList.add('scale-100');
-    });
-  });
-
-  const closeModal = () => {
-    modal.classList.add('opacity-0', 'pointer-events-none');
-    modal.firstElementChild.classList.remove('scale-100');
-    modal.firstElementChild.classList.add('scale-95');
-    if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
-    setTimeout(() => {
-      betaForm.classList.remove('hidden');
-      modalSuccess.classList.add('hidden');
-      betaForm.reset();
-    }, 300);
-  };
-
-  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-  if (closeModalSuccessBtn) closeModalSuccessBtn.addEventListener('click', closeModal);
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-  }
-
-  if (betaForm) {
-    betaForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      betaForm.classList.add('hidden');
-      modalSuccess.classList.remove('hidden');
-      
-      // Auto close after success
-      autoCloseTimeout = setTimeout(() => {
-        closeModal();
-      }, 3500);
-    });
-  }
-
-  // 3. Interactive backup toggle
-  const toggleBtn = document.getElementById('toggle-backup');
-  const toggleThumb = document.getElementById('toggle-thumb');
-  let isBackupActive = true;
-
-  if (toggleBtn && toggleThumb) {
-    toggleBtn.addEventListener('click', () => {
-      isBackupActive = !isBackupActive;
-      if (isBackupActive) {
-        toggleBtn.classList.remove('bg-slate-300');
-        toggleBtn.classList.add('bg-jade-500');
-        toggleThumb.style.right = '2px';
-        toggleThumb.style.left = 'auto';
-      } else {
-        toggleBtn.classList.remove('bg-jade-500');
-        toggleBtn.classList.add('bg-slate-300');
-        toggleThumb.style.left = '2px';
-        toggleThumb.style.right = 'auto';
-      }
-    });
-  }
-
-  // 4. Lazy loading iframes with IntersectionObserver
-  const lazyIframes = document.querySelectorAll('.lazy-phone-iframe');
-  if ('IntersectionObserver' in window) {
-    const iframeObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const iframe = entry.target;
-          if (iframe.dataset.src) {
-            iframe.src = iframe.dataset.src;
-            observer.unobserve(iframe);
-          }
-        }
-      });
-    }, { rootMargin: '0px 0px 300px 0px' });
-
-    lazyIframes.forEach(iframe => iframeObserver.observe(iframe));
-  } else {
-    lazyIframes.forEach(iframe => {
-      if (iframe.dataset.src) iframe.src = iframe.dataset.src;
-    });
-  }
-
-  // 5. ROI Calculator
-  const femaleSlider = document.getElementById('female-count');
-  const priceSlider = document.getElementById('rabbit-price');
-  
-  if (femaleSlider && priceSlider) {
-    const femaleVal = document.getElementById('female-count-val');
-    const priceVal = document.getElementById('rabbit-price-val');
-    const littersSaved = document.getElementById('litters-saved');
-    const moneySaved = document.getElementById('money-saved');
-
-    const updateROI = () => {
-      const females = parseInt(femaleSlider.value);
-      const price = parseInt(priceSlider.value);
-      
-      femaleVal.innerText = females;
-      priceVal.innerText = price.toLocaleString('fr-FR') + ' FCFA';
-      
-      const litters = Math.max(1, Math.round(females * 0.2));
-      littersSaved.innerText = litters;
-      
-      const gain = litters * 7 * price;
-      moneySaved.innerText = gain.toLocaleString('fr-FR') + ' F';
-    };
-
-    femaleSlider.addEventListener('input', updateROI);
-    priceSlider.addEventListener('input', updateROI);
-    updateROI();
-  }
-
-  // 6. Mobile Drawer Logic
-  const mobileDrawer = document.getElementById('mobile-drawer');
-  const btnMenuOpen = document.getElementById('menu-open');
-  const btnMenuClose = document.getElementById('menu-close');
-  const drawerBackdrop = document.getElementById('drawer-backdrop');
-  const drawerLinks = document.querySelectorAll('.drawer-link');
-
-  const openDrawer = () => { mobileDrawer.classList.add('open'); document.body.style.overflow = 'hidden'; };
-  const closeDrawer = () => { mobileDrawer.classList.remove('open'); document.body.style.overflow = ''; };
-
-  if (btnMenuOpen) btnMenuOpen.addEventListener('click', openDrawer);
-  if (btnMenuClose) btnMenuClose.addEventListener('click', closeDrawer);
-  if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
-  drawerLinks.forEach(link => link.addEventListener('click', closeDrawer));
-
-  // 7. FAQ Accordion Logic
-  const faqItems = document.querySelectorAll('.faq-item');
-  faqItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const isOpen = item.classList.contains('open');
-      faqItems.forEach(f => f.classList.remove('open')); // Close others
-      if (!isOpen) item.classList.add('open'); // Open clicked
-    });
-  });
-
-  // 8. Number Counter Animation
-  const animateValue = (obj, start, end, duration) => {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // easeOutQuart
-      const ease = 1 - Math.pow(1 - progress, 4);
-      const current = Math.floor(ease * (end - start) + start);
-      
-      const suffix = obj.dataset.suffix || '';
-      obj.innerHTML = current.toLocaleString('fr-FR') + suffix;
-      
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      }
-    };
-    window.requestAnimationFrame(step);
-  };
-
-  const counterObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const el = entry.target;
-        const targetValue = parseInt(el.dataset.counter, 10);
-        if (targetValue) {
-          el.classList.add('count-animated');
-          animateValue(el, 0, targetValue, 2000);
-          observer.unobserve(el);
-        }
-      }
-    });
-  }, { threshold: 0.5 });
-  
-  document.querySelectorAll('[data-counter]').forEach(el => counterObserver.observe(el));
-
-  // 9. Navbar Active State
-  const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('.nav-link');
-  
-  const navObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.getAttribute('id');
-        navLinks.forEach(link => {
-          link.classList.remove('active');
-          if (link.getAttribute('href') === `#${id}`) {
-            link.classList.add('active');
-          }
-        });
-      }
-    });
-  }, { rootMargin: '-20% 0px -70% 0px' });
-  
-  sections.forEach(section => navObserver.observe(section));
-
 </script>
 </body>
 </html>

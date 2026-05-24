@@ -47,7 +47,7 @@ dependencies:
 
   # ── QR codes (V2) ──
   qr_flutter: ^4.1.0
-  mobile_scanner: ^5.2.3
+  mobile_scanner: ^7.2.0
 
   # ── Photos lapins (V2.2 — Phase 2) ──
   image_picker: ^1.1.2

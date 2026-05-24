@@ -28,7 +28,7 @@ dependencies:
   file_picker: ^8.1.2
 
   # ── Formatage et localisation ──
-  intl: ^0.19.0
+  intl: ^0.20.2
   cupertino_icons: ^1.0.6
 
   # ── Graphiques ──
@@ -90,7 +90,7 @@ dev_dependencies:
   sentry_dart_plugin: ^3.3.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # ── SQLite en mémoire pour les tests (sans SQLCipher) ──
   sqflite_common_ffi: ^2.3.3

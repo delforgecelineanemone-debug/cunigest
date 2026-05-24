@@ -1236,8 +1236,8 @@
 <!-- Modal Bêta / Waitlist -->
 <div id="beta-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
   <div class="relative w-full max-w-md bg-paper border border-line rounded-[28px] p-6 sm:p-8 shadow-card transform scale-95 transition-transform duration-300">
-    <button id="close-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full border border-line hover:bg-paper-raised flex items-center justify-center transition" aria-label="Fermer la modale">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <button type="button" id="close-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full border border-line hover:bg-paper-raised flex items-center justify-center transition z-10" aria-label="Fermer la modale">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
     <div class="text-center">
       <div class="w-12 h-12 rounded-2xl bg-jade-50 text-jade-700 flex items-center justify-center mx-auto mb-4 text-xl">
@@ -1271,6 +1271,9 @@
       </div>
       <h4 class="text-[17px] font-semibold text-ink">Inscription réussie !</h4>
       <p class="mt-1 text-[13.5px] text-ink-muted">Merci, nous vous contacterons très prochainement.</p>
+      <button type="button" id="close-modal-success" class="mt-6 w-full btn-press py-2.5 rounded-xl border border-line bg-white hover:bg-paper-raised text-ink font-medium text-[14.5px] transition">
+        Fermer
+      </button>
     </div>
   </div>
 </div>
@@ -1288,8 +1291,10 @@
   const modal = document.getElementById('beta-modal');
   const openModalBtns = document.querySelectorAll('.js-open-modal');
   const closeModalBtn = document.getElementById('close-modal');
+  const closeModalSuccessBtn = document.getElementById('close-modal-success');
   const betaForm = document.getElementById('beta-form');
   const modalSuccess = document.getElementById('modal-success');
+  let autoCloseTimeout;
 
   openModalBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1304,6 +1309,7 @@
     modal.classList.add('opacity-0', 'pointer-events-none');
     modal.firstElementChild.classList.remove('scale-100');
     modal.firstElementChild.classList.add('scale-95');
+    if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
     setTimeout(() => {
       betaForm.classList.remove('hidden');
       modalSuccess.classList.add('hidden');
@@ -1312,6 +1318,7 @@
   };
 
   if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (closeModalSuccessBtn) closeModalSuccessBtn.addEventListener('click', closeModal);
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
@@ -1323,6 +1330,11 @@
       e.preventDefault();
       betaForm.classList.add('hidden');
       modalSuccess.classList.remove('hidden');
+      
+      // Auto close after success
+      autoCloseTimeout = setTimeout(() => {
+        closeModal();
+      }, 3500);
     });
   }
 

@@ -1,18 +1,18 @@
-// LapinsListScreen V3 — « Field-Premium »
+// LapinsListScreen V3.5 — ConsumerWidget + AsyncNotifier (P1.8)
 // Pagination 80/page · CuSearchBar · CuChipFilter · CuLapinTile
+// Réactivité auto via LapinsListNotifier (DataBus subscribe).
 
 import 'package:flutter/material.dart';
-import '../../database/db_helper.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/lapin.dart';
-import '../../services/data_bus.dart';
+import '../../providers/lapins_list_notifier.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/breakpoints.dart';
 import '../../utils/cu_page_route.dart';
-import '../../utils/reactive_state_mixin.dart';
 import 'lapin_detail_screen.dart';
 import 'lapin_form_screen.dart';
 
-class LapinsListScreen extends StatefulWidget {
+class LapinsListScreen extends ConsumerStatefulWidget {
   /// Quand true, l'écran est intégré dans le Cheptel Hub :
   /// pas de Scaffold appBar (le hub fournit le sien).
   final bool embedded;
@@ -20,33 +20,14 @@ class LapinsListScreen extends StatefulWidget {
   const LapinsListScreen({super.key, this.embedded = false});
 
   @override
-  State<LapinsListScreen> createState() => _LapinsListScreenState();
+  ConsumerState<LapinsListScreen> createState() => _LapinsListScreenState();
 }
 
-class _LapinsListScreenState extends State<LapinsListScreen>
-    with ReactiveStateMixin<LapinsListScreen> {
-  final _db = DBHelper.instance;
-
-  @override
-  List<String> get watchedTopics =>
-      const [DataTopics.lapins, DataTopics.cages];
-
-  @override
-  Future<void> onReactiveRefresh() => _load();
-
-  List<Lapin> _lapins = [];
-  List<Lapin> _filtered = [];
-  Map<int, String> _cageNumero = {};
-
+class _LapinsListScreenState extends ConsumerState<LapinsListScreen> {
+  // Filtres UI purement locaux — pas besoin de re-fetch DB.
   String _search = '';
   String _filtreStatut = 'tous';
   String _filtreSexe = 'tous';
-
-  bool _loading = true;
-  bool _loadingMore = false;
-  bool _hasMore = true;
-
-  static const int _pageSize = 80;
 
   // ── Filtres disponibles ────────────────────────────────────
 
@@ -65,49 +46,12 @@ class _LapinsListScreenState extends State<LapinsListScreen>
     ('femelle', '♀ Femelles', Icons.female),
   ];
 
-  // ── Chargement ─────────────────────────────────────────────
+  // ── Filtrage local ─────────────────────────────────────────
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    if (!mounted) return;
-    setState(() => _loading = true);
-    final lapins = await _db.getAllLapins(limit: _pageSize);
-    final cagesRepo = await _db.cages;
-    final cages = await cagesRepo.getAllCages();
-    final cageMap = {for (final c in cages) if (c.id != null) c.id!: c.numero};
-    if (!mounted) return;
-    setState(() {
-      _lapins = lapins;
-      _cageNumero = cageMap;
-      _hasMore = lapins.length == _pageSize;
-      _loading = false;
-      _applyFilter();
-    });
-  }
-
-  Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore || _search.isNotEmpty) return;
-    setState(() => _loadingMore = true);
-    final next =
-        await _db.getAllLapins(limit: _pageSize, offset: _lapins.length);
-    if (!mounted) return;
-    setState(() {
-      _lapins.addAll(next);
-      _hasMore = next.length == _pageSize;
-      _loadingMore = false;
-      _applyFilter();
-    });
-  }
-
-  void _applyFilter() {
-    _filtered = _lapins.where((l) {
-      if (_search.isNotEmpty) {
-        final q = _search.toLowerCase();
+  List<Lapin> _applyFilter(List<Lapin> lapins) {
+    final q = _search.toLowerCase();
+    return lapins.where((l) {
+      if (q.isNotEmpty) {
         final matchBague = l.numeroBague.toLowerCase().contains(q);
         final matchNom = l.nom?.toLowerCase().contains(q) ?? false;
         final matchRace = l.race?.toLowerCase().contains(q) ?? false;
@@ -119,23 +63,14 @@ class _LapinsListScreenState extends State<LapinsListScreen>
     }).toList();
   }
 
-  // ── Résumé cheptel ─────────────────────────────────────────
-
-  int get _totalActifs =>
-      _lapins.where((l) => l.statut == 'actif').length;
-  int get _totalMales =>
-      _lapins.where((l) => l.sexe == 'male' && l.statut == 'actif').length;
-  int get _totalFemelles =>
-      _lapins.where((l) => l.sexe == 'femelle' && l.statut == 'actif').length;
-
   // ── Actions ────────────────────────────────────────────────
 
   Future<void> _ajouterLapin() async {
-    final result = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       CuPageRoute(builder: (_) => const LapinFormScreen()),
     );
-    if (result == true) _load();
+    // Pas de _load() : le DataBus s'en charge via LapinsListNotifier.
   }
 
   Future<void> _ouvrirFiche(Lapin lapin) async {
@@ -143,7 +78,6 @@ class _LapinsListScreenState extends State<LapinsListScreen>
       context,
       CuPageRoute(builder: (_) => LapinDetailScreen(lapin: lapin)),
     );
-    _load();
   }
 
   // ── Build ──────────────────────────────────────────────────
@@ -152,6 +86,8 @@ class _LapinsListScreenState extends State<LapinsListScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hPad = context.hPad;
+    final listAsync = ref.watch(lapinsListProvider);
+    final notifier = ref.read(lapinsListProvider.notifier);
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
@@ -166,43 +102,39 @@ class _LapinsListScreenState extends State<LapinsListScreen>
         backgroundColor: CuColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          // ── Barre de recherche + filtres ──
-          _FiltersBar(
-            hPad: hPad,
-            filtreStatut: _filtreStatut,
-            filtreSexe: _filtreSexe,
-            onSearch: (v) => setState(() {
-              _search = v;
-              _applyFilter();
-            }),
-            onStatutChanged: (v) => setState(() {
-              _filtreStatut = v;
-              _applyFilter();
-            }),
-            onSexeChanged: (v) => setState(() {
-              _filtreSexe = v;
-              _applyFilter();
-            }),
-          ),
+      body: listAsync.when(
+        skipLoadingOnRefresh: true,
+        loading: () => _SkeletonList(),
+        error: (e, _) => _ErrorBody(message: '$e', onRetry: notifier.refresh),
+        data: (data) {
+          final filtered = _applyFilter(data.lapins);
+          final totalActifs = data.lapins.where((l) => l.statut == 'actif').length;
+          final totalMales =
+              data.lapins.where((l) => l.sexe == 'male' && l.statut == 'actif').length;
+          final totalFemelles = data.lapins
+              .where((l) => l.sexe == 'femelle' && l.statut == 'actif')
+              .length;
 
-          // ── Résumé rapide ──
-          _SummaryRow(
-            total: _filtered.length,
-            actifs: _totalActifs,
-            males: _totalMales,
-            femelles: _totalFemelles,
-            hPad: hPad,
-          ),
-
-          const SizedBox(height: CuSpacing.sm),
-
-          // ── Liste ──
-          Expanded(
-            child: _loading
-                ? _SkeletonList()
-                : _filtered.isEmpty
+          return Column(
+            children: [
+              _FiltersBar(
+                hPad: hPad,
+                filtreStatut: _filtreStatut,
+                filtreSexe: _filtreSexe,
+                onSearch: (v) => setState(() => _search = v),
+                onStatutChanged: (v) => setState(() => _filtreStatut = v),
+                onSexeChanged: (v) => setState(() => _filtreSexe = v),
+              ),
+              _SummaryRow(
+                total: filtered.length,
+                actifs: totalActifs,
+                males: totalMales,
+                femelles: totalFemelles,
+                hPad: hPad,
+              ),
+              const SizedBox(height: CuSpacing.sm),
+              Expanded(
+                child: filtered.isEmpty
                     ? CuEmptyState(
                         title: _search.isNotEmpty
                             ? 'Aucun résultat pour "$_search"'
@@ -216,13 +148,13 @@ class _LapinsListScreenState extends State<LapinsListScreen>
                       )
                     : RefreshIndicator(
                         color: CuColors.primary,
-                        onRefresh: _load,
+                        onRefresh: notifier.refresh,
                         child: ListView.builder(
-                          itemCount: _filtered.length +
-                              (_hasMore && _search.isEmpty ? 1 : 0),
+                          itemCount: filtered.length +
+                              (data.hasMore && _search.isEmpty ? 1 : 0),
                           itemBuilder: (_, i) {
-                            if (i >= _filtered.length) {
-                              _loadMore();
+                            if (i >= filtered.length) {
+                              notifier.loadMore();
                               return const Padding(
                                 padding: EdgeInsets.all(CuSpacing.lg),
                                 child: Center(
@@ -231,9 +163,9 @@ class _LapinsListScreenState extends State<LapinsListScreen>
                                 ),
                               );
                             }
-                            final l = _filtered[i];
+                            final l = filtered[i];
                             final cageNum = l.cageId != null
-                                ? _cageNumero[l.cageId]
+                                ? data.cageNumero[l.cageId]
                                 : l.cageLegacy;
                             return CuLapinTile(
                               bague: l.numeroBague,
@@ -251,8 +183,10 @@ class _LapinsListScreenState extends State<LapinsListScreen>
                           },
                         ),
                       ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -375,9 +309,9 @@ class _SummaryRow extends StatelessWidget {
                 ?.copyWith(color: secondary),
           ),
           const Spacer(),
-          _dot(const Color(0xFF1565C0), '♂ $males'),
+          _dot(CuColors.sexeMale, '♂ $males'),
           const SizedBox(width: CuSpacing.md),
-          _dot(const Color(0xFFEC407A), '♀ $femelles'),
+          _dot(CuColors.sexeFemelle, '♀ $femelles'),
         ],
       ),
     );
@@ -395,6 +329,51 @@ class _SummaryRow extends StatelessWidget {
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.w600, color: c)),
       ],
+    );
+  }
+}
+
+// ── Erreur ─────────────────────────────────────────────────────
+
+class _ErrorBody extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorBody({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(CuSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline,
+                size: 48, color: CuColors.danger),
+            const SizedBox(height: CuSpacing.md),
+            Text(
+              'Impossible de charger la liste',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: CuSpacing.xs),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: CuSpacing.lg),
+            CuButton(
+              label: 'Réessayer',
+              icon: Icons.refresh,
+              onPressed: onRetry,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

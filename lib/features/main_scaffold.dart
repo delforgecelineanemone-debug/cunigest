@@ -264,7 +264,7 @@ class _BottomBar extends StatelessWidget {
 // ── Chargement lapins + navigation saillie ─────────────────────
 
 Future<void> _openSaillieForm(BuildContext context) async {
-  final lapins = await DBHelper.instance.getAllLapins();
+  final lapins = await (await DBHelper.instance.lapins).getAllLapins();
   final map = {for (final l in lapins) l.id!: l};
   if (!context.mounted) return;
   Navigator.push(

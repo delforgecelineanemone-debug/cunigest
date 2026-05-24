@@ -17,11 +17,14 @@
 //   );
 // ──────────────────────────────────────────────────────────────
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../database/db_helper.dart';
 import '../models/lot.dart';
 import '../models/soin.dart';
 import '../models/stock.dart';
+import '../services/data_bus.dart';
 
 // ── Snapshot des données du tableau de bord ──────────────────
 
@@ -50,11 +53,44 @@ class DashboardData {
 // ── Notifier ──────────────────────────────────────────────────
 
 class DashboardNotifier extends AsyncNotifier<DashboardData> {
+  StreamSubscription<String>? _sub;
+  Timer? _debounce;
+
   @override
-  Future<DashboardData> build() => _load();
+  Future<DashboardData> build() {
+    // S'abonne au DataBus pour les tables qui alimentent le dashboard.
+    // Le ref.onDispose annule la souscription quand le provider est détruit.
+    _sub?.cancel();
+    _sub = DataBus.instance.subscribe(
+      const [
+        DataTopics.lapins,
+        DataTopics.ventes,
+        DataTopics.soins,
+        DataTopics.stocks,
+        DataTopics.lots,
+        DataTopics.saillies,
+        DataTopics.distributionsAliment,
+      ],
+      (_) => _scheduleRefresh(),
+    );
+    ref.onDispose(() {
+      _sub?.cancel();
+      _debounce?.cancel();
+    });
+    return _load();
+  }
+
+  /// Coalesce plusieurs broadcasts rapprochés en un seul refresh
+  /// (ex. une vente écrit dans `ventes` + `lapins` simultanément).
+  void _scheduleRefresh() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 50), refresh);
+  }
 
   Future<DashboardData> _load() async {
     final db = DBHelper.instance;
+    final (soinsRepo, stocksRepo, lapinsRepo, ventesRepo) =
+        await (db.soins, db.stocks, db.lapins, db.ventes).wait;
 
     final lotsF = db.lots.then((r) => r.getEnCours());
     final repartitionF = db.database
@@ -68,11 +104,11 @@ class DashboardNotifier extends AsyncNotifier<DashboardData> {
 
     final (rappels, stocks, lapinsStats, ventes, naissances, lots, repartition) =
         await (
-      db.getRappelsProchains(7),
-      db.getStocksCritiques(),
-      db.getStatistiquesLapins(),
-      db.getStatistiquesVentes(),
-      db.naissancesParMois(1),
+      soinsRepo.getRappelsProchains(7),
+      stocksRepo.getStocksCritiques(),
+      lapinsRepo.getStatistiquesLapins(),
+      ventesRepo.getStatistiquesVentes(),
+      lapinsRepo.naissancesParMois(1),
       lotsF,
       repartitionF,
     ).wait;
@@ -94,9 +130,12 @@ class DashboardNotifier extends AsyncNotifier<DashboardData> {
   }
 
   /// Force le rechargement complet (pull-to-refresh, retour de sous-écran).
-  /// [skipLoadingOnRefresh] dans le widget évite le flash de chargement.
+  /// On garde la donnée précédente affichée pendant le re-chargement
+  /// pour éviter un flash. Le widget peut ajouter `skipLoadingOnRefresh: true`.
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
+    // Préserve l'état "data" actuel pendant le refresh — le when()
+    // côté widget gardera l'ancien snapshot affiché si on utilise
+    // skipLoadingOnRefresh: true.
     state = await AsyncValue.guard(_load);
   }
 }

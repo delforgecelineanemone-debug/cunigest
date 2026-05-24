@@ -29,18 +29,66 @@ import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../database/db_helper.dart';
 import '../models/sync_entry.dart';
 import 'account_service.dart';
+import 'certificate_pinning_service.dart';
+import 'data_bus.dart';
+import 'kpi_service.dart';
+
+/// Mapping table SQLite → topic DataBus. Ajouter ici toute nouvelle
+/// table miroir pour propager les changements pull cloud à l'UI.
+const Map<String, String> _kTableToTopic = {
+  'lapins': DataTopics.lapins,
+  'saillies': DataTopics.saillies,
+  'soins': DataTopics.soins,
+  'stocks': DataTopics.stocks,
+  'ventes': DataTopics.ventes,
+  'lots': DataTopics.lots,
+  'pesees': DataTopics.pesees,
+  'distributions_aliment': DataTopics.distributionsAliment,
+  // V3.1 — tables ajoutées pour couverture complète
+  'depenses': DataTopics.depenses,
+  'batiments': DataTopics.batiments,
+  'clapiers': DataTopics.clapiers,
+  'cages': DataTopics.cages,
+  'mouvements_cage': DataTopics.mouvementsCage,
+  'pesees_lapin': DataTopics.peseesLapin,
+  // V17 — tables ajoutées (couverture exhaustive multi-device)
+  'consommations': DataTopics.stocks,
+  'lot_lapins': DataTopics.lots,
+  'taches_quotidiennes': DataTopics.taches,
+  'completions': DataTopics.completions,
+  'profil_eleveur': DataTopics.profil,
+  'reglages': DataTopics.reglages,
+};
 
 /// Liste ordonnée des tables à synchroniser.
 /// L'ordre garantit l'intégrité référentielle au pull (parents avant enfants).
 const List<String> kSyncedTables = [
-  'lapins',         // Référencé par saillies/soins/ventes
+  // Hiérarchie cages (parents → enfants)
+  'batiments',
+  'clapiers',
+  'cages',
+  // Cheptel principal
+  'lapins',         // Référencé par saillies/soins/ventes/mouvements/pesées
   'lots',           // Référencé par pesees/distributions
   'stocks',         // Référencé par distributions
+  // Mouvements & événements liés au cheptel
+  'mouvements_cage',
+  'pesees_lapin',
   'saillies',
   'soins',
   'ventes',
+  'depenses',
+  // Lots — production
   'pesees',
   'distributions_aliment',
+  // V17 — données auxiliaires (consommation, routines, profil utilisateur)
+  // pour qu'un changement de téléphone restaure un état complet.
+  'consommations',
+  'lot_lapins',
+  'taches_quotidiennes',
+  'completions',
+  'profil_eleveur',
+  'reglages',
 ];
 
 /// Résultat d'une opération de synchronisation
@@ -60,6 +108,40 @@ class SyncReport {
   });
 }
 
+/// Snapshot d'avancement émis pendant la sync (pour UI premium).
+class SyncProgress {
+  /// Phase courante : `'preparing' | 'pushing' | 'pulling' | 'finalizing' | 'done'`
+  final String phase;
+
+  /// Table en cours de traitement (null en preparing/finalizing/done).
+  final String? table;
+
+  /// Nombre d'éléments traités jusqu'ici (push + pull).
+  final int processed;
+
+  /// Total estimé d'éléments à traiter (peut être imprécis pour le pull).
+  final int total;
+
+  /// Message lisible affichable dans une modale.
+  final String message;
+
+  const SyncProgress({
+    required this.phase,
+    this.table,
+    required this.processed,
+    required this.total,
+    required this.message,
+  });
+
+  /// Fraction d'avancement entre 0.0 et 1.0 — utile pour ProgressIndicator.
+  /// Retourne null si on ne peut pas estimer (phase pull avant 1ʳᵉ row).
+  double? get fraction {
+    if (total <= 0) return null;
+    final f = processed / total;
+    return f.clamp(0.0, 1.0);
+  }
+}
+
 class SyncService {
   static final SyncService instance = SyncService._();
   SyncService._();
@@ -67,6 +149,8 @@ class SyncService {
   bool _running = false;
   bool _wasOffline = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  StreamSubscription<String>? _busSub;
+  Timer? _autoPushDebounce;
 
   /// Configuration courante (lue à chaque appel pour rester fraîche).
   Future<SyncConfig> _config() async {
@@ -221,11 +305,19 @@ class SyncService {
 
   /// Lance une synchronisation complète (push + pull).
   /// Idempotent : retourne immédiatement si déjà en cours.
-  Future<SyncReport> synchroniser() async {
+  Future<SyncReport> synchroniser({void Function(SyncProgress)? onProgress}) async {
     if (_running) {
       return const SyncReport(success: false, message: 'Sauvegarde déjà en cours');
     }
+    debugPrint('SYNC ▶ démarrage');
+    onProgress?.call(const SyncProgress(
+      phase: 'preparing',
+      processed: 0,
+      total: 0,
+      message: 'Préparation de la sauvegarde…',
+    ));
     if (!await _isOnline()) {
+      debugPrint('SYNC ⏸ hors-ligne');
       return const SyncReport(
         success: false,
         message: 'Pas de réseau. La sauvegarde reprendra automatiquement.',
@@ -237,6 +329,7 @@ class SyncService {
       var cfg = await _config();
       if (cfg.serverUrl == null || cfg.apiKey == null ||
           cfg.serverUrl!.isEmpty || cfg.apiKey!.isEmpty) {
+        debugPrint('SYNC ❌ serverUrl/apiKey vide');
         return const SyncReport(
             success: false,
             message: 'Sauvegarde cloud non disponible. Réinstalle l\'app.');
@@ -244,21 +337,53 @@ class SyncService {
       // Si le compte n'est pas encore lié au cloud (premier essai après
       // création offline du compte), tenter le lien maintenant.
       if (!cfg.isCloudLinked) {
+        debugPrint('SYNC 🔗 compte pas encore lié, tentative…');
         await AccountService.instance.tenterLienCloud();
         cfg = await _config();
       }
       if (!cfg.isCloudLinked) {
+        debugPrint('SYNC ❌ compte non lié au cloud après tentative');
         return const SyncReport(
             success: false,
             message: 'Pas de réseau pour la sauvegarde cloud. Réessaye plus tard.');
       }
+      debugPrint(
+          'SYNC ✅ lié (userId=${cfg.userId?.substring(0, 8)}…) — push…');
+
+      // P3.19 — Pre-flight certificate pinning : si activé, on vérifie
+      // l'empreinte TLS du serveur AVANT d'envoyer le moindre token.
+      // Bloque un proxy hostile / faux point d'accès Wi-Fi.
+      if (CertificatePinningService.instance.isEnabled) {
+        final safe = await CertificatePinningService.instance
+            .isSafeUrl(cfg.serverUrl!);
+        if (!safe) {
+          debugPrint('SYNC 🛑 certificat non reconnu — sync annulée (MITM ?)');
+          return const SyncReport(
+            success: false,
+            message:
+                'Connexion non sécurisée détectée. Sauvegarde annulée par précaution. '
+                'Change de réseau Wi-Fi et réessaye.',
+          );
+        }
+      }
 
       // 1. PUSH des modifications locales
-      final pushReport = await _pushPending(cfg);
+      final pushReport = await _pushPending(cfg, onProgress: onProgress);
+      debugPrint(
+          'SYNC ⬆ push : ${pushReport.success} OK, ${pushReport.errors} erreurs');
 
       // 2. PULL des modifications distantes
       cfg = await _config(); // Recharge pour avoir un éventuel token rafraîchi
+      debugPrint('SYNC ⬇ pull…');
+      onProgress?.call(SyncProgress(
+        phase: 'pulling',
+        processed: pushReport.success,
+        total: pushReport.success,
+        message: 'Récupération des changements cloud…',
+      ));
       final pullReport = await _pullDistant(cfg);
+      debugPrint(
+          'SYNC ⬇ pull : ${pullReport.success} OK, ${pullReport.errors} erreurs');
 
       // 3. Mise à jour du timestamp seulement si la sync est complète.
       final repo = await DBHelper.instance.sync;
@@ -271,6 +396,8 @@ class SyncService {
       }
 
       final allOk = pushReport.errors == 0 && pullReport.errors == 0;
+      KpiService.instance
+          .track(allOk ? KpiEvent.syncReussie : KpiEvent.syncEchouee);
       return SyncReport(
         success: allOk,
         pushed: pushReport.success,
@@ -282,6 +409,7 @@ class SyncService {
       );
     } catch (e) {
       debugPrint('Sync échec : $e');
+      KpiService.instance.track(KpiEvent.syncEchouee);
       return const SyncReport(
         success: false,
         message: 'Sauvegarde impossible. Vérifie ta connexion.',
@@ -291,17 +419,99 @@ class SyncService {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // INITIAL FULL PUSH — pour les données pré-existantes au cloud
+  // ═══════════════════════════════════════════════════════════
+
+  /// Ajoute toutes les lignes existantes des tables miroirs à la
+  /// `sync_queue` comme INSERT.
+  ///
+  /// Comportement :
+  /// - Si [forceAll] est `false` (défaut) : ignore les rows déjà connues
+  ///   de la sync_queue (déjà push ou en attente). **Idempotent**.
+  /// - Si [forceAll] est `true` : enqueue TOUTES les rows, peu importe
+  ///   l'historique de la sync_queue. **Utile au changement de cloud
+  ///   user** : les rows déjà push à l'ancien userId sont re-push au
+  ///   nouveau.
+  ///
+  /// Retourne le nombre de lignes ajoutées à la file.
+  Future<int> enqueueAllExistingRows({bool forceAll = false}) async {
+    final db = await DBHelper.instance.database;
+    final syncRepo = await DBHelper.instance.sync;
+    int enqueued = 0;
+
+    for (final table in kSyncedTables) {
+      try {
+        // 1. Si !forceAll, récupère les row_ids déjà connus pour skip.
+        Set<int> knownIds = const {};
+        if (!forceAll) {
+          final knownRows = await db.rawQuery(
+            'SELECT DISTINCT row_id FROM sync_queue WHERE table_name = ?',
+            [table],
+          );
+          knownIds = knownRows.map((r) => r['row_id'] as int).toSet();
+        }
+
+        // 2. Liste toutes les rows actuelles de la table.
+        final rows = await db.query(table);
+        int addedForTable = 0;
+        for (final row in rows) {
+          final id = row['id'] as int?;
+          if (id == null) {
+            debugPrint('SYNC 🆕 ⚠ $table : row sans id ignorée — $row');
+            continue;
+          }
+          if (!forceAll && knownIds.contains(id)) continue;
+
+          await syncRepo.enqueue(
+            tableName: table,
+            rowId: id,
+            operation: 'insert',
+            payload: row,
+          );
+          addedForTable++;
+          enqueued++;
+        }
+        debugPrint(
+            'SYNC 🆕 $table : ${rows.length} lignes, +$addedForTable en file${forceAll ? ' (force)' : ''}');
+      } catch (e) {
+        debugPrint('SYNC 🆕 ⚠ $table : $e');
+      }
+    }
+
+    debugPrint('SYNC 🆕 total ajouté à la file : $enqueued${forceAll ? ' (force)' : ''}');
+    return enqueued;
+  }
+
   // ── PUSH ──
 
-  Future<({int success, int errors})> _pushPending(SyncConfig cfg) async {
+  Future<({int success, int errors})> _pushPending(
+    SyncConfig cfg, {
+    void Function(SyncProgress)? onProgress,
+  }) async {
     final repo = await DBHelper.instance.sync;
-    final pending = await repo.getPending(limit: 200);
+    final pending = await repo.getPending(limit: 500);
     int success = 0;
     int errors = 0;
+    final total = pending.length;
 
+    debugPrint('SYNC ⬆ $total élément(s) en file');
+    onProgress?.call(SyncProgress(
+      phase: 'pushing',
+      processed: 0,
+      total: total,
+      message: total == 0
+          ? 'Aucune modification à envoyer'
+          : 'Envoi de $total modification${total > 1 ? "s" : ""}…',
+    ));
+
+    int processed = 0;
     for (final entry in pending) {
+      processed++;
       // On ne synchronise que les tables miroirs présentes côté serveur
       if (!kSyncedTables.contains(entry.tableName)) {
+        debugPrint(
+            'SYNC ⬆ skip ${entry.tableName} (pas dans kSyncedTables)');
         await repo.markSynced(entry.id!);
         continue;
       }
@@ -309,13 +519,43 @@ class SyncService {
         await _pushOne(cfg, entry);
         await repo.markSynced(entry.id!);
         success++;
+        debugPrint(
+            'SYNC ⬆ ✅ ${entry.operation} ${entry.tableName} #${entry.rowId}');
       } catch (e) {
         await repo.markFailed(entry.id!, e.toString());
         errors++;
+        debugPrint(
+            'SYNC ⬆ ❌ ${entry.operation} ${entry.tableName} #${entry.rowId} — $e');
       }
+      onProgress?.call(SyncProgress(
+        phase: 'pushing',
+        table: entry.tableName,
+        processed: processed,
+        total: total,
+        message: 'Envoi : $processed / $total — ${_humanTable(entry.tableName)}',
+      ));
     }
     return (success: success, errors: errors);
   }
+
+  /// Nom lisible d'une table pour les messages UI.
+  String _humanTable(String t) => switch (t) {
+        'lapins' => 'lapins',
+        'saillies' => 'saillies',
+        'soins' => 'soins',
+        'ventes' => 'ventes',
+        'stocks' => 'stocks',
+        'lots' => 'lots',
+        'pesees' => 'pesées (lots)',
+        'pesees_lapin' => 'pesées (individuelles)',
+        'distributions_aliment' => 'distributions',
+        'depenses' => 'dépenses',
+        'cages' => 'cages',
+        'batiments' => 'bâtiments',
+        'clapiers' => 'clapiers',
+        'mouvements_cage' => 'déplacements',
+        _ => t,
+      };
 
   Future<void> _pushOne(SyncConfig cfg, SyncEntry entry) async {
     final url = '${_clean(cfg.serverUrl!)}/rest/v1/${entry.tableName}';
@@ -365,6 +605,9 @@ class SyncService {
   Future<({int success, int errors})> _pullDistant(SyncConfig cfg) async {
     int success = 0;
     int errors = 0;
+    // Tables dont au moins une ligne a été modifiée localement par le pull —
+    // on broadcast sur le DataBus à la fin pour que toute l'UI se rafraîchisse.
+    final tablesTouched = <String>{};
     final lastSync = cfg.lastSyncAt ?? '1970-01-01T00:00:00Z';
 
     // Récupérer la liste des row_ids non encore synchronisés (qu'on ne veut
@@ -403,6 +646,7 @@ class SyncService {
 
               try {
                 await _applyRowToLocal(table, m, txn: txn);
+                tablesTouched.add(table);
                 success++;
               } catch (e) {
                 debugPrint('Pull apply échec $table:$rowId — $e');
@@ -420,6 +664,29 @@ class SyncService {
         debugPrint('Pull table $table échec : $e');
         errors++;
       }
+    }
+
+    // Broadcast les changements aux écrans abonnés — la magie de la sync :
+    // si un autre téléphone a ajouté un lapin, il apparaît instantanément
+    // dans la liste ouverte sans aucune action de l'utilisateur.
+    if (tablesTouched.isNotEmpty) {
+      final topics = tablesTouched
+          .map((t) => _kTableToTopic[t])
+          .whereType<String>()
+          .toList();
+      if (topics.isNotEmpty) {
+        debugPrint('Sync pull → broadcast topics: $topics');
+        DataBus.instance.notifyAll(topics);
+      }
+    }
+
+    // Pruning du log de conflits (rotation FIFO à 200 entrées) — hors
+    // transaction de pull pour ne pas allonger les locks SQLite.
+    try {
+      final repo = await DBHelper.instance.sync;
+      await repo.pruneConflicts();
+    } catch (e) {
+      debugPrint('SYNC ⚠ pruneConflicts échoué : $e');
     }
 
     return (success: success, errors: errors);
@@ -441,8 +708,16 @@ class SyncService {
   }
 
   /// Applique une ligne reçue du serveur dans la base locale.
-  /// - Si `deleted_at` non null → supprime localement
-  /// - Sinon → upsert sans REPLACE en retirant les colonnes serveur
+  /// - Si `deleted_at` non null côté remote → soft-delete local (jamais hard,
+  ///   pour préserver la récupération si pull est partiel/replayable).
+  /// - Sinon → last-write-wins basé sur `updated_at` (skip si local plus
+  ///   récent), puis upsert en conservant `updated_at` local pour audit.
+  ///
+  /// Écrasement de conflit : si une row locale existante avec son propre
+  /// `updated_at` non-null est remplacée par une row distante plus récente
+  /// (cas typique : un autre téléphone a modifié la même fiche entre temps),
+  /// on enregistre une trace dans `conflict_log` pour que l'éleveur puisse
+  /// comprendre où sa modif a « disparu ».
   Future<void> _applyRowToLocal(
     String table,
     Map<String, dynamic> row, {
@@ -453,17 +728,70 @@ class SyncService {
     final id = row['id'] as int?;
     if (id == null) return;
 
-    // Soft-delete distant → DELETE local
-    if (row['deleted_at'] != null) {
-      await executor.delete(table, where: 'id = ?', whereArgs: [id]);
+    final remoteDeletedAt = row['deleted_at'] as String?;
+    final remoteUpdatedAt = row['updated_at'] as String?;
+
+    // Soft-delete remote → soft-delete local (pas de hard delete)
+    if (remoteDeletedAt != null) {
+      await executor.update(
+        table,
+        {'deleted_at': remoteDeletedAt, 'updated_at': remoteUpdatedAt ?? remoteDeletedAt},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
       return;
     }
 
-    // Retirer les colonnes propres au serveur (non présentes en local)
+    // Last-write-wins : si la version locale est plus récente, on garde.
+    String? localUpdatedAt;
+    var isExistingRow = false;
+    if (remoteUpdatedAt != null) {
+      final existing = await executor.query(
+        table,
+        columns: ['updated_at'],
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) {
+        isExistingRow = true;
+        localUpdatedAt = existing.first['updated_at'] as String?;
+        if (localUpdatedAt != null && localUpdatedAt.compareTo(remoteUpdatedAt) >= 0) {
+          // Local est aussi récent ou plus récent → ne pas écraser
+          return;
+        }
+      }
+    }
+
+    // Conflit détecté : on s'apprête à écraser une row locale existante qui
+    // avait un updated_at non-null distinct du remote → trace d'audit.
+    // L'insertion se fait dans la même transaction que l'update pour rester
+    // atomique : si le commit échoue, le log disparaît aussi.
+    if (isExistingRow &&
+        localUpdatedAt != null &&
+        remoteUpdatedAt != null &&
+        localUpdatedAt != remoteUpdatedAt) {
+      try {
+        final syncRepo = await DBHelper.instance.sync;
+        await syncRepo.recordConflict(
+          tableName: table,
+          rowId: id,
+          localUpdatedAt: localUpdatedAt,
+          remoteUpdatedAt: remoteUpdatedAt,
+          executor: executor,
+        );
+        debugPrint(
+            'SYNC ⚠ conflit LWW : $table#$id (local=$localUpdatedAt < remote=$remoteUpdatedAt)');
+      } catch (e) {
+        debugPrint('SYNC ⚠ log conflit échoué : $e');
+      }
+    }
+
+    // Retirer les colonnes propres au serveur (mais conserver updated_at /
+    // deleted_at pour LWW futur). user_id non stocké en local : seul le
+    // sync_config contient le user courant.
     final clean = Map<String, dynamic>.from(row);
     clean.remove('user_id');
-    clean.remove('updated_at');
-    clean.remove('deleted_at');
 
     // Sanitize : convertir les bool en int (SQLite n'a pas de bool)
     clean.updateAll((k, v) {
@@ -503,13 +831,13 @@ class SyncService {
       };
       switch (method) {
         case 'GET':
-          return http.get(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 20));
+          return http.get(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 8));
         case 'POST':
-          return http.post(Uri.parse(url), headers: headers, body: body).timeout(const Duration(seconds: 20));
+          return http.post(Uri.parse(url), headers: headers, body: body).timeout(const Duration(seconds: 8));
         case 'PATCH':
-          return http.patch(Uri.parse(url), headers: headers, body: body).timeout(const Duration(seconds: 20));
+          return http.patch(Uri.parse(url), headers: headers, body: body).timeout(const Duration(seconds: 8));
         case 'DELETE':
-          return http.delete(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 20));
+          return http.delete(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 8));
         default:
           throw ArgumentError('Méthode HTTP inconnue : $method');
       }
@@ -549,6 +877,51 @@ class SyncService {
   void disposeConnectivity() {
     _connectivitySub?.cancel();
     _connectivitySub = null;
+  }
+
+  /// Auto-push debounced : écoute le `DataBus.syncQueue` et déclenche
+  /// une sauvegarde 3 secondes après la dernière modification locale.
+  ///
+  /// Résout le problème "les données ne sont prises en compte qu'au
+  /// prochain démarrage" — chaque modif locale est poussée vers le
+  /// cloud presque immédiatement, sans intervention utilisateur.
+  ///
+  /// Si l'utilisateur ajoute 10 lapins en 5s, on fait **1 seule sync**
+  /// après la dernière modif — pas 10. Économise la batterie et le réseau.
+  ///
+  /// À appeler une fois au démarrage (depuis main.dart).
+  void wireAutoPush() {
+    _busSub?.cancel();
+    _busSub = DataBus.instance.subscribe(
+      const [DataTopics.syncQueue],
+      (_) => _scheduleAutoPush(),
+    );
+    debugPrint('Sync 🤖 auto-push armé (debounce 3s)');
+  }
+
+  void _scheduleAutoPush() {
+    _autoPushDebounce?.cancel();
+    _autoPushDebounce = Timer(const Duration(seconds: 3), () async {
+      if (_running) return; // sync déjà en cours
+      try {
+        final ready = await isReady();
+        if (!ready) {
+          debugPrint('Sync 🤖 skip auto-push : compte non lié au cloud');
+          return;
+        }
+        debugPrint('Sync 🤖 auto-push déclenché');
+        await synchroniser();
+      } catch (e) {
+        debugPrint('Sync 🤖 auto-push erreur : $e');
+      }
+    });
+  }
+
+  void disposeAutoPush() {
+    _busSub?.cancel();
+    _busSub = null;
+    _autoPushDebounce?.cancel();
+    _autoPushDebounce = null;
   }
 
   Future<bool> _isOnline() async {

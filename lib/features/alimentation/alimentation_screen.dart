@@ -4,7 +4,9 @@
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/stock.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'stock_form_screen.dart';
@@ -16,8 +18,15 @@ class AlimentationScreen extends StatefulWidget {
   State<AlimentationScreen> createState() => _AlimentationScreenState();
 }
 
-class _AlimentationScreenState extends State<AlimentationScreen> {
+class _AlimentationScreenState extends State<AlimentationScreen>
+    with ReactiveStateMixin<AlimentationScreen> {
   final db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics => const [DataTopics.stocks];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
   List<Stock> _stocks = [];
   bool _loading = true;
   String _filtre = 'tous';
@@ -29,7 +38,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
   }
 
   Future<void> _load() async {
-    final stocks = await db.getAllStocks();
+    final stocks = await (await db.stocks).getAllStocks();
     if (mounted) setState(() { _stocks = stocks; _loading = false; });
   }
 
@@ -260,7 +269,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
                       message: 'Ce stock sera supprimé.',
                       confirmColor: AppTheme.error,
                     );
-                    if (ok) { await db.deleteStock(s.id!); _load(); }
+                    if (ok) { await (await db.stocks).deleteStock(s.id!); _load(); }
                   },
                   child: const Text('Supprimer'),
                 ),
@@ -304,7 +313,7 @@ class _AlimentationScreenState extends State<AlimentationScreen> {
     if (ok == true && ctrl.text.isNotEmpty) {
       final qte = double.tryParse(ctrl.text.replaceAll(',', '.'));
       if (qte != null && qte > 0 && qte <= stock.quantite) {
-        await db.consommerStock(stock.id!, qte, DateTime.now().toIso8601String().substring(0, 10));
+        await (await db.stocks).consommerStock(stock.id!, qte, DateTime.now().toIso8601String().substring(0, 10));
         _load();
         if (mounted) showSuccessSnackBar(context, 'Stock mis à jour');
       } else {

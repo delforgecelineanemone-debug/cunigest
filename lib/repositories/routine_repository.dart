@@ -4,6 +4,7 @@
 
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/tache.dart';
+import '../services/data_bus.dart';
 
 class RoutineRepository {
   final Database db;
@@ -73,15 +74,23 @@ class RoutineRepository {
   }
 
   Future<int> insertTache(Tache t) async {
-    return db.insert('taches_quotidiennes', t.toMap());
+    final id = await db.insert('taches_quotidiennes', t.toMap());
+    DataBus.instance.notify(DataTopics.taches);
+    return id;
   }
 
   Future<int> updateTache(Tache t) async {
-    return db.update('taches_quotidiennes', t.toMap(), where: 'id = ?', whereArgs: [t.id]);
+    final r = await db.update('taches_quotidiennes', t.toMap(),
+        where: 'id = ?', whereArgs: [t.id]);
+    DataBus.instance.notify(DataTopics.taches);
+    return r;
   }
 
   Future<int> deleteTache(int id) async {
-    return db.delete('taches_quotidiennes', where: 'id = ?', whereArgs: [id]);
+    final r = await db.delete('taches_quotidiennes',
+        where: 'id = ?', whereArgs: [id]);
+    DataBus.instance.notify(DataTopics.taches);
+    return r;
   }
 
   Future<bool> estTacheCompletee(int tacheId) async {
@@ -93,18 +102,24 @@ class RoutineRepository {
 
   Future<int> completerTache(int tacheId, {String? notes}) async {
     final now = DateTime.now();
-    return db.insert('completions', {
+    final id = await db.insert('completions', {
       'tache_id': tacheId,
       'date_completion': now.toIso8601String().substring(0, 10),
       'heure_completion': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
       'notes': notes,
     });
+    DataBus.instance.notify(DataTopics.completions);
+    DataBus.instance.notify(DataTopics.taches);
+    return id;
   }
 
   Future<int> deCompleterTache(int tacheId) async {
     final today = DateTime.now().toIso8601String().substring(0, 10);
-    return db.delete('completions',
+    final r = await db.delete('completions',
         where: 'tache_id = ? AND date_completion = ?', whereArgs: [tacheId, today]);
+    DataBus.instance.notify(DataTopics.completions);
+    DataBus.instance.notify(DataTopics.taches);
+    return r;
   }
 
   Future<Set<int>> getTachesCompleteesAujourdhui() async {

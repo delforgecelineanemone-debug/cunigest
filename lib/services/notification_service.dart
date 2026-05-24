@@ -139,7 +139,7 @@ class NotificationService {
       await _plugin.cancel(i);
     }
 
-    final reglages = await DBHelper.instance.getReglages();
+    final reglages = await (await DBHelper.instance.profil).getReglages();
     if (!reglages.notificationsActives) return;
 
     final matin = _parseHeure(reglages.heureRappelMatin) ?? const _Heure(7, 0);
@@ -211,12 +211,11 @@ class NotificationService {
       await _plugin.cancel(i);
     }
 
-    final reglages = await DBHelper.instance.getReglages();
+    final reglages = await (await DBHelper.instance.profil).getReglages();
     if (!reglages.notificationsActives) return;
 
     try {
-      final db = DBHelper.instance;
-      final alertes = await db.getAlertesActives();
+      final alertes = await (await DBHelper.instance.alertes).getAlertesActives();
       final today = DateTime.now().toIso8601String().substring(0, 10);
 
       int idCounter = _baseIdAlerte;
@@ -294,7 +293,7 @@ class NotificationService {
   /// Respecte les réglages : silencieux si gamification désactivée
   /// ou notifications globalement désactivées.
   Future<void> envoyerFelicitation(String titre, String message) async {
-    final reglages = await DBHelper.instance.getReglages();
+    final reglages = await (await DBHelper.instance.profil).getReglages();
     if (!reglages.notificationsActives || !reglages.gamificationActive) return;
 
     await _notificationImmediate(
@@ -309,7 +308,7 @@ class NotificationService {
   /// Programme la notification de rappel de streak (20h).
   /// Désactivée si la gamification est off.
   Future<void> rappelerStreak(int streakActuel) async {
-    final reglages = await DBHelper.instance.getReglages();
+    final reglages = await (await DBHelper.instance.profil).getReglages();
     await _plugin.cancel(_baseIdMotivation);
     if (!reglages.notificationsActives || !reglages.gamificationActive) return;
 
@@ -410,7 +409,7 @@ class NotificationService {
     await programmerRappelsQuotidiens();
     await programmerAlertesReproduction();
     try {
-      final profil = await DBHelper.instance.getProfil();
+      final profil = await (await DBHelper.instance.profil).getProfil();
       await rappelerStreak(profil.streakActuel);
     } catch (e) {
       debugPrint('Erreur programmation streak : $e');

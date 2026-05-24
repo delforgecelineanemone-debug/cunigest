@@ -75,6 +75,46 @@ class SyncEntry {
       );
 }
 
+/// Trace d'un conflit multi-device détecté au pull cloud.
+/// Une row distante a écrasé une row locale dont l'`updated_at` était
+/// antérieur. Sans ce log, l'éleveur ne saurait pas pourquoi une modif
+/// qu'il croyait avoir enregistrée a disparu après une sync.
+class ConflictEntry {
+  final int? id;
+  final String tableName;
+  final int rowId;
+  final String? localUpdatedAt;
+  final String? remoteUpdatedAt;
+  final String detectedAt;
+
+  const ConflictEntry({
+    this.id,
+    required this.tableName,
+    required this.rowId,
+    this.localUpdatedAt,
+    this.remoteUpdatedAt,
+    required this.detectedAt,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'table_name': tableName,
+        'row_id': rowId,
+        'local_updated_at': localUpdatedAt,
+        'remote_updated_at': remoteUpdatedAt,
+        'detected_at': detectedAt,
+      };
+
+  factory ConflictEntry.fromMap(Map<String, dynamic> m) => ConflictEntry(
+        id: m['id'] as int?,
+        tableName: m['table_name'] as String,
+        rowId: m['row_id'] as int,
+        localUpdatedAt: m['local_updated_at'] as String?,
+        remoteUpdatedAt: m['remote_updated_at'] as String?,
+        detectedAt: m['detected_at'] as String,
+      );
+}
+
 /// Configuration sync + compte cuniculteur unique
 ///
 /// Cette ligne (singleton, id=1) joue 2 rôles :
@@ -109,10 +149,20 @@ class SyncConfig {
     this.lastSyncAt,
   });
 
-  /// Le compte local est créé (email + hash présents).
+  /// Sentinel utilisée pour les comptes Google (pas de mot de passe local).
+  static const String googleOAuthSentinel = 'oauth:google';
+
+  /// Le compte local est créé. Accepté si :
+  ///   - email + hash mot de passe (legacy + nouveau email/pwd) OU
+  ///   - email + sentinel `oauth:*` (Google / Apple Sign-In V3.1)
   bool get hasLocalAccount =>
       email != null && email!.isNotEmpty &&
       passwordHash != null && passwordHash!.isNotEmpty;
+
+  /// True si le compte a été créé via OAuth (Google / Apple) — pas de PIN
+  /// hash à vérifier, la session est gérée par Supabase Auth.
+  bool get isOAuthAccount =>
+      passwordHash != null && passwordHash!.startsWith('oauth:');
 
   /// Le compte est lié au cloud (tokens valides).
   bool get isCloudLinked =>

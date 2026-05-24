@@ -217,6 +217,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
           prefixIcon: const Icon(Icons.calendar_today),
           suffixIcon: value != null ? IconButton(
             icon: const Icon(Icons.clear, size: 16),
+            tooltip: 'Effacer la date',
             onPressed: () => setState(() {
               if (label.contains('expiration')) {
                 _dateExpiration = null;
@@ -252,10 +253,11 @@ class _StockFormScreenState extends State<StockFormScreen> {
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
 
+    final stocksRepo = await db.stocks;
     if (widget.stock == null) {
-      await db.insertStock(stock);
+      await stocksRepo.insertStock(stock);
     } else {
-      await db.updateStock(stock);
+      await stocksRepo.updateStock(stock);
     }
 
     if (mounted) {

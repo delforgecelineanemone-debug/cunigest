@@ -36,7 +36,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
   }
 
   Future<void> _load() async {
-    final s = await db.getStatistiquesReproduction();
+    final s = await (await db.saillies).getStatistiquesReproduction();
     if (mounted) {
       setState(() {
         _stats = s;
@@ -55,6 +55,7 @@ class _StatsReproductionScreenState extends State<StatsReproductionScreen> {
         extraActions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Rafraîchir',
             onPressed: () {
               setState(() => _loading = true);
               _load();

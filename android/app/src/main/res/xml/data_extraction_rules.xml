@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Règles d'extraction de données (Android 12+).
+  CuniGest exclut toutes les données des sauvegardes cloud et des
+  transferts d'appareil : la base est chiffrée localement et la clé
+  est liée au Keystore du téléphone. Une copie sur un autre appareil
+  serait de toute façon illisible. Les sauvegardes utilisateur passent
+  exclusivement par l'export .cunigest chiffré par mot de passe.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

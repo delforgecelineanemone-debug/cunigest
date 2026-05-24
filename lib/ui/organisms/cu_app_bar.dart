@@ -20,7 +20,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/alertes/alertes_screen.dart';
-import '../../features/auth/login_screen.dart';
+import '../../features/auth/lock_screen.dart';
+import '../../services/auth/local_lock_service.dart';
+import '../../services/auth/session_manager.dart';
 import '../../features/qr/qr_scan_screen.dart';
 import '../../features/reglages/reglages_screen.dart';
 import '../../providers/state_providers.dart';
@@ -184,19 +186,32 @@ class CuAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    // V3.0 Auth refactor : « Déconnexion » = verrouillage immédiat.
+    // - Si un verrou local est configuré : on déclenche le LockScreen
+    //   via SessionManager → AuthGate overlay.
+    // - Sinon : on tombe quand même sur LockScreen plein écran qui
+    //   bascule vers Réglages → Sécurité si rien n'est configuré.
     final ok = await showConfirmDialog(
       context,
-      title: 'Se déconnecter ?',
-      message: 'Vous reviendrez à l\'écran de connexion.',
-      confirmLabel: 'Déconnexion',
+      title: 'Verrouiller maintenant ?',
+      message: 'L\'app sera verrouillée. Tu devras t\'authentifier '
+          'pour revenir.',
+      confirmLabel: 'Verrouiller',
     );
     if (!ok || !context.mounted) return;
     ref.read(sessionProvider.notifier).logout();
+    final mode = await LocalLockService.instance.currentMode();
     if (!context.mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    if (mode != LockMode.none) {
+      SessionManager.instance.lockNow();
+    } else {
+      // Pas de verrou configuré : on présente LockScreen plein écran
+      // qui guidera l'utilisateur vers la création d'un PIN.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LockScreen()),
+      );
+    }
   }
 }
 

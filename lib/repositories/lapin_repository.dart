@@ -7,6 +7,10 @@
 
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/lapin.dart';
+import '../services/data_bus.dart';
+import '../services/kpi_service.dart';
+import 'repository_validators.dart';
+import 'sync_meta.dart';
 
 class LapinRepository {
   final Database db;
@@ -17,8 +21,12 @@ class LapinRepository {
   /// Ajoute un nouveau lapin dans la base.
   /// Lance une `DatabaseException` en cas de doublon de numéro de bague.
   Future<int> insertLapin(Lapin lapin) async {
-    final id = await db.insert('lapins', lapin.toMap());
-    await enqueueSyncIfEnabled?.call('lapins', id, 'insert', {...lapin.toMap(), 'id': id});
+    RepositoryValidators.assertValidLapin(lapin);
+    final payload = stampUpdated(lapin.toMap());
+    final id = await db.insert('lapins', payload);
+    await enqueueSyncIfEnabled?.call('lapins', id, 'insert', {...payload, 'id': id});
+    DataBus.instance.notify(DataTopics.lapins);
+    KpiService.instance.track(KpiEvent.lapinCree);
     return id;
   }
 
@@ -26,6 +34,7 @@ class LapinRepository {
   Future<List<Lapin>> getAllLapins({int? limit, int? offset}) async {
     final maps = await db.query(
       'lapins',
+      where: kNotDeletedWhere,
       orderBy: 'date_creation DESC',
       limit: limit,
       offset: offset,
@@ -39,7 +48,7 @@ class LapinRepository {
     final placeholders = List.filled(uniqueIds.length, '?').join(',');
     final maps = await db.query(
       'lapins',
-      where: 'id IN ($placeholders)',
+      where: 'id IN ($placeholders) AND $kNotDeletedWhere',
       whereArgs: uniqueIds,
     );
     return {
@@ -50,46 +59,58 @@ class LapinRepository {
 
   /// Récupère les lapins par statut (actif, vendu, mort, sevrage)
   Future<List<Lapin>> getLapinsByStatut(String statut) async {
-    final maps = await db.query('lapins', where: 'statut = ?', whereArgs: [statut]);
+    final maps = await db.query('lapins',
+        where: 'statut = ? AND $kNotDeletedWhere', whereArgs: [statut]);
     return maps.map((m) => Lapin.fromMap(m)).toList();
   }
 
   /// Récupère les lapins actifs par sexe
   Future<List<Lapin>> getLapinsBySexe(String sexe) async {
-    final maps = await db.query('lapins', where: 'sexe = ? AND statut = ?', whereArgs: [sexe, 'actif']);
+    final maps = await db.query('lapins',
+        where: 'sexe = ? AND statut = ? AND $kNotDeletedWhere',
+        whereArgs: [sexe, 'actif']);
     return maps.map((m) => Lapin.fromMap(m)).toList();
   }
 
   /// Récupère un lapin par son ID
   Future<Lapin?> getLapinById(int id) async {
-    final maps = await db.query('lapins', where: 'id = ?', whereArgs: [id]);
+    final maps = await db.query('lapins',
+        where: 'id = ? AND $kNotDeletedWhere', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return Lapin.fromMap(maps.first);
   }
 
   /// Met à jour les informations d'un lapin
   Future<int> updateLapin(Lapin lapin) async {
-    final r = await db.update('lapins', lapin.toMap(), where: 'id = ?', whereArgs: [lapin.id]);
+    RepositoryValidators.assertValidLapin(lapin);
+    final payload = stampUpdated(lapin.toMap());
+    final r = await db.update('lapins', payload, where: 'id = ?', whereArgs: [lapin.id]);
     if (lapin.id != null) {
-      await enqueueSyncIfEnabled?.call('lapins', lapin.id!, 'update', lapin.toMap());
+      await enqueueSyncIfEnabled?.call('lapins', lapin.id!, 'update', payload);
     }
+    DataBus.instance.notify(DataTopics.lapins);
     return r;
   }
 
-  /// Supprime un lapin de la base.
-  /// Les soins liés seront supprimés en cascade ; les ventes et liens
-  /// généalogiques (pere_id/mere_id) seront mis à NULL.
+  /// Supprime un lapin de la base (soft-delete : `deleted_at` rempli).
+  /// La row est conservée localement jusqu'à confirmation du push cloud,
+  /// puis sera purgée. Les écrans filtrent automatiquement les rows soft-deleted.
   Future<int> deleteLapin(int id) async {
-    final r = await db.delete('lapins', where: 'id = ?', whereArgs: [id]);
-    await enqueueSyncIfEnabled?.call('lapins', id, 'delete', {'id': id});
+    final r = await softDelete(db, 'lapins', id);
+    await enqueueSyncIfEnabled?.call('lapins', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.lapins);
+    // Les soins/ventes liés restent ; ils seront masqués via le filtre lapin_id IS NULL ?
+    // Pour rester safe, on notifie aussi les topics dépendants.
+    DataBus.instance.notify(DataTopics.soins);
+    DataBus.instance.notify(DataTopics.ventes);
     return r;
   }
 
   /// Calcule les statistiques globales des lapins
   Future<Map<String, int>> getStatistiquesLapins() async {
-    final all = await db.rawQuery('SELECT statut, COUNT(*) as count FROM lapins GROUP BY statut');
-    final males = await db.rawQuery("SELECT COUNT(*) as count FROM lapins WHERE sexe='male' AND statut='actif'");
-    final femelles = await db.rawQuery("SELECT COUNT(*) as count FROM lapins WHERE sexe='femelle' AND statut='actif'");
+    final all = await db.rawQuery('SELECT statut, COUNT(*) as count FROM lapins WHERE deleted_at IS NULL GROUP BY statut');
+    final males = await db.rawQuery("SELECT COUNT(*) as count FROM lapins WHERE sexe='male' AND statut='actif' AND deleted_at IS NULL");
+    final femelles = await db.rawQuery("SELECT COUNT(*) as count FROM lapins WHERE sexe='femelle' AND statut='actif' AND deleted_at IS NULL");
     return {
       'total': all.fold(0, (sum, r) => sum + (r['count'] as int)),
       'actifs': all.where((r) => r['statut'] == 'actif').fold(0, (s, r) => s + (r['count'] as int)),

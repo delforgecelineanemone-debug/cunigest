@@ -65,7 +65,8 @@ class _DepenseFormScreenState extends State<DepenseFormScreen> {
   Future<void> _chargerImputables() async {
     final lotsRepo = await DBHelper.instance.lots;
     final lots = await lotsRepo.getAll();
-    final lapins = await DBHelper.instance.getLapinsByStatut('actif');
+    final lapins =
+        await (await DBHelper.instance.lapins).getLapinsByStatut('actif');
     if (!mounted) return;
     setState(() {
       _lots = lots;

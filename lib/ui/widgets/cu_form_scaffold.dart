@@ -35,11 +35,16 @@ import '../../utils/theme.dart';
 
 /// Contrôleur du formulaire. Expose un flag `isDirty` modifiable
 /// par le formulaire parent ; le scaffold l'écoute pour bloquer
-/// ou autoriser le pop.
+/// ou autoriser le pop. Expose aussi `isSaving` pour afficher un
+/// overlay bloquant pendant les sauvegardes (anti double-tap).
 class CuFormController extends ChangeNotifier {
   bool _isDirty = false;
+  bool _isSaving = false;
+  String? _savingMessage;
 
   bool get isDirty => _isDirty;
+  bool get isSaving => _isSaving;
+  String? get savingMessage => _savingMessage;
 
   /// Marque le formulaire comme modifié (à appeler dans onChanged).
   /// Idempotent : ne notifie que si l'état change réellement.
@@ -53,6 +58,24 @@ class CuFormController extends ChangeNotifier {
   void markClean() {
     if (!_isDirty) return;
     _isDirty = false;
+    notifyListeners();
+  }
+
+  /// Active l'overlay "Enregistrement…" (barrier modal + spinner).
+  /// L'utilisateur ne peut plus toucher le formulaire ni double-tapper
+  /// "Enregistrer" tant que [markSaved] n'est pas appelé.
+  void markSaving([String? message]) {
+    if (_isSaving && _savingMessage == message) return;
+    _isSaving = true;
+    _savingMessage = message;
+    notifyListeners();
+  }
+
+  /// Désactive l'overlay (à appeler en fin de save, success ou échec).
+  void markSaved() {
+    if (!_isSaving) return;
+    _isSaving = false;
+    _savingMessage = null;
     notifyListeners();
   }
 }
@@ -127,10 +150,57 @@ class CuFormScaffold extends StatelessWidget {
             appBar: appBar,
             backgroundColor: backgroundColor,
             floatingActionButton: floatingActionButton,
-            body: child,
+            body: Stack(
+              children: [
+                child,
+                if (controller.isSaving)
+                  _SavingOverlay(message: controller.savingMessage),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Overlay modal affiché pendant `controller.isSaving = true`.
+/// Bloque le double-tap "Enregistrer" et donne un feedback visuel clair.
+class _SavingOverlay extends StatelessWidget {
+  const _SavingOverlay({this.message});
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        absorbing: true,
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.35),
+          alignment: Alignment.center,
+          child: Card(
+            elevation: 6,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    message ?? 'Enregistrement…',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

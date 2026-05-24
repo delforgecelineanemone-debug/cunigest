@@ -64,11 +64,11 @@ class _LotIndividualisationScreenState
   Future<void> _load() async {
     // Charger saillie d'origine pour récupérer parents
     if (widget.lot.saillieId != null) {
-      final saillies = await db.getAllSaillies();
+      final saillies = await (await db.saillies).getAllSaillies();
       try {
         _saillie =
             saillies.firstWhere((s) => s.id == widget.lot.saillieId);
-        final lapins = await db.getAllLapins();
+        final lapins = await (await db.lapins).getAllLapins();
         try {
           _mere = lapins.firstWhere((l) => l.id == _saillie!.mereId);
         } catch (_) {/* mère supprimée */}
@@ -216,7 +216,7 @@ class _LotIndividualisationScreenState
           mereId: _saillie?.mereId,
           notes: 'Issu du lot ${widget.lot.code}',
         );
-        await db.insertLapin(lapin);
+        await (await db.lapins).insertLapin(lapin);
       }
 
       // Mettre à jour le lot

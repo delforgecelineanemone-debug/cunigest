@@ -74,6 +74,26 @@ abstract final class CuColors {
   static const cageQuarantaine = Color(0xFFB45309);
   static const cageDesinfection = Color(0xFF7B1FA2);
   static const cageMaintenance = Color(0xFF424242);
+
+  // ── Sémantique sexe (FK des badges, dots, icônes) ──
+  /// ♂ male — bleu (réutilise accentTools).
+  static const sexeMale = accentTools;
+  /// ♀ femelle — rose (cohérent avec gestante/allaitement).
+  static const sexeFemelle = cageGestante;
+
+  // ── Sémantique timeline (fiche lapin / mouvements / soins) ──
+  /// Événement naissance (lapereau né).
+  static const timelineNaissance = cageGestante;
+  /// Événement saillie (accouplement).
+  static const timelineSaillie = accentRepro;
+  /// Événement soin / vaccin.
+  static const timelineSoin = accentTools;
+  /// Événement mise-bas.
+  static const timelineMiseBas = accentRepro;
+  /// Mouvement de cage : entrée (corail).
+  static const timelineMouvementEntree = accentFeed;
+  /// Mouvement de cage : sortie (warning).
+  static const timelineMouvementSortie = warning;
 }
 
 /// Helpers d'accès aux couleurs sémantiques en fonction du thème courant.

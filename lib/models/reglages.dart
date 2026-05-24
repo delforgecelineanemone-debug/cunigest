@@ -45,7 +45,7 @@ class Reglages {
     this.notificationsActives = true,
     this.themeMode = 'system',
     this.onboardingDone = false,
-    this.devise = '€',
+    this.devise = 'FCFA',
     this.modeSoleil = false,
     this.modeGants = false,
   });
@@ -75,7 +75,7 @@ class Reglages {
         notificationsActives: (m['notifications_actives'] ?? 1) == 1,
         themeMode: (m['theme_mode'] as String?) ?? 'system',
         onboardingDone: (m['onboarding_done'] ?? 0) == 1,
-        devise: (m['devise'] as String?) ?? '€',
+        devise: (m['devise'] as String?) ?? 'FCFA',
         modeSoleil: (m['mode_soleil'] ?? 0) == 1,
         modeGants: (m['mode_gants'] ?? 0) == 1,
       );

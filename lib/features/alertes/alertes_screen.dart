@@ -15,7 +15,9 @@ import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
 import '../../models/alerte.dart';
 import '../../models/lot.dart';
+import '../../services/data_bus.dart';
 import '../../ui/cu_ui.dart';
+import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import '../lots/lot_individualisation_screen.dart';
@@ -26,8 +28,16 @@ class AlertesScreen extends StatefulWidget {
   State<AlertesScreen> createState() => _AlertesScreenState();
 }
 
-class _AlertesScreenState extends State<AlertesScreen> {
+class _AlertesScreenState extends State<AlertesScreen>
+    with ReactiveStateMixin<AlertesScreen> {
   final db = DBHelper.instance;
+
+  @override
+  List<String> get watchedTopics =>
+      const [DataTopics.alertes, DataTopics.saillies, DataTopics.lapins];
+
+  @override
+  Future<void> onReactiveRefresh() => _load();
   List<Alerte> _alertes = [];
   bool _loading = true;
 
@@ -41,9 +51,10 @@ class _AlertesScreenState extends State<AlertesScreen> {
     // Générer les nouvelles alertes basées sur les données
     await db.genererAlertesReproduction();
     // Nettoyer les anciennes alertes traitées
-    await db.nettoyerAlertes();
+    final alertesRepo = await db.alertes;
+    await alertesRepo.nettoyerAlertes();
     // Charger les alertes actives
-    final alertes = await db.getAlertesActives();
+    final alertes = await alertesRepo.getAlertesActives();
     if (mounted) setState(() { _alertes = alertes; _loading = false; });
   }
 
@@ -152,7 +163,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
         child: const Icon(Icons.check, color: Colors.white, size: 30),
       ),
       onDismissed: (_) async {
-        await db.marquerAlerteTraitee(a.id!);
+        await (await db.alertes).marquerAlerteTraitee(a.id!);
         _load();
         if (mounted) showSuccessSnackBar(context, 'Alerte traitée ✅');
       },
@@ -254,7 +265,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
                     ),
                   TextButton.icon(
                     onPressed: () async {
-                      await db.marquerAlerteTraitee(a.id!);
+                      await (await db.alertes).marquerAlerteTraitee(a.id!);
                       _load();
                       if (mounted) showSuccessSnackBar(context, 'Alerte traitée ✅');
                     },
@@ -277,7 +288,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
       lot = await repo.getById(a.referenceId!);
     } else if (a.referenceType == 'saillie' && a.referenceId != null) {
       // Chercher le lot via la saillie
-      final saillies = await db.getAllSaillies();
+      final saillies = await (await db.saillies).getAllSaillies();
       try {
         final s = saillies.firstWhere((x) => x.id == a.referenceId);
         if (s.lotId != null) {
@@ -316,7 +327,7 @@ class _AlertesScreenState extends State<AlertesScreen> {
     );
     if (ok) {
       for (final a in _alertes) {
-        await db.marquerAlerteTraitee(a.id!);
+        await (await db.alertes).marquerAlerteTraitee(a.id!);
       }
       _load();
       if (mounted) showSuccessSnackBar(context, 'Toutes les alertes traitées ✅');

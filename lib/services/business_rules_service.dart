@@ -124,7 +124,7 @@ class BusinessRules {
   }) async {
     final tag = bague.trim();
     if (tag.isEmpty) return null;
-    final lapins = await DBHelper.instance.getAllLapins();
+    final lapins = await (await DBHelper.instance.lapins).getAllLapins();
     final doublon = lapins.firstWhere(
       (l) =>
           l.numeroBague.toLowerCase() == tag.toLowerCase() &&

@@ -53,11 +53,12 @@ class _SanteScreenState extends State<SanteScreen>
   Future<void> _load() async {
     if (!mounted) return;
     setState(() => _loading = true);
+    final (soinsRepo, lapinsRepo) = await (db.soins, db.lapins).wait;
     final (soins, rappels) = await (
-      db.getAllSoins(limit: _pageSize),
-      db.getRappelsProchains(14),
+      soinsRepo.getAllSoins(limit: _pageSize),
+      soinsRepo.getRappelsProchains(14),
     ).wait;
-    final map = await db.getLapinsByIds([
+    final map = await lapinsRepo.getLapinsByIds([
       ...soins.where((s) => s.lapinId != null).map((s) => s.lapinId!),
       ...rappels.where((s) => s.lapinId != null).map((s) => s.lapinId!),
     ]);
@@ -84,8 +85,9 @@ class _SanteScreenState extends State<SanteScreen>
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore || _filtre != 'tous') return;
     setState(() => _loadingMore = true);
-    final next = await db.getAllSoins(limit: _pageSize, offset: _soins.length);
-    final map = await db.getLapinsByIds(
+    final next = await (await db.soins)
+        .getAllSoins(limit: _pageSize, offset: _soins.length);
+    final map = await (await db.lapins).getLapinsByIds(
         next.where((s) => s.lapinId != null).map((s) => s.lapinId!));
     for (var s in next) {
       s.lapinNom = s.lapinId != null
@@ -256,15 +258,16 @@ class _SanteScreenState extends State<SanteScreen>
     await UndoHelper.deleteWithUndo(
       context: context,
       label: 'Soin du ${s.dateSoin}',
-      delete: () => db.deleteSoin(s.id!).then((_) {}),
-      restore: () => db.insertSoin(s).then((_) {}),
+      delete: () async => (await db.soins).deleteSoin(s.id!).then((_) {}),
+      restore: () async => (await db.soins).insertSoin(s).then((_) {}),
       onUndone: _load,
     );
     _load();
   }
 
   Future<Map<int, Lapin>> _lapinsActifsMap() async {
-    final lapins = await db.getLapinsByStatut('actif');
+    final lapins =
+        await (await db.lapins).getLapinsByStatut('actif');
     return {for (final l in lapins) if (l.id != null) l.id!: l};
   }
 }

@@ -155,4 +155,58 @@ void main() {
       expect(loaded.hasLocalAccount, isTrue);
     });
   });
+
+  // P1.11 — backoff exponentiel : une entrée qui échoue est mise en
+  // cooldown (next_retry_at futur) et exclue temporairement du push.
+  group('backoff exponentiel', () {
+    test('markFailed pose un next_retry_at dans le futur', () async {
+      final id = await enq();
+      await repo.markFailed(id, 'boom');
+      final row =
+          (await db.query('sync_queue', where: 'id = ?', whereArgs: [id]))
+              .first;
+      final nextRetry = row['next_retry_at'] as String?;
+      expect(nextRetry, isNotNull);
+      final dt = DateTime.parse(nextRetry!);
+      expect(dt.isAfter(DateTime.now().toUtc()), isTrue);
+    });
+
+    test('une entrée en cooldown est exclue de getPending', () async {
+      final id = await enq();
+      // Avant échec : présente dans la file.
+      expect((await repo.getPending()).any((e) => e.id == id), isTrue);
+
+      await repo.markFailed(id, 'boom');
+      // Après échec : en cooldown → absente de la file.
+      expect((await repo.getPending()).any((e) => e.id == id), isFalse);
+    });
+
+    test('une entrée dont le cooldown est passé redevient éligible',
+        () async {
+      final id = await enq();
+      await repo.markFailed(id, 'boom');
+      // On force un next_retry_at déjà dépassé (simule l'attente écoulée).
+      await db.update(
+        'sync_queue',
+        {
+          'next_retry_at': DateTime.now()
+              .toUtc()
+              .subtract(const Duration(seconds: 1))
+              .toIso8601String()
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      expect((await repo.getPending()).any((e) => e.id == id), isTrue);
+    });
+
+    test('le backoff est strictement croissant et plafonné', () {
+      final b = SyncRepository.kBackoffSeconds;
+      expect(b, isNotEmpty);
+      for (var i = 1; i < b.length; i++) {
+        expect(b[i], greaterThan(b[i - 1]),
+            reason: 'délai $i doit dépasser le précédent');
+      }
+    });
+  });
 }

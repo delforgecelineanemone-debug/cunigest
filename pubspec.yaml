@@ -70,9 +70,13 @@ dependencies:
   # ── Réseau / détection connectivité (D.5) ──
   connectivity_plus: ^6.1.0
 
-  # ── Sync cloud Supabase (V2.1) ──
-  # Auth (email/JWT) + push/pull via REST. Pas besoin de supabase_flutter.
+  # ── Sync cloud Supabase (V2.1 → V3.1) ──
+  # V3.1 : migration vers supabase_flutter pour Google Sign-In + Realtime.
+  # Le sync_service legacy continue à utiliser http pour le push/pull REST
+  # (compat). Le client supabase_flutter gère Auth + Realtime.
   http: ^1.2.2
+  supabase_flutter: ^2.5.6
+  google_sign_in: ^6.2.1
 
   # ── Crash reporting (Phase A.2) ──
   sentry_flutter: ^8.0.0
@@ -82,9 +86,6 @@ dependencies:
 
   # ── Ouverture URL (politique de confidentialité — Phase A.5) ──
   url_launcher: ^6.3.2
-
-  # ── Typographie Inter (CuniUI Design System — Phase R1) ──
-  google_fonts: ^6.2.1
 
 dev_dependencies:
   sentry_dart_plugin: ^3.3.0
@@ -105,6 +106,15 @@ flutter:
   assets:
     - assets/icons/
     - assets/logo/
+
+  # ── Typographie Inter — police variable bundlée (CuniUI) ──
+  # Bundlée dans l'app : aucun téléchargement réseau au 1er lancement,
+  # rendu identique hors-ligne. Licence SIL OFL 1.1 (assets/fonts/Inter-OFL.txt).
+  # Le fichier variable couvre toutes les graisses via l'axe « wght ».
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
 
 # ── Configuration flutter_launcher_icons ──────────────────────
 flutter_launcher_icons:

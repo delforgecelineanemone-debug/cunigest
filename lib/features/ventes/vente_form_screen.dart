@@ -113,7 +113,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
       return;
     }
     setState(() => _checkingDelai = true);
-    final soin = await db.getSoinDelaiAttenteActif(lapinId);
+    final soin = await (await db.soins).getSoinDelaiAttenteActif(lapinId);
     if (mounted) {
       setState(() {
         _delaiActif = soin;
@@ -509,7 +509,7 @@ class _VenteFormScreenState extends State<VenteFormScreen> {
     );
 
     try {
-      await db.insertVente(vente);
+      await (await db.ventes).insertVente(vente);
       if (mounted) {
         _formCtrl.markClean();
         showSuccessSnackBar(context, 'Vente enregistrée !');

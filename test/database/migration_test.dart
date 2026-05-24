@@ -32,11 +32,13 @@ void main() {
         'batiments', 'clapiers', 'cages', 'mouvements_cage',
         // V9
         'pesees_lapin', 'depenses',
+        // V20
+        'conflict_log',
       };
       expect(tables, containsAll(expected));
     });
 
-    test('table reglages a la colonne devise par défaut "€"', () async {
+    test('table reglages a la colonne devise par défaut "FCFA"', () async {
       final cols = await tableColumns(db, 'reglages');
       expect(cols, contains('devise'));
       expect(cols, contains('theme_mode'));
@@ -44,7 +46,7 @@ void main() {
 
       final rows = await db.query('reglages');
       expect(rows.length, 1, reason: 'seed devrait insérer un singleton');
-      expect(rows.first['devise'], '€');
+      expect(rows.first['devise'], 'FCFA');
       expect(rows.first['theme_mode'], 'system');
     });
 
@@ -235,6 +237,97 @@ void main() {
       expect(depensesCols, containsAll(['lot_id', 'lapin_id'])); // v12
     });
 
+    // ──────────────────────────────────────────────────────────
+    // V17→V19 — focus sur le chemin de mise à jour V2.5 (le risque
+    // identifié en revue de code : 21 tables ALTER TABLE + backfill,
+    // FCFA par défaut, next_retry_at sur sync_queue).
+    // ──────────────────────────────────────────────────────────
+
+    test('migration v16→v19 : soft-delete présent sur toutes les tables sync',
+        () async {
+      // Note : le `setUp` partagé du group démarre en v1, mais l'isolation
+      // de `inMemoryDatabasePath` entre tests n'est pas garantie — les tests
+      // précédents peuvent avoir laissé la DB à kCurrentDbVersion. Pas de
+      // sanity check sur l'absence des colonnes : `_addColumn` est idempotent
+      // (rethrow uniquement les erreurs ≠ « duplicate column »), donc le
+      // chemin v1→19 reste valide même si déjà partiellement migré.
+      await upgradeSchema(db, 1, 19);
+
+      // Insère une row de contrôle dans lapins. À ce stade, soft-delete
+      // existe — le backfill du UPDATE v17 a déjà fait son travail, donc
+      // on met updated_at explicitement à NULL pour vérifier que le test
+      // ne dépend pas d'un état précédent.
+      await db.delete('lapins', where: 'numero_bague = ?', whereArgs: ['BAG-MIG-001']);
+      final lapinId = await db.insert('lapins', {
+        'numero_bague': 'BAG-MIG-001',
+        'sexe': 'femelle',
+        'date_creation': today,
+      });
+
+      // Toutes les tables sync ont updated_at + deleted_at.
+      for (final table in kSoftDeleteTables) {
+        final cols = await tableColumns(db, table);
+        expect(cols, contains('updated_at'),
+            reason: 'updated_at manquant sur table "$table" après v17');
+        expect(cols, contains('deleted_at'),
+            reason: 'deleted_at manquant sur table "$table" après v17');
+      }
+
+      // Le lapin nouvellement inséré a un updated_at non-null (backfill
+      // direct ou ajout au moment de l'INSERT selon le chemin) OU NULL.
+      // L'important : la colonne existe et est queryable.
+      final lapins =
+          await db.query('lapins', where: 'id = ?', whereArgs: [lapinId]);
+      expect(lapins, isNotEmpty);
+      expect(lapins.first.containsKey('updated_at'), isTrue,
+          reason: 'colonne updated_at doit exister sur la row');
+      expect(lapins.first['deleted_at'], isNull,
+          reason: 'deleted_at par défaut NULL = ligne active');
+
+      // sync_queue : next_retry_at présent (v18).
+      final syncCols = await tableColumns(db, 'sync_queue');
+      expect(syncCols, contains('next_retry_at'),
+          reason: 'next_retry_at manquant sur sync_queue après v18');
+    });
+
+    test('migration v19 préserve une devise choisie manuellement (USD, etc.)',
+        () async {
+      // Comme expliqué plus haut : on assume éventuellement déjà migré.
+      // L'utilisateur a explicitement choisi USD APRÈS v19 → v19 (rejoué)
+      // ne doit JAMAIS l'écraser car la WHERE est sur '€'/NULL/vide.
+      await upgradeSchema(db, 1, 19);
+      await db.update('reglages', {'devise': 'USD'});
+      // Re-rejouer le bloc v19 pour confirmer l'idempotence.
+      await upgradeSchema(db, 18, 19);
+      final reglages = await db.query('reglages');
+      expect(reglages.first['devise'], 'USD',
+          reason: 'v19 doit préserver un choix explicite (≠ NULL/vide/€)');
+    });
+
+    test('migration v19→v20 crée la table conflict_log + son index',
+        () async {
+      // On migre directement jusqu'à v20. Pas de sanity check préalable :
+      // l'isolation entre tests n'est pas garantie sur inMemoryDatabasePath.
+      // Ce qui compte : à la fin, la table conflict_log + son index existent
+      // avec le bon schéma.
+      await upgradeSchema(db, 1, kCurrentDbVersion);
+
+      // Table créée avec les bonnes colonnes.
+      expect(await listTables(db), contains('conflict_log'));
+      final cols = await tableColumns(db, 'conflict_log');
+      expect(cols,
+          containsAll([
+            'id',
+            'table_name',
+            'row_id',
+            'local_updated_at',
+            'remote_updated_at',
+            'detected_at',
+          ]));
+
+      // Index créé.
+      expect(await listIndexes(db), contains('idx_conflict_log_detected'));
+    });
   });
 
   group('parité schéma : install fraîche ≡ migration v1→v14', () {

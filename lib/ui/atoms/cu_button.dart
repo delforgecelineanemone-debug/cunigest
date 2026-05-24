@@ -109,26 +109,33 @@ class CuButton extends StatelessWidget {
             ],
           );
 
-    final inner = GestureDetector(
-      onTap: disabled
-          ? null
-          : () {
-              HapticFeedback.lightImpact();
-              onPressed!();
-            },
-      child: AnimatedOpacity(
-        opacity: disabled ? 0.48 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
-          height: height,
-          padding: EdgeInsets.symmetric(horizontal: hPad),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: CuRadius.mdAll,
-            border: borderColor != null ? Border.all(color: borderColor) : null,
+    final inner = Semantics(
+      button: true,
+      enabled: !disabled,
+      label: label,
+      hint: loading ? 'En cours de chargement' : null,
+      child: GestureDetector(
+        onTap: disabled
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onPressed!();
+              },
+        child: AnimatedOpacity(
+          opacity: disabled ? 0.48 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            height: height,
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: CuRadius.mdAll,
+              border:
+                  borderColor != null ? Border.all(color: borderColor) : null,
+            ),
+            alignment: Alignment.center,
+            child: child,
           ),
-          alignment: Alignment.center,
-          child: child,
         ),
       ),
     );

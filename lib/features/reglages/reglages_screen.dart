@@ -9,6 +9,7 @@
 // - Heures de notifications quotidiennes
 // ──────────────────────────────────────────────────────────────
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +47,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   }
 
   Future<void> _load() async {
-    final r = await db.getReglages();
+    final r = await (await db.profil).getReglages();
     if (mounted) {
       setState(() {
         _reglages = r;
@@ -56,7 +57,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
   }
 
   Future<void> _save(Reglages r) async {
-    await db.updateReglages(r);
+    await (await db.profil).updateReglages(r);
     setState(() => _reglages = r);
     // Met à jour le ReglagesState (pour MaterialApp themeMode notamment)
     if (mounted) await ref.read(reglagesProvider.notifier).refresh();
@@ -147,7 +148,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                       ListTile(
                         leading: const Icon(Icons.save_alt, color: AppTheme.primary),
                         title: const Text('Créer une sauvegarde'),
-                        subtitle: const Text('Exporter votre base de données'),
+                        subtitle: const Text('Fichier chiffré par mot de passe'),
                         trailing: _busy
                             ? const SizedBox(
                                 width: 18, height: 18,
@@ -363,26 +364,31 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                   ),
                 ],
 
-                const SizedBox(height: 16),
-                // ── Section À propos ──
-                _sectionTitle('🧪 Test & développement'),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.science_outlined,
-                        color: Colors.deepPurple),
-                    title: const Text('Insérer des données de test'),
-                    subtitle: const Text(
-                        '12 lapins variés + cages + saillies + lots + ventes pour tester l\'app'),
-                    trailing: _busy
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.chevron_right),
-                    onTap: _busy ? null : _insererDonneesTest,
+                // Section dev : visible UNIQUEMENT en debug/profile.
+                // En release (build Play Store), aucun moyen d'insérer
+                // les données de test → impossible de polluer un vrai
+                // élevage par un appui maladroit.
+                if (kDebugMode) ...[
+                  const SizedBox(height: 16),
+                  _sectionTitle('🧪 Test & développement'),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.science_outlined,
+                          color: Colors.deepPurple),
+                      title: const Text('Insérer des données de test'),
+                      subtitle: const Text(
+                          '12 lapins variés + cages + saillies + lots + ventes pour tester l\'app'),
+                      trailing: _busy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.chevron_right),
+                      onTap: _busy ? null : _insererDonneesTest,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
 
                 _sectionTitle('ℹ️ À propos'),
                 Card(
@@ -429,8 +435,11 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
       );
 
   Future<void> _exporter() async {
+    // Sauvegarde locale chiffrée (.cunigest) — protégée par mot de passe.
+    final motDePasse = await _demanderMotDePasse(confirmNeeded: true);
+    if (motDePasse == null || !mounted) return;
     setState(() => _busy = true);
-    final r = await BackupService.instance.exporter();
+    final r = await BackupService.instance.exporterChiffre(motDePasse);
     if (!mounted) return;
     setState(() => _busy = false);
     if (r.success) {
@@ -652,6 +661,7 @@ class _ReglagesScreenState extends ConsumerState<ReglagesScreen> {
                     subtitle: Text('$size Ko — ${date.day}/${date.month}/${date.year} ${date.hour}h${date.minute.toString().padLeft(2, '0')}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      tooltip: 'Supprimer cette sauvegarde',
                       onPressed: () async {
                         // Capture Navigator AVANT l'await pour éviter
                         // l'usage de BuildContext post-async.

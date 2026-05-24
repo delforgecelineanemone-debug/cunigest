@@ -49,10 +49,27 @@ class CuLapinTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sexeColor =
-        sexe == 'femelle' ? const Color(0xFFEC407A) : CuColors.accentTools;
+        sexe == 'femelle' ? CuColors.sexeFemelle : CuColors.sexeMale;
     final sexeIcon = sexe == 'femelle' ? Icons.female : Icons.male;
 
-    return Dismissible(
+    // A11y : énoncé complet de la tuile pour les lecteurs d'écran.
+    final sexeLabel = sexe == 'femelle' ? 'femelle' : 'mâle';
+    final semanticLabel = [
+      'Lapin $bague',
+      sexeLabel,
+      statut,
+      if (race != null && race!.isNotEmpty) race,
+      if (poids != null) '${poids!.toStringAsFixed(2)} kilos',
+      if (cage != null && cage!.isNotEmpty) 'cage $cage',
+      if (note != null && note!.isNotEmpty) note,
+      if (alerte) 'alerte',
+    ].join(', ');
+
+    return Semantics(
+      label: semanticLabel,
+      button: onTap != null,
+      excludeSemantics: true,
+      child: Dismissible(
       key: ValueKey('lapin_$bague'),
       direction: DismissDirection.horizontal,
       confirmDismiss: (_) async => false, // swipe = actions, pas de suppression
@@ -220,6 +237,7 @@ class CuLapinTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

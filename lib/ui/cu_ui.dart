@@ -14,6 +14,7 @@ export 'atoms/cu_button.dart';
 export 'atoms/cu_badge.dart';
 export 'atoms/cu_chip_filter.dart';
 export 'atoms/cu_avatar.dart';
+export 'atoms/cu_input.dart';
 
 // ── Molecules ──
 export 'molecules/cu_kpi_card.dart';

@@ -26,31 +26,36 @@ class CuBadge extends StatelessWidget {
     final bg = filled ? color : color.withValues(alpha: 0.12);
     final fg = filled ? Colors.white : color;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: CuSpacing.sm,
-        vertical: 3,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: CuRadius.fullAll,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: (fontSize ?? 12) + 1, color: fg),
-            const SizedBox(width: 3),
-          ],
-          Text(
-            label,
-            style: CuTypography.textTheme.labelSmall?.copyWith(
-              fontSize: fontSize ?? 12,
-              fontWeight: FontWeight.w600,
-              color: fg,
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: CuSpacing.sm,
+          vertical: 3,
+        ),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: CuRadius.fullAll,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              ExcludeSemantics(
+                child: Icon(icon, size: (fontSize ?? 12) + 1, color: fg),
+              ),
+              const SizedBox(width: 3),
+            ],
+            Text(
+              label,
+              style: CuTypography.textTheme.labelSmall?.copyWith(
+                fontSize: fontSize ?? 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

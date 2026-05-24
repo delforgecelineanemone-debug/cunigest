@@ -12,7 +12,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../database/db_helper.dart';
 import '../../services/auth/local_lock_service.dart';
+import '../../services/encryption_key_service.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
@@ -33,6 +35,9 @@ class _SecuriteConnexionScreenState extends State<SecuriteConnexionScreen> {
   bool _hasPin = false;
   bool _bioAvailable = false;
   int _reLockMin = LocalLockService.defaultReLockMinutes;
+  int _keyAgeDays = 0;
+  bool _keyNeedsRotation = false;
+  bool _rotating = false;
 
   @override
   void initState() {
@@ -45,12 +50,16 @@ class _SecuriteConnexionScreenState extends State<SecuriteConnexionScreen> {
     final hasPin = await _lock.hasPinSet();
     final bio = await _lock.isBiometryAvailable();
     final rl = await _lock.reLockMinutes();
+    final keyAge = await EncryptionKeyService.instance.keyAgeInDays();
+    final needsRotation = await EncryptionKeyService.instance.needsRotation();
     if (!mounted) return;
     setState(() {
       _mode = mode;
       _hasPin = hasPin;
       _bioAvailable = bio;
       _reLockMin = rl;
+      _keyAgeDays = keyAge;
+      _keyNeedsRotation = needsRotation;
       _loading = false;
     });
   }
@@ -146,10 +155,67 @@ class _SecuriteConnexionScreenState extends State<SecuriteConnexionScreen> {
                   ],
                 ],
 
+                // ── Chiffrement de la base (P3.19) ──
+                const SizedBox(height: 16),
+                _sectionTitle('Chiffrement des données'),
+                Card(
+                  child: ListTile(
+                    leading: Icon(Icons.key,
+                        color: _keyNeedsRotation
+                            ? CuColors.warning
+                            : AppTheme.primary),
+                    title: const Text('Clé de chiffrement de la base'),
+                    subtitle: Text(
+                      _keyNeedsRotation
+                          ? 'Clé âgée de $_keyAgeDays jours — rotation recommandée.'
+                          : 'Clé âgée de $_keyAgeDays jour${_keyAgeDays > 1 ? "s" : ""}. '
+                              'La base est chiffrée (SQLCipher AES-256).',
+                    ),
+                    trailing: _rotating
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _roterCle,
+                            child: const Text('Renouveler'),
+                          ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
               ],
             ).responsive(),
     );
+  }
+
+  /// Rotation manuelle de la clé SQLCipher (re-chiffrement complet).
+  Future<void> _roterCle() async {
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Renouveler la clé de chiffrement ?',
+      message:
+          'Toute la base de données va être re-chiffrée avec une nouvelle '
+          'clé. L\'opération est sûre et ne touche pas tes données — '
+          'elle prend quelques secondes.\n\n'
+          'Garde l\'application ouverte jusqu\'à la fin.',
+      confirmLabel: 'Renouveler',
+    );
+    if (!ok || !mounted) return;
+    setState(() => _rotating = true);
+    final reussi = await DBHelper.instance.rotateEncryptionKey();
+    if (!mounted) return;
+    setState(() => _rotating = false);
+    if (reussi) {
+      await _refresh();
+      if (mounted) {
+        showSuccessSnackBar(context, 'Clé de chiffrement renouvelée.');
+      }
+    } else {
+      showErrorSnackBar(
+          context, 'Renouvellement impossible. Ta clé actuelle reste valable.');
+    }
   }
 
   // ── Construction des tiles ──────────────────────────────────

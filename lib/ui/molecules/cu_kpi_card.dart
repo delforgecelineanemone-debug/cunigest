@@ -34,16 +34,27 @@ class CuKpiCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? CuColors.cardDark : CuColors.cardLight;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: CuRadius.mdAll,
-          boxShadow: isDark ? CuShadows.none : CuShadows.level1,
+    // A11y : un lecteur d'écran annonce « <label> : <valeur> [delta] »
+    // au lieu de lire séparément l'icône, le chiffre et le texte.
+    final semanticLabel = loading
+        ? '$label, chargement en cours'
+        : '$label : $value${delta != null ? ', évolution $delta' : ''}';
+
+    return Semantics(
+      label: semanticLabel,
+      button: onTap != null,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: CuRadius.mdAll,
+            boxShadow: isDark ? CuShadows.none : CuShadows.level1,
+          ),
+          padding: const EdgeInsets.all(CuSpacing.lg),
+          child: loading ? _skeleton(isDark) : _content(isDark),
         ),
-        padding: const EdgeInsets.all(CuSpacing.lg),
-        child: loading ? _skeleton(isDark) : _content(isDark),
       ),
     );
   }

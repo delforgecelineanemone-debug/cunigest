@@ -5,13 +5,16 @@
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/alerte.dart';
 import '../models/lapin.dart';
+import '../services/data_bus.dart';
 
 class AlerteRepository {
   final Database db;
   AlerteRepository(this.db);
 
   Future<int> insertAlerte(Alerte a) async {
-    return db.insert('alertes', a.toMap());
+    final id = await db.insert('alertes', a.toMap());
+    DataBus.instance.notify(DataTopics.alertes);
+    return id;
   }
 
   Future<List<Alerte>> getAlertesActives() async {
@@ -32,19 +35,27 @@ class AlerteRepository {
   }
 
   Future<int> marquerAlerteLue(int id) async {
-    return db.update('alertes', {'est_lue': 1}, where: 'id = ?', whereArgs: [id]);
+    final r = await db.update('alertes', {'est_lue': 1},
+        where: 'id = ?', whereArgs: [id]);
+    DataBus.instance.notify(DataTopics.alertes);
+    return r;
   }
 
   Future<int> marquerAlerteTraitee(int id) async {
-    return db.update('alertes', {'est_traitee': 1, 'est_lue': 1}, where: 'id = ?', whereArgs: [id]);
+    final r = await db.update('alertes', {'est_traitee': 1, 'est_lue': 1},
+        where: 'id = ?', whereArgs: [id]);
+    DataBus.instance.notify(DataTopics.alertes);
+    return r;
   }
 
   /// Supprime les alertes traitées de plus de 30 jours
   Future<int> nettoyerAlertes() async {
     final limite = DateTime.now().subtract(const Duration(days: 30))
         .toIso8601String().substring(0, 10);
-    return db.delete('alertes',
+    final r = await db.delete('alertes',
         where: 'est_traitee = 1 AND date_alerte < ?', whereArgs: [limite]);
+    if (r > 0) DataBus.instance.notify(DataTopics.alertes);
+    return r;
   }
 
   /// Génère les alertes automatiques depuis les saillies en attente.

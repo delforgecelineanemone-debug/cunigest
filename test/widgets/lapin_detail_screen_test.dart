@@ -1,23 +1,17 @@
 // ─────────────────────────────────────────────────────────────
-// Widget test : LapinDetailScreen — smoke minimal
-// ─────────────────────────────────────────────────────────────
-// L'écran charge beaucoup de données via DBHelper en initState()
-// (soins, parents, cage, pesées, dépenses, ventes). Sans hook
-// d'injection, ces appels échouent silencieusement et l'écran
-// affiche les valeurs initiales (lapin reçu en argument).
+// Tests widget : LapinDetailScreen
 //
-// On teste donc le squelette structurel :
+// Depuis P1.8, l'écran est un ConsumerStatefulWidget alimenté par
+// `lapinDetailProvider` (AsyncNotifierProvider.family). Les tests
+// overrident ce provider avec un faux notifier qui renvoie des
+// données fixes — pas besoin de base de données réelle.
+//
+// On vérifie :
 //   - AppBar : displayName du lapin (nom > bague)
 //   - 3 icônes directes (QR, pedigree, edit) + menu overflow (delete)
 //   - Aucun crash au build
 //
-// V2.5 — Sprint 4 : Delete a été déplacé dans un PopupMenuButton pour
-// éviter les mis-tap (avant 4 IconButtons collés à 32dp). Le test
-// vérifie maintenant la présence du menu overflow.
-//
-// Les tests avec données chargées (soins, généalogie, timeline)
-// seront faits dans une itération future avec hooks debug ou
-// injection des repositories.
+// V2.5 — Sprint 4 : Delete déplacé dans un PopupMenuButton.
 // ─────────────────────────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -25,6 +19,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestion_cunicole/features/lapins/lapin_detail_screen.dart';
 import 'package:gestion_cunicole/models/lapin.dart';
+import 'package:gestion_cunicole/providers/lapin_detail_notifier.dart';
+
+/// Faux notifier : renvoie une fiche complète sans toucher la base.
+class _FakeLapinDetailNotifier extends LapinDetailNotifier {
+  _FakeLapinDetailNotifier(this._lapin);
+  final Lapin _lapin;
+
+  @override
+  Future<LapinDetailData> build(int arg) async {
+    return LapinDetailData(
+      lapin: _lapin,
+      soins: const [],
+      mvts: const [],
+      pesees: const [],
+      saillies: const [],
+      depensesLapin: 0,
+      ventesLapin: 0,
+    );
+  }
+}
 
 void main() {
   setUp(() {
@@ -34,9 +48,18 @@ void main() {
   Future<void> pumpDetail(WidgetTester tester, Lapin lapin) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          // Override du family entier — tous les lapinId pointent vers
+          // le faux notifier (suffisant : un seul lapin par test).
+          lapinDetailProvider.overrideWith(
+            () => _FakeLapinDetailNotifier(lapin),
+          ),
+        ],
         child: MaterialApp(home: LapinDetailScreen(lapin: lapin)),
       ),
     );
+    // 1er pump = loading, 2e = data (le Future du notifier résout).
+    await tester.pump();
     await tester.pump();
   }
 
@@ -50,8 +73,6 @@ void main() {
     );
     await pumpDetail(tester, lapin);
 
-    // displayName = nom (Bella) car non-vide.
-    // Apparaît au moins 2 fois (AppBar + header card de l'écran).
     expect(find.text('Bella'), findsAtLeastNWidgets(1));
   });
 
@@ -60,11 +81,9 @@ void main() {
       id: 2,
       numeroBague: 'M-2026-042',
       sexe: 'male',
-      // pas de nom
     );
     await pumpDetail(tester, lapin);
 
-    // displayName = numeroBague
     expect(find.text('M-2026-042'), findsAtLeastNWidgets(1));
   });
 
@@ -81,7 +100,7 @@ void main() {
     expect(find.byIcon(Icons.qr_code), findsOneWidget);
     expect(find.byIcon(Icons.account_tree), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsOneWidget);
-    // Delete dans le menu overflow (icône more_vert visible).
+    // Delete + mortalité dans le menu overflow (icône more_vert visible).
     expect(find.byIcon(Icons.more_vert), findsOneWidget);
     // Delete pas visible sans ouverture du menu.
     expect(find.byIcon(Icons.delete_outline), findsNothing);

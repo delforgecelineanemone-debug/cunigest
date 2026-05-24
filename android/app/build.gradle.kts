@@ -58,8 +58,10 @@ android {
 
     defaultConfig {
         applicationId = "com.cunigest.gestion_cunicole"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 34
+        // minSdk 23 : secure storage + biométrie fiables (Android 6+).
+        minSdk = maxOf(flutter.minSdkVersion, 23)
+        // targetSdk 35 : minimum exigé par Google Play depuis fin 2025.
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

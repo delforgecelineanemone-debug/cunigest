@@ -2,41 +2,25 @@
 // Logique DB inchangée · Cartes overflow-proof · Wrap dates & résultats
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../database/db_helper.dart';
 import '../../models/saillie.dart';
-import '../../models/lapin.dart';
-import '../../services/data_bus.dart';
+import '../../providers/reproduction_notifier.dart';
 import '../../ui/cu_ui.dart';
 import '../../utils/cu_page_route.dart';
-import '../../utils/reactive_state_mixin.dart';
 import '../../utils/theme.dart';
 import '../../widgets/common_widgets.dart';
 import 'saillie_form_screen.dart';
 
-class ReproductionScreen extends StatefulWidget {
+class ReproductionScreen extends ConsumerStatefulWidget {
   const ReproductionScreen({super.key});
 
   @override
-  State<ReproductionScreen> createState() => _ReproductionScreenState();
+  ConsumerState<ReproductionScreen> createState() => _ReproductionScreenState();
 }
 
-class _ReproductionScreenState extends State<ReproductionScreen>
-    with ReactiveStateMixin<ReproductionScreen> {
-  final db = DBHelper.instance;
-
-  @override
-  List<String> get watchedTopics =>
-      const [DataTopics.saillies, DataTopics.lapins];
-
-  @override
-  Future<void> onReactiveRefresh() => _load();
-  List<Saillie> _saillies = [];
-  Map<int, Lapin> _lapinsMap = {};
-  bool _loading = true;
-  bool _loadingMore = false;
-  bool _hasMore = true;
+class _ReproductionScreenState extends ConsumerState<ReproductionScreen> {
   String _filtre = 'tous';
-  static const int _pageSize = 60;
 
   static const _filtres = [
     ('tous', 'Tous'),
@@ -47,62 +31,15 @@ class _ReproductionScreenState extends State<ReproductionScreen>
     ('echec', 'Échecs'),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    if (!mounted) return;
-    setState(() => _loading = true);
-    final saillies = await db.getAllSaillies(limit: _pageSize);
-    final map = await _lapinsForSaillies(saillies);
-    for (var s in saillies) {
-      s.mereNom = map[s.mereId]?.displayName ?? '?';
-      s.pereNom = map[s.pereId]?.displayName ?? '?';
-    }
-    if (!mounted) return;
-    setState(() {
-      _saillies = saillies;
-      _lapinsMap = map;
-      _hasMore = saillies.length == _pageSize;
-      _loading = false;
-    });
-  }
-
-  Future<void> _loadMore() async {
-    if (_loadingMore || !_hasMore || _filtre != 'tous') return;
-    setState(() => _loadingMore = true);
-    final next =
-        await db.getAllSaillies(limit: _pageSize, offset: _saillies.length);
-    final map = await _lapinsForSaillies(next);
-    for (var s in next) {
-      s.mereNom = map[s.mereId]?.displayName ?? '?';
-      s.pereNom = map[s.pereId]?.displayName ?? '?';
-    }
-    if (!mounted) return;
-    setState(() {
-      _lapinsMap.addAll(map);
-      _saillies.addAll(next);
-      _hasMore = next.length == _pageSize;
-      _loadingMore = false;
-    });
-  }
-
-  Future<Map<int, Lapin>> _lapinsForSaillies(List<Saillie> saillies) =>
-      db.getLapinsByIds(saillies.expand((s) => [s.mereId, s.pereId]));
-
-  List<Saillie> get _filtered => _filtre == 'tous'
-      ? _saillies
-      : _saillies.where((s) => s.statut == _filtre).toList();
-
-  int _count(String statut) =>
-      _saillies.where((s) => s.statut == statut).length;
+  List<Saillie> _applyFilter(List<Saillie> all) => _filtre == 'tous'
+      ? all
+      : all.where((s) => s.statut == _filtre).toList();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final reproAsync = ref.watch(reproductionProvider);
+    final notifier = ref.read(reproductionProvider.notifier);
 
     return Scaffold(
       backgroundColor: isDark ? CuColors.bgDark : CuColors.bgLight,
@@ -119,71 +56,92 @@ class _ReproductionScreenState extends State<ReproductionScreen>
         backgroundColor: CuColors.accentRepro,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          // ── KPIs rapides ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                CuSpacing.lg, CuSpacing.lg, CuSpacing.lg, 0),
-            child: Row(
+      body: reproAsync.when(
+        skipLoadingOnRefresh: true,
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: CuColors.accentRepro),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: _MiniKpi(
-                    label: 'En attente',
-                    count: _count('en_attente'),
-                    color: CuColors.warning,
-                  ),
-                ),
-                const SizedBox(width: CuSpacing.sm),
-                Expanded(
-                  child: _MiniKpi(
-                    label: 'Mise bas',
-                    count: _count('mise_bas'),
-                    color: CuColors.accentTools,
-                  ),
-                ),
-                const SizedBox(width: CuSpacing.sm),
-                Expanded(
-                  child: _MiniKpi(
-                    label: 'Sevrage',
-                    count: _count('sevrage'),
-                    color: CuColors.accentRepro,
-                  ),
+                const Icon(Icons.error_outline, size: 48, color: CuColors.danger),
+                const SizedBox(height: 12),
+                Text('Erreur : $e', textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: notifier.refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Réessayer'),
                 ),
               ],
             ),
           ),
-
-          // ── Filtres ──
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: CuSpacing.lg, vertical: CuSpacing.md),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _filtres.map((f) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: CuSpacing.sm),
-                    child: CuChipFilter(
-                      label: f.$2,
-                      selected: _filtre == f.$1,
-                      color: CuColors.accentRepro,
-                      onTap: () => setState(() => _filtre = f.$1),
+        ),
+        data: (data) {
+          final filtered = _applyFilter(data.saillies);
+          return Column(
+            children: [
+              // ── KPIs rapides ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    CuSpacing.lg, CuSpacing.lg, CuSpacing.lg, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _MiniKpi(
+                        label: 'En attente',
+                        count: data.count('en_attente'),
+                        color: CuColors.warning,
+                      ),
                     ),
-                  );
-                }).toList(),
+                    const SizedBox(width: CuSpacing.sm),
+                    Expanded(
+                      child: _MiniKpi(
+                        label: 'Mise bas',
+                        count: data.count('mise_bas'),
+                        color: CuColors.accentTools,
+                      ),
+                    ),
+                    const SizedBox(width: CuSpacing.sm),
+                    Expanded(
+                      child: _MiniKpi(
+                        label: 'Sevrage',
+                        count: data.count('sevrage'),
+                        color: CuColors.accentRepro,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
 
-          // ── Liste ──
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                        color: CuColors.accentRepro),
-                  )
-                : _filtered.isEmpty
+              // ── Filtres ──
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: CuSpacing.lg, vertical: CuSpacing.md),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _filtres.map((f) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: CuSpacing.sm),
+                        child: CuChipFilter(
+                          label: f.$2,
+                          selected: _filtre == f.$1,
+                          color: CuColors.accentRepro,
+                          onTap: () => setState(() => _filtre = f.$1),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+              // ── Liste ──
+              Expanded(
+                child: filtered.isEmpty
                     ? CuEmptyState(
                         title: 'Aucune saillie',
                         hint: 'Enregistrez votre premier accouplement.',
@@ -194,15 +152,15 @@ class _ReproductionScreenState extends State<ReproductionScreen>
                       )
                     : RefreshIndicator(
                         color: CuColors.accentRepro,
-                        onRefresh: _load,
+                        onRefresh: notifier.refresh,
                         child: ListView.builder(
                           padding: const EdgeInsets.fromLTRB(
                               CuSpacing.lg, 0, CuSpacing.lg, 88),
-                          itemCount: _filtered.length +
-                              (_hasMore && _filtre == 'tous' ? 1 : 0),
+                          itemCount: filtered.length +
+                              (data.hasMore && _filtre == 'tous' ? 1 : 0),
                           itemBuilder: (_, i) {
-                            if (i >= _filtered.length) {
-                              _loadMore();
+                            if (i >= filtered.length) {
+                              notifier.loadMore();
                               return const Padding(
                                 padding: EdgeInsets.all(CuSpacing.lg),
                                 child: Center(
@@ -212,41 +170,45 @@ class _ReproductionScreenState extends State<ReproductionScreen>
                               );
                             }
                             return _SaillieCard(
-                              saillie: _filtered[i],
-                              onEdit: () => _modifier(_filtered[i]),
-                              onDelete: () => _supprimer(_filtered[i]),
+                              saillie: filtered[i],
+                              onEdit: () => _modifier(filtered[i]),
+                              onDelete: () => _supprimer(filtered[i]),
                             );
                           },
                         ),
                       ),
-          ),
-        ],
-      ).responsive(),
+              ),
+            ],
+          ).responsive();
+        },
+      ),
     );
   }
 
   Future<void> _ajouter() async {
-    final formMap = await _lapinsActifsMap();
+    final formMap =
+        await ref.read(reproductionProvider.notifier).lapinsActifsMap();
     if (!mounted) return;
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       CuPageRoute(builder: (_) => SaillieFormScreen(lapinsMap: formMap)),
     );
-    if (result == true) _load();
+    // Pas de refresh manuel : le DataBus rafraîchit via ReproductionNotifier.
   }
 
   Future<void> _modifier(Saillie s) async {
-    final formMap = await _lapinsActifsMap();
+    final formMap =
+        await ref.read(reproductionProvider.notifier).lapinsActifsMap();
     if (!mounted) return;
     await Navigator.push(
       context,
       CuPageRoute(
           builder: (_) => SaillieFormScreen(saillie: s, lapinsMap: formMap)),
     );
-    _load();
   }
 
   Future<void> _supprimer(Saillie s) async {
+    final db = DBHelper.instance;
     final ok = await showConfirmDialog(
       context,
       title: 'Supprimer cette saillie ?',
@@ -259,16 +221,9 @@ class _ReproductionScreenState extends State<ReproductionScreen>
     await UndoHelper.deleteWithUndo(
       context: context,
       label: 'Saillie du ${s.dateSaillie}',
-      delete: () => db.deleteSaillie(s.id!).then((_) {}),
-      restore: () => db.insertSaillie(s).then((_) {}),
-      onUndone: _load,
+      delete: () async => (await db.saillies).deleteSaillie(s.id!).then((_) {}),
+      restore: () async => (await db.saillies).insertSaillie(s).then((_) {}),
     );
-    _load();
-  }
-
-  Future<Map<int, Lapin>> _lapinsActifsMap() async {
-    final lapins = await db.getLapinsByStatut('actif');
-    return {for (final l in lapins) if (l.id != null) l.id!: l};
   }
 }
 

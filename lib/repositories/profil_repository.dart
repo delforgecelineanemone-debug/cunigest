@@ -5,6 +5,7 @@
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/profil.dart';
 import '../models/reglages.dart';
+import '../services/data_bus.dart';
 
 class ProfilRepository {
   final Database db;
@@ -24,7 +25,10 @@ class ProfilRepository {
   }
 
   Future<int> updateProfil(ProfilEleveur p) async {
-    return db.update('profil_eleveur', p.toMap(), where: 'id = ?', whereArgs: [p.id]);
+    final r = await db.update('profil_eleveur', p.toMap(),
+        where: 'id = ?', whereArgs: [p.id]);
+    DataBus.instance.notify(DataTopics.profil);
+    return r;
   }
 
   /// Met à jour le streak et le score après complétion ou décomplétion.
@@ -161,6 +165,9 @@ class ProfilRepository {
   }
 
   Future<int> updateReglages(Reglages r) async {
-    return db.update('reglages', r.toMap(), where: 'id = ?', whereArgs: [r.id]);
+    final res = await db.update('reglages', r.toMap(),
+        where: 'id = ?', whereArgs: [r.id]);
+    DataBus.instance.notify(DataTopics.reglages);
+    return res;
   }
 }

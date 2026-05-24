@@ -107,6 +107,16 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       setState(() => _erreurPin = 'PIN trop court');
       return;
     }
+    // Brute-force guard : refuser si lockout actif.
+    final remaining = await _lock.pinLockoutSecondsRemaining();
+    if (remaining > 0) {
+      if (!mounted) return;
+      setState(() {
+        _erreurPin = 'Trop de tentatives. Réessaye dans ${_formatLockout(remaining)}.';
+        _pinCtrl.clear();
+      });
+      return;
+    }
     setState(() {
       _busy = true;
       _erreurPin = null;
@@ -116,15 +126,31 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     if (ok) {
       await _deverrouiller();
     } else {
+      final newRemaining = await _lock.pinLockoutSecondsRemaining();
+      if (!mounted) return;
       setState(() {
         _busy = false;
-        _erreurPin = 'PIN incorrect';
+        _erreurPin = newRemaining > 0
+            ? 'PIN incorrect. Verrouillage ${_formatLockout(newRemaining)}.'
+            : 'PIN incorrect';
         _pinCtrl.clear();
       });
     }
   }
 
+  String _formatLockout(int seconds) {
+    if (seconds < 60) return '$seconds s';
+    final minutes = (seconds / 60).ceil();
+    return '$minutes min';
+  }
+
   Future<void> _deverrouiller() async {
+    // Libère le focus du champ PIN AVANT que l'overlay LockScreen ne soit
+    // retiré de l'arbre par l'AuthGate : un TextField focalisé désactivé
+    // pendant cette mutation provoque le crash "dirty InputDecorator in
+    // wrong build scope". L'overlay n'étant pas une route, l'observer de
+    // navigation global ne le couvre pas — on le fait donc ici.
+    FocusManager.instance.primaryFocus?.unfocus();
     await ref.read(sessionManagerProvider).markUnlocked();
     if (!mounted) return;
     if (!widget.fromBoot) {
@@ -204,6 +230,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       const SizedBox(height: 40),
       IconButton(
         iconSize: 72,
+        tooltip: 'Déverrouiller par empreinte',
         onPressed: _busy ? null : _lancerBiometrie,
         icon: const Icon(
           Icons.fingerprint,

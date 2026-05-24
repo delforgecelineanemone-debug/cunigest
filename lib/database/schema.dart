@@ -9,12 +9,41 @@
 // ET ajouter une branche `oldVersion < N` dans `upgradeSchema`.
 // ──────────────────────────────────────────────────────────────
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/reglages.dart';
 import '../utils/app_config.dart';
 
 /// Version courante du schéma de base de données.
-const int kCurrentDbVersion = 16;
+const int kCurrentDbVersion = 20;
+
+/// Tables soumises à la sync cloud — doivent porter `updated_at` + `deleted_at`
+/// localement pour : (1) last-write-wins fiable au pull et (2) soft-delete
+/// résilient (les rows ne sont jamais physiquement supprimées tant que la
+/// sync n'a pas confirmé l'opération côté serveur).
+const List<String> kSoftDeleteTables = [
+  'lapins',
+  'saillies',
+  'soins',
+  'stocks',
+  'ventes',
+  'depenses',
+  'lots',
+  'pesees',
+  'distributions_aliment',
+  'batiments',
+  'clapiers',
+  'cages',
+  'mouvements_cage',
+  'pesees_lapin',
+  'consommations',
+  'lot_lapins',
+  'taches_quotidiennes',
+  'completions',
+  'profil_eleveur',
+  'badges',
+  'reglages',
+];
 
 /// Active les contraintes de clés étrangères (SQLite les ignore par défaut).
 Future<void> onConfigureSchema(Database db) async {
@@ -244,7 +273,7 @@ Future<void> createSchema(Database db, int version) async {
       notifications_actives INTEGER DEFAULT 1,
       theme_mode TEXT DEFAULT 'system',
       onboarding_done INTEGER DEFAULT 0,
-      devise TEXT DEFAULT '€',
+      devise TEXT DEFAULT 'FCFA',
       mode_soleil INTEGER DEFAULT 0,
       mode_gants INTEGER DEFAULT 0
     )
@@ -258,6 +287,98 @@ Future<void> createSchema(Database db, int version) async {
 
   // ── V9 : pesées individuelles + dépenses ──
   await createV9Tables(db);
+
+  // ── V17 : colonnes updated_at + deleted_at sur toutes les tables sync ──
+  await applySoftDeleteColumns(db);
+
+  // ── V20 : table conflict_log (audit des écrasements LWW au pull cloud) ──
+  await createV20Tables(db);
+}
+
+/// Table d'audit des conflits multi-device. Une ligne par row distante qui
+/// écrase une row locale dont l'`updated_at` était antérieur — utile pour
+/// expliquer à l'éleveur pourquoi une modif qu'il croyait avoir enregistrée
+/// a disparu (un autre appareil avait fait une modif plus récente).
+///
+/// Volontairement minimaliste : pas de stockage des payloads (RGPD + volume).
+/// L'utilisateur voit table+id+timestamps et peut vérifier dans son cheptel.
+Future<void> createV20Tables(Database db) async {
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS conflict_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      table_name TEXT NOT NULL,
+      row_id INTEGER NOT NULL,
+      local_updated_at TEXT,
+      remote_updated_at TEXT,
+      detected_at TEXT NOT NULL
+    )
+  ''');
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_conflict_log_detected ON conflict_log(detected_at DESC)');
+}
+
+/// Ajoute `updated_at` (TEXT, ISO-8601) + `deleted_at` (TEXT, ISO-8601 ou NULL)
+/// + index `deleted_at` à toutes les tables listées dans `kSoftDeleteTables`.
+///
+/// Idempotent : utilise `_addColumn` qui ignore les colonnes déjà présentes.
+/// Backfill : pour les rows existantes, `updated_at` reçoit `date_creation`
+/// (si disponible) ou la date du jour. `deleted_at` reste NULL (= actif).
+///
+/// Logge la progression : sur un téléphone bas de gamme avec une grosse base,
+/// la migration peut prendre plusieurs secondes (~21 tables × ALTER+UPDATE).
+/// Les logs permettent de diagnostiquer un blocage perçu côté utilisateur.
+/// L'ensemble est encapsulé dans la transaction implicite d'`onUpgrade`
+/// par sqflite — soit toutes les colonnes sont ajoutées, soit aucune
+/// (rollback en cas d'erreur fatale).
+Future<void> applySoftDeleteColumns(Database db) async {
+  final nowIso = DateTime.now().toIso8601String();
+  final stopwatch = Stopwatch()..start();
+  debugPrint(
+      'MIGRATION V17 → ajout soft-delete sur ${kSoftDeleteTables.length} tables…');
+  var done = 0;
+  for (final table in kSoftDeleteTables) {
+    await _addColumn(db, 'ALTER TABLE $table ADD COLUMN updated_at TEXT');
+    await _addColumn(db, 'ALTER TABLE $table ADD COLUMN deleted_at TEXT');
+    // Backfill updated_at pour les rows déjà présentes
+    try {
+      // Tables qui possèdent une colonne `date_creation` : on s'y rattache.
+      // Sinon (ex. reglages, profil_eleveur, lot_lapins…) : on met now().
+      final hasDateCreation = await _columnExists(db, table, 'date_creation');
+      if (hasDateCreation) {
+        await db.execute(
+          "UPDATE $table SET updated_at = COALESCE(updated_at, date_creation, ?) WHERE updated_at IS NULL",
+          [nowIso],
+        );
+      } else {
+        await db.execute(
+          "UPDATE $table SET updated_at = COALESCE(updated_at, ?) WHERE updated_at IS NULL",
+          [nowIso],
+        );
+      }
+    } catch (_) {
+      // Table absente sur cette version — ignorer.
+    }
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_${table}_deleted ON $table(deleted_at)');
+    } catch (_) {/* table absente sur cette version */}
+    done++;
+    if (done % 5 == 0) {
+      debugPrint('MIGRATION V17 → $done/${kSoftDeleteTables.length} tables traitées…');
+    }
+  }
+  stopwatch.stop();
+  debugPrint(
+      'MIGRATION V17 ✅ ${kSoftDeleteTables.length} tables OK en ${stopwatch.elapsedMilliseconds} ms');
+}
+
+/// Vérifie qu'une colonne existe sur une table (via `PRAGMA table_info`).
+Future<bool> _columnExists(Database db, String table, String column) async {
+  try {
+    final rows = await db.rawQuery('PRAGMA table_info($table)');
+    return rows.any((r) => r['name'] == column);
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Crée les tables ajoutées en V9 (Phase 4 — pesées indiv. + finances).
@@ -431,10 +552,12 @@ Future<void> createV5Tables(Database db) async {
       created_at TEXT NOT NULL,
       synced_at TEXT,
       error_message TEXT,
-      retry_count INTEGER DEFAULT 0
+      retry_count INTEGER DEFAULT 0,
+      next_retry_at TEXT
     )
   ''');
   await db.execute('CREATE INDEX idx_sync_pending ON sync_queue(synced_at)');
+  await db.execute('CREATE INDEX idx_sync_pending_retry ON sync_queue(synced_at, next_retry_at)');
 
   // Configuration de synchronisation + compte unique (singleton id=1)
   // V11 : password_hash et nom ajoutés pour le compte cuniculteur unique.
@@ -766,5 +889,42 @@ Future<void> upgradeSchema(Database db, int oldVersion, int newVersion) async {
     // lapins.cause_mortalite : champ obligatoire à renseigner quand statut='mort'
     // (pasteurellose, coccidiose, coup_chaleur, predateur, ecrasement, inconnue…)
     await _addColumn(db, 'ALTER TABLE lapins ADD COLUMN cause_mortalite TEXT');
+  }
+
+  if (oldVersion < 17) {
+    // Version 17 : sync resilient — updated_at + deleted_at sur toutes les
+    // tables synchronisables. Élimine le risque de perte de données en cas
+    // de delete offline + crash avant push, et permet du last-write-wins
+    // fiable côté pull cloud.
+    await applySoftDeleteColumns(db);
+  }
+
+  if (oldVersion < 18) {
+    // Version 18 : backoff exponentiel sur la sync_queue.
+    // `next_retry_at` = ISO timestamp à partir duquel l'entry peut
+    // être ré-essayée. Permet d'espacer les retries (1s → 2s → 4s → 8s
+    // → 30s → 2min → 10min cap) sans submerger un serveur down.
+    await _addColumn(db, 'ALTER TABLE sync_queue ADD COLUMN next_retry_at TEXT');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_sync_pending_retry ON sync_queue(synced_at, next_retry_at)',
+    );
+  }
+
+  if (oldVersion < 19) {
+    // Version 19 : FCFA devient la devise par défaut (cible : élevages
+    // cunicoles d'Afrique de l'Ouest et centrale). Les installs encore
+    // sur l'ancien défaut « € » sont basculées ; un choix explicite
+    // d'une autre devise est préservé.
+    await db.execute(
+      "UPDATE reglages SET devise = 'FCFA' "
+      "WHERE devise IS NULL OR devise = '' OR devise = '€'",
+    );
+  }
+
+  if (oldVersion < 20) {
+    // Version 20 : audit des conflits multi-device. Permet de tracer les
+    // écrasements last-write-wins du pull cloud — sans cette table les
+    // modifications « perdues » à la sync étaient totalement silencieuses.
+    await createV20Tables(db);
   }
 }

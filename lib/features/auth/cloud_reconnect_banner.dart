@@ -11,9 +11,11 @@
 
 import 'package:flutter/material.dart';
 import '../../database/db_helper.dart';
+import '../../services/account_service.dart';
 import '../../services/auth/cloud_auth_service.dart';
 import '../../ui/cu_ui.dart';
 import '../../widgets/common_widgets.dart';
+import 'google_sign_in_button.dart';
 
 class CloudReconnectBanner extends StatefulWidget {
   const CloudReconnectBanner({super.key});
@@ -36,10 +38,12 @@ class _CloudReconnectBannerState extends State<CloudReconnectBanner> {
     // On lit l'état déjà calculé au démarrage par le splash, sans
     // déclencher d'appel réseau supplémentaire.
     final h = CloudAuthService.instance.lastHealth;
-    if (mounted) setState(() {
-      _health = h;
-      _checked = true;
-    });
+    if (mounted) {
+      setState(() {
+        _health = h;
+        _checked = true;
+      });
+    }
   }
 
   @override
@@ -82,9 +86,42 @@ class _CloudReconnectBannerState extends State<CloudReconnectBanner> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Ton mot de passe cloud est demandé uniquement parce que '
-                  'la session précédente a expiré. Cette saisie est rare.',
+                  'Reconnecte-toi pour reprendre la sauvegarde cloud. '
+                  'Cette saisie est rare (~1 fois par mois maximum).',
                   style: TextStyle(fontSize: 12.5, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                GoogleSignInButton(
+                  enabled: !busy,
+                  onResult: (r) async {
+                    if (r.cancelled) return;
+                    if (!r.isSuccess) {
+                      setLocal(() => erreur = r.error);
+                      return;
+                    }
+                    await AccountService.instance.creerCompteGoogle(
+                      email: r.email ?? '',
+                      nom: r.displayName,
+                      session: r.session!,
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) {
+                      setState(() => _health = CloudHealth.healthy);
+                      showSuccessSnackBar(context, 'Compte reconnecté ✅');
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('ou email',
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -106,6 +143,9 @@ class _CloudReconnectBannerState extends State<CloudReconnectBanner> {
                       icon: Icon(obscure
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined),
+                      tooltip: obscure
+                          ? 'Afficher le mot de passe'
+                          : 'Masquer le mot de passe',
                       onPressed: () => setLocal(() => obscure = !obscure),
                     ),
                   ),

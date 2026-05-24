@@ -14,38 +14,107 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/state_providers.dart';
+import 'utils/app_config.dart';
 import 'utils/theme.dart';
 import 'features/onboarding_screen.dart';
 import 'features/auth/lock_screen.dart';
+import 'features/auth/key_recovery_screen.dart';
 import 'features/main_scaffold.dart';
 import 'database/db_helper.dart';
+import 'services/encryption_key_service.dart';
 import 'services/account_service.dart';
 import 'services/auth/cloud_auth_service.dart';
 import 'services/auth/local_lock_service.dart';
 import 'services/auth/session_manager.dart';
 import 'services/notification_service.dart';
+import 'services/realtime_service.dart';
 import 'services/sync_service.dart';
 import 'services/error_logger_service.dart';
+import 'services/kpi_service.dart';
 
 void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       await ErrorLoggerService.instance.init();
+      await KpiService.instance.init();
+
+      // Init Supabase (V3.1) — Auth + Realtime + persistence session.
+      // Le client gère automatiquement le refresh des tokens et la
+      // persistance via SharedPreferences (par défaut).
+      // Si SUPABASE_URL/ANON_KEY ne sont pas fournis, on saute l'init :
+      // l'app reste fonctionnelle offline-only.
+      if (AppConfig.hasSupabaseDefaults) {
+        try {
+          debugPrint('Supabase ⏳ init en cours…');
+          await Supabase.initialize(
+            url: AppConfig.supabaseUrl,
+            anonKey: AppConfig.supabaseAnonKey,
+            authOptions: const FlutterAuthClientOptions(
+              authFlowType: AuthFlowType.pkce,
+            ),
+            // Pas de Realtime activé par défaut — c'est l'app qui s'abonne
+            // explicitement aux channels qui l'intéressent (cf. Phase 4).
+            realtimeClientOptions: const RealtimeClientOptions(
+              logLevel: RealtimeLogLevel.warn,
+            ),
+          ).timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              debugPrint(
+                  'Supabase ⏱ init timeout 8s — l\'app continue offline');
+              throw TimeoutException('Supabase init timeout');
+            },
+          );
+          debugPrint('Supabase ✅ initialisé');
+
+          // Sync automatique des tokens dans sync_config dès qu'une
+          // session est créée ou rafraîchie par supabase_flutter.
+          // Permet au SyncService legacy (push/pull REST) de toujours
+          // avoir des tokens valides sans réécriture.
+          Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+            final s = data.session;
+            if (s != null) {
+              // Fire-and-forget intentionnel dans un listener synchrone :
+              // la mise à jour des tokens est best-effort, une éventuelle
+              // erreur n'est pas bloquante (la prochaine authStateChange
+              // réessaiera).
+              unawaited(AccountService.instance.syncFromSupabaseSession(s));
+            }
+          });
+
+          // Realtime : démarre l'écoute WebSocket dès qu'une session
+          // est disponible (et la stoppe au signOut). Multi-device =
+          // tes données apparaissent en live sur les autres téléphones.
+          RealtimeService.instance.wireUp();
+        } catch (e, st) {
+          debugPrint('Supabase ⚠ init échec : $e\n$st');
+          // L'app reste démarrable même si Supabase plante — offline-first.
+        }
+      } else {
+        debugPrint('Supabase ⚠ SUPABASE_URL absent — mode offline-only');
+      }
 
       // Sentry activé uniquement si le DSN est fourni :
       //   flutter run --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
-      const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+      // Le DSN a une defaultValue dans AppConfig : les builds release
+      // remontent toujours les crashs même sans --dart-define explicite.
+      const sentryDsn = AppConfig.sentryDsn;
       if (sentryDsn.isNotEmpty) {
         await SentryFlutter.init((options) {
           options.dsn = sentryDsn;
           options.release = 'gestion_cunicole@2.5.0+8';
-          options.environment = const String.fromEnvironment(
-            'SENTRY_ENV',
-            defaultValue: 'production',
-          );
+          options.environment = AppConfig.sentryEnv;
           options.tracesSampleRate = 0.0; // pas de perf-tracing pour économiser le quota
+          // PII filter — on retire emails, tokens, noms d'éleveur, noms de
+          // lapins, contenu de notes avant envoi. Sentry n'a besoin que
+          // de la stack trace et du type d'erreur pour être utile.
+          options.sendDefaultPii = false;
+          options.beforeSend = (event, hint) async {
+            return _scrubSentryEvent(event);
+          };
         });
       }
 
@@ -73,6 +142,72 @@ void main() {
     },
   );
 }
+
+/// Filtre les données personnelles avant envoi à Sentry.
+///
+/// Stratégie : on supprime tout ce qui pourrait identifier l'éleveur ou
+/// ses animaux dans le contexte de l'erreur. Les stack traces et les types
+/// d'exception restent intacts — c'est suffisant pour débugger.
+///
+/// Champs scrubbés :
+///   - User : id, ip, email, username, nom complet
+///   - Request : headers (cookies, auth), URL paramètres (token)
+///   - Contexts : tout `email`, `bague`, `notes`, `password`, `token`
+///   - Extra/Tags : idem
+SentryEvent? _scrubSentryEvent(SentryEvent event) {
+  // 1. Coupe l'utilisateur (Sentry remplit auto par défaut)
+  final scrubbed = event.copyWith(user: null);
+
+  // 2. Masque les messages d'exception qui contiendraient des emails
+  //    ou des données identifiantes (regex simple, suffisante en pratique).
+  final emailRegex = RegExp(r'\b[\w.+-]+@[\w-]+\.[\w.-]+\b');
+  final phoneRegex = RegExp(r'\b\+?\d[\d \-.]{7,}\b');
+  String scrubText(String? s) {
+    if (s == null) return '';
+    return s
+        .replaceAll(emailRegex, '[email]')
+        .replaceAll(phoneRegex, '[phone]');
+  }
+
+  return scrubbed.copyWith(
+    message: event.message == null
+        ? null
+        : SentryMessage(
+            scrubText(event.message!.formatted),
+            template: event.message!.template,
+            params: event.message!.params,
+          ),
+  );
+}
+
+/// Observer de navigation qui libère le focus clavier à chaque
+/// transition de route (push/pop/replace).
+///
+/// Sans ça, un `TextField` encore focalisé au moment où sa route est
+/// dépilée peut être désactivé alors qu'il est « dirty », ce qui
+/// corrompt l'arbre de widgets : `Tried to build dirty widget in the
+/// wrong build scope` → écran rouge / crash. Très visible lors des
+/// confirmations (dialogues) et des retours arrière sur formulaires.
+class _UnfocusNavigatorObserver extends NavigatorObserver {
+  void _unfocus() {
+    final f = FocusManager.instance.primaryFocus;
+    if (f != null && f.hasFocus) f.unfocus();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => _unfocus();
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) => _unfocus();
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      _unfocus();
+}
+
+/// Instance unique partagée (l'identité doit rester stable entre les
+/// rebuilds de MaterialApp).
+final unfocusNavigatorObserver = _UnfocusNavigatorObserver();
 
 class CuniGestApp extends ConsumerWidget {
   const CuniGestApp({super.key});
@@ -122,6 +257,10 @@ class CuniGestApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: mode,
       debugShowCheckedModeBanner: false,
+      // Libère le focus clavier à chaque changement de route — évite le
+      // crash "dirty InputDecorator in wrong build scope" provoqué par un
+      // champ de saisie encore focalisé désactivé pendant un pop/push.
+      navigatorObservers: [unfocusNavigatorObserver],
       // Le builder wrap chaque route avec :
       //   1. Mode soleil (textScaler +25 % si activé)
       //   2. AuthGate (overlay LockScreen quand la session est verrouillée)
@@ -220,70 +359,89 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   String _initStatus = 'Initialisation…';
 
   Future<void> _initApp() async {
-    // Chaque étape est isolée pour qu'une erreur ne bloque pas la suivante.
-    // Les erreurs sont logguées via debugPrint et affichées dans le splash.
-
+    // ─── Phase 1 : DB (bloquant, sans elle rien ne fonctionne) ──
+    // Timeout 8s (réduit de 25s) — si la DB met plus de 8s à s'ouvrir,
+    // on a un vrai problème (corruption, secure_storage cassé) et l'utilisateur
+    // doit redémarrer plutôt que d'attendre indéfiniment.
     try {
       _setStatus('Base de données…');
       await DBHelper.instance.database
-          .timeout(const Duration(seconds: 25));
+          .timeout(const Duration(seconds: 8));
       debugPrint('SPLASH ✅ DB ouverte');
-
-      try {
-        await DBHelper.instance.genererAlertesReproduction();
-        await DBHelper.instance.nettoyerAlertes();
-      } catch (e) {
-        debugPrint('SPLASH ⚠ alertes : $e');
-      }
+    } on EncryptionKeyLostException catch (e, st) {
+      // Clé de chiffrement perdue (secure storage corrompu) : on NE
+      // réinitialise PAS en silence — écran de récupération dédié.
+      debugPrint('SPLASH 🔐 clé perdue : $e\n$st');
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const KeyRecoveryScreen()),
+      );
+      return;
     } catch (e, st) {
       debugPrint('SPLASH ❌ DB : $e\n$st');
-      _setStatus('Une erreur est survenue. Redémarre l\'app.');
-      // Re-tente la navigation après 3s pour pas bloquer définitivement
-      await Future.delayed(const Duration(seconds: 3));
+      _setStatus('Erreur base de données — redémarre l\'application.');
+      // Pas de continuation : la DB est indispensable. On laisse l'écran
+      // d'erreur affiché jusqu'à ce que l'utilisateur ferme l'app.
+      return;
     }
 
-    try {
-      _setStatus('Notifications…');
-      await NotificationService.instance
-          .init()
-          .timeout(const Duration(seconds: 8));
-      await NotificationService.instance.programmerToutes();
-      debugPrint('SPLASH ✅ notifs');
-    } catch (e) {
-      debugPrint('SPLASH ⚠ notifs : $e');
+    // ─── Phase 2 : tout le reste en parallèle (8s max par tâche) ──
+    // Tous les init non-critiques s'exécutent en parallèle pour minimiser
+    // le temps de splash. Une erreur sur un init n'empêche pas les autres
+    // de finir — l'app reste démarrable.
+    _setStatus('Chargement des données…');
+
+    // Capture les notifiers AVANT les awaits parallèles : on ne peut pas
+    // utiliser ref/context après un async gap si l'écran s'est démonté.
+    final lapinsNotifier =
+        mounted ? ref.read(lapinsProvider.notifier) : null;
+    final profilNotifier =
+        mounted ? ref.read(profilProvider.notifier) : null;
+    final reglagesNotifier =
+        mounted ? ref.read(reglagesProvider.notifier) : null;
+    final alertesNotifier =
+        mounted ? ref.read(alertesCountProvider.notifier) : null;
+
+    Future<void> safe(String label, Future<void> Function() task,
+        {Duration timeout = const Duration(seconds: 8)}) async {
+      try {
+        await task().timeout(timeout, onTimeout: () {
+          debugPrint('SPLASH ⏱ $label timeout');
+        });
+        debugPrint('SPLASH ✅ $label');
+      } catch (e) {
+        debugPrint('SPLASH ⚠ $label : $e');
+      }
     }
 
-    try {
-      SyncService.instance.listenConnectivity();
-      debugPrint('SPLASH ✅ connectivity listener');
-    } catch (e) {
-      debugPrint('SPLASH ⚠ connectivity : $e');
-    }
+    await Future.wait<void>([
+      safe('alertes', () async {
+        await DBHelper.instance.genererAlertesReproduction();
+        await (await DBHelper.instance.alertes).nettoyerAlertes();
+      }),
+      safe('notifs', () async {
+        await NotificationService.instance.init();
+        await NotificationService.instance.programmerToutes();
+      }),
+      safe('connectivity', () async {
+        SyncService.instance.listenConnectivity();
+        SyncService.instance.wireAutoPush();
+      }, timeout: const Duration(seconds: 2)),
+      safe('state', () async {
+        await lapinsNotifier?.refresh();
+        await profilNotifier?.refresh();
+        await reglagesNotifier?.refresh();
+        await alertesNotifier?.refresh();
+      }),
+    ]);
 
-    // Refresh proactif silencieux du token Supabase — non bloquant.
-    // L'app reste utilisable même si ça échoue (offline-first).
+    // Refresh proactif silencieux du token Supabase — fire-and-forget,
+    // ne bloque jamais le splash. L'app reste utilisable même si ça échoue.
     // ignore: discarded_futures
     CloudAuthService.instance.proactiveRefresh().then((h) {
       debugPrint('SPLASH ☁ cloud health = ${h.name}');
     });
-
-    try {
-      _setStatus('Chargement des données…');
-      if (mounted) {
-        // Capture les notifiers AVANT les awaits pour éviter
-        // l'usage de BuildContext après async gap.
-        final lapins = ref.read(lapinsProvider.notifier);
-        final profil = ref.read(profilProvider.notifier);
-        final reglages = ref.read(reglagesProvider.notifier);
-        final alertes = ref.read(alertesCountProvider.notifier);
-        await lapins.refresh();
-        await profil.refresh();
-        await reglages.refresh();
-        await alertes.refresh();
-      }
-    } catch (e) {
-      debugPrint('SPLASH ⚠ state : $e');
-    }
 
     // ─── Routage V3.0 — Auth refactor ──────────────────────────
     // Le mot de passe cloud n'est PLUS demandé à chaque ouverture.
@@ -299,9 +457,51 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     } catch (e) {
       debugPrint('SPLASH ⚠ compte check : $e');
     }
+
+    // ─── Récupération auto du compte local depuis Supabase ──
+    // Cas : l'utilisateur a fait Google Sign-In mais le compte local
+    // n'a jamais été persisté (app fermée trop tôt, erreur silencieuse).
+    // Si Supabase a une session valide, on recrée le compte local
+    // automatiquement à partir de la session — pas besoin de re-signin.
+    //
+    // Timeout 3s pour ne JAMAIS bloquer le splash : si quelque chose
+    // tourne en boucle, on continue vers l'onboarding plutôt que de
+    // laisser l'utilisateur planté sur le splash.
+    if (!compteExiste) {
+      try {
+        await Future(() async {
+          final supabase = Supabase.instance.client;
+          final session = supabase.auth.currentSession;
+          final user = supabase.auth.currentUser;
+          if (session != null && user != null && !session.isExpired) {
+            final email = user.email ?? '';
+            final nom = user.userMetadata?['full_name'] as String? ??
+                user.userMetadata?['name'] as String?;
+            debugPrint(
+                'SPLASH 🔄 récupération compte depuis session Supabase ($email)');
+            await AccountService.instance.creerCompteGoogle(
+              email: email,
+              nom: nom,
+              session: session,
+            );
+            compteExiste = await AccountService.instance.compteExiste();
+            debugPrint(
+                'SPLASH ✅ compte récupéré : compteExiste=$compteExiste');
+          } else {
+            debugPrint(
+                'SPLASH ℹ pas de session Supabase valide à récupérer');
+          }
+        }).timeout(const Duration(seconds: 3), onTimeout: () {
+          debugPrint('SPLASH ⏱ récup compte timeout 3s — on continue');
+        });
+      } catch (e, st) {
+        debugPrint('SPLASH ⚠ récup compte Supabase : $e\n$st');
+      }
+    }
+
     bool onboardingDone = true;
     try {
-      final r = await DBHelper.instance.getReglages();
+      final r = await (await DBHelper.instance.profil).getReglages();
       onboardingDone = r.onboardingDone;
     } catch (_) {/* ignore */}
 
@@ -313,11 +513,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       debugPrint('SPLASH ⚠ lock mode : $e');
     }
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    // Petit délai cosmétique pour que l'animation du logo se termine sans
+    // brusquer la transition. Pas indispensable mais améliore le ressenti.
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
+    // Routage tolérant V3.2 :
+    // - Onboarding fini (compte cloud OU mode offline-only) → MainScaffold
+    //   ou LockScreen selon `lockMode`.
+    // - Aucun signal → OnboardingScreen.
+    // Un utilisateur qui a choisi « Démarrer sans compte cloud » a
+    // `onboardingDone = true` sans `compteExiste` → l'app reste utilisable.
+    debugPrint(
+        'SPLASH 🚦 compteExiste=$compteExiste onboardingDone=$onboardingDone lockMode=${lockMode.name}');
     final Widget destination;
-    if (!compteExiste || !onboardingDone) {
+    if (!compteExiste && !onboardingDone) {
       destination = const OnboardingScreen();
     } else if (lockMode == LockMode.none) {
       // Pas de verrou local : ouverture directe, comme WhatsApp/Notion.

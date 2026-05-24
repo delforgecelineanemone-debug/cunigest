@@ -71,6 +71,13 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   String? _causeMortalite; // V16 — obligatoire si statut='mort'
   bool _saving = false;
 
+  // V2.5 — P2.12 : formulaire en wizard 3 étapes pour réduire la
+  // surcharge cognitive (avant : 13 champs sur une seule page scrollable).
+  //   0 = Identité    1 = Généalogie    2 = Santé & sortie
+  int _step = 0;
+  static const int _nbSteps = 3;
+  static const _stepTitres = ['Identité', 'Généalogie', 'Santé & sortie'];
+
   List<Lapin> _allLapins = [];
   bool _loadingParents = true;
 
@@ -125,7 +132,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
   }
 
   Future<void> _loadParents() async {
-    final lapins = await db.getAllLapins();
+    final lapins = await (await db.lapins).getAllLapins();
     if (mounted) {
       setState(() {
         _allLapins = lapins;
@@ -206,9 +213,9 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
             ),
             if (_photoPath != null)
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
+                leading: const Icon(Icons.delete, color: CuColors.danger),
                 title: const Text('Supprimer la photo',
-                    style: TextStyle(color: Colors.red)),
+                    style: TextStyle(color: CuColors.danger)),
                 onTap: () {
                   Navigator.pop(context, null);
                   setState(() => _photoPath = null);
@@ -265,6 +272,8 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     }
 
     setState(() => _saving = true);
+    // V2.5 — P2.17 : overlay modal anti double-tap pendant la sauvegarde.
+    _formCtrl.markSaving('Enregistrement du lapin…');
 
     final oldCageId = widget.lapin?.cageId;
 
@@ -296,11 +305,12 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
 
     try {
       int lapinId;
+      final lapinsRepo = await db.lapins;
       if (widget.lapin == null) {
-        lapinId = await db.insertLapin(lapin);
+        lapinId = await lapinsRepo.insertLapin(lapin);
       } else {
         lapinId = widget.lapin!.id!;
-        await db.updateLapin(lapin);
+        await lapinsRepo.updateLapin(lapin);
       }
 
       // Changement de cage en édition → enregistrer un mouvement
@@ -348,7 +358,44 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         setState(() => _saving = false);
         showErrorSnackBar(context, 'Une erreur est survenue.');
       }
+    } finally {
+      // Toujours retirer l'overlay de sauvegarde — même si le widget est
+      // unmounted ou si une exception non prévue remonte (markSaved est
+      // idempotent et ne dépend pas du contexte Flutter).
+      _formCtrl.markSaved();
     }
+  }
+
+  // ── Navigation wizard ──
+
+  /// Valide l'étape courante avant d'autoriser le passage à la suivante.
+  /// Étape 0 (Identité) : bague + sexe obligatoires.
+  /// Étapes 1 et 2 : pas de champ bloquant pour avancer.
+  bool _validerEtape(int step) {
+    if (step == 0) {
+      if (_bague.text.trim().isEmpty) {
+        showErrorSnackBar(context, 'Le numéro de bague est obligatoire.');
+        return false;
+      }
+      if (_sexe == null) {
+        showErrorSnackBar(context, 'Choisis le sexe du lapin.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _suivant() {
+    if (!_validerEtape(_step)) return;
+    if (_step < _nbSteps - 1) {
+      setState(() => _step++);
+    } else {
+      _save();
+    }
+  }
+
+  void _precedent() {
+    if (_step > 0) setState(() => _step--);
   }
 
   @override
@@ -356,34 +403,154 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     final isEdit = widget.lapin != null;
     return CuFormScaffold(
       controller: _formCtrl,
-      appBar: CuAppBar(title: isEdit ? 'Modifier le lapin' : 'Nouveau lapin', showActions: false),
+      appBar: CuAppBar(
+        title: isEdit ? 'Modifier le lapin' : 'Nouveau lapin',
+        showActions: false,
+      ),
       child: Form(
         key: _formKey,
         // V2.5 — Sprint 3 : marque le form "dirty" dès la 1ère modif.
         onChanged: _formCtrl.markDirty,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
-            Center(child: _buildPhotoSection()),
-            const SizedBox(height: 16),
-            ..._buildIdentificationSection(),
-            ..._buildCaracteristiquesSection(),
-            ..._buildGenealogieSection(),
-            if (isEdit) ..._buildStatutSection(),
-            ..._buildAchatSection(),
-            ..._buildNotesSection(),
-            _buildSaveButton(isEdit),
-            const SizedBox(height: 16),
+            _buildStepIndicator(),
+            Expanded(
+              child: IndexedStack(
+                index: _step,
+                children: [
+                  // ── Étape 0 : Identité ──
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Center(child: _buildPhotoSection()),
+                      const SizedBox(height: 16),
+                      ..._buildIdentificationSection(),
+                      ..._buildCaracteristiquesSection(),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                  // ── Étape 1 : Généalogie ──
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      ..._buildGenealogieSection(),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                  // ── Étape 2 : Santé & sortie ──
+                  ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (isEdit) ..._buildStatutSection(),
+                      ..._buildAchatSection(),
+                      ..._buildNotesSection(),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            _buildWizardNav(isEdit),
           ],
         ),
       ).responsive(),
     );
   }
 
+  /// Barre de progression 3 segments + titre de l'étape courante.
+  Widget _buildStepIndicator() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Étape ${_step + 1}/$_nbSteps',
+                  style: TextStyle(
+                      fontSize: 12, color: context.cuTextSecondary)),
+              const SizedBox(width: 8),
+              Text(_stepTitres[_step],
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(_nbSteps, (i) {
+              final atteint = i <= _step;
+              return Expanded(
+                child: Container(
+                  height: 5,
+                  margin: EdgeInsets.only(right: i < _nbSteps - 1 ? 6 : 0),
+                  decoration: BoxDecoration(
+                    color: atteint
+                        ? CuColors.primary
+                        : context.cuBorder,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Barre de navigation bas d'écran : Précédent / Suivant / Enregistrer.
+  Widget _buildWizardNav(bool isEdit) {
+    final estDerniere = _step == _nbSteps - 1;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: context.cuBorder)),
+      ),
+      child: Row(
+        children: [
+          if (_step > 0)
+            Expanded(
+              child: CuButton(
+                label: 'Précédent',
+                icon: Icons.arrow_back,
+                variant: CuButtonVariant.ghost,
+                size: CuButtonSize.lg,
+                onPressed: _saving ? null : _precedent,
+              ),
+            ),
+          if (_step > 0) const SizedBox(width: 12),
+          Expanded(
+            flex: _step > 0 ? 1 : 2,
+            child: CuButton(
+              label: estDerniere
+                  ? (isEdit ? 'Enregistrer' : 'Créer le lapin')
+                  : 'Suivant',
+              icon: estDerniere
+                  ? (isEdit ? Icons.save : Icons.check)
+                  : Icons.arrow_forward,
+              variant: CuButtonVariant.primary,
+              size: CuButtonSize.lg,
+              fullWidth: true,
+              loading: _saving,
+              onPressed: _saving ? null : _suivant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Sections du formulaire ──
 
   Widget _buildPhotoSection() {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: _photoPath != null
+          ? 'Photo du lapin — appuyer pour changer'
+          : 'Ajouter une photo du lapin',
+      child: GestureDetector(
       onTap: _pickPhoto,
       child: Stack(
         alignment: Alignment.bottomRight,
@@ -391,7 +558,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
           Container(
             width: 130, height: 130,
             decoration: BoxDecoration(
-              color: Colors.grey.shade200, shape: BoxShape.circle,
+              color: context.cuRaised, shape: BoxShape.circle,
               border: Border.all(color: AppTheme.primary, width: 2),
               image: _photoPath != null && File(_photoPath!).existsSync()
                   ? DecorationImage(image: FileImage(File(_photoPath!)), fit: BoxFit.cover)
@@ -409,6 +576,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -536,11 +704,15 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
               ? const Icon(Icons.chevron_right)
               : IconButton(
                   icon: const Icon(Icons.clear, size: 18),
+                  tooltip: 'Retirer la cage',
                   onPressed: () => setState(() { _cageId = null; _cageLabel = null; }),
                 ),
         ),
         child: Text(_cageLabel ?? 'Aucune cage assignée',
-            style: TextStyle(color: _cageLabel != null ? Colors.black87 : Colors.grey)),
+            style: TextStyle(
+                color: _cageLabel != null
+                    ? context.cuTextPrimary
+                    : context.cuTextSecondary)),
       ),
     ),
     const SizedBox(height: 12),
@@ -567,7 +739,10 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         ),
         child: Text(
           _dateNaissance != null ? formatDate(_dateNaissance) : 'Sélectionner',
-          style: TextStyle(color: _dateNaissance != null ? Colors.black87 : Colors.grey),
+          style: TextStyle(
+              color: _dateNaissance != null
+                  ? context.cuTextPrimary
+                  : context.cuTextSecondary),
         ),
       ),
     ),
@@ -594,9 +769,12 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
 
   List<Widget> _buildGenealogieSection() => [
     _sectionTitle('Généalogie (optionnel)'),
-    const Text(
+    Text(
       'Renseigner les parents permet la détection automatique de consanguinité lors des saillies.',
-      style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+      style: TextStyle(
+          fontSize: 12,
+          color: context.cuTextSecondary,
+          fontStyle: FontStyle.italic),
     ),
     const SizedBox(height: 8),
     if (_loadingParents)
@@ -606,7 +784,8 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       DropdownButtonFormField<int?>(
         initialValue: _pereId, isExpanded: true,
         decoration: const InputDecoration(
-            labelText: 'Père (mâle)', prefixIcon: Icon(Icons.male, color: Colors.blue)),
+            labelText: 'Père (mâle)',
+            prefixIcon: Icon(Icons.male, color: CuColors.sexeMale)),
         items: [
           const DropdownMenuItem<int?>(value: null, child: Text('— Inconnu —')),
           ..._peresPossibles.map((l) => DropdownMenuItem<int?>(
@@ -620,7 +799,8 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
       DropdownButtonFormField<int?>(
         initialValue: _mereId, isExpanded: true,
         decoration: const InputDecoration(
-            labelText: 'Mère (femelle)', prefixIcon: Icon(Icons.female, color: Colors.pink)),
+            labelText: 'Mère (femelle)',
+            prefixIcon: Icon(Icons.female, color: CuColors.sexeFemelle)),
         items: [
           const DropdownMenuItem<int?>(value: null, child: Text('— Inconnue —')),
           ..._meresPossibles.map((l) => DropdownMenuItem<int?>(
@@ -659,7 +839,7 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
         initialValue: _causeMortalite,
         decoration: const InputDecoration(
           labelText: 'Cause de mortalité *',
-          prefixIcon: Icon(Icons.warning_amber, color: Colors.red),
+          prefixIcon: Icon(Icons.warning_amber, color: CuColors.danger),
           helperText: 'Donnée sanitaire essentielle pour vos statistiques',
           helperMaxLines: 2,
         ),
@@ -720,18 +900,6 @@ class _LapinFormScreenState extends State<LapinFormScreen> {
     const SizedBox(height: 24),
   ];
 
-  Widget _buildSaveButton(bool isEdit) {
-    // V2.5 — Sprint 4 : CTA unifié via CuButton (design system).
-    return CuButton(
-      label: isEdit ? 'Enregistrer les modifications' : 'Créer le lapin',
-      icon: isEdit ? Icons.save : Icons.check,
-      variant: CuButtonVariant.primary,
-      size: CuButtonSize.lg,
-      fullWidth: true,
-      loading: _saving,
-      onPressed: _saving ? null : _save,
-    );
-  }
 
   Widget _sectionTitle(String title) {
     return Padding(
@@ -814,7 +982,7 @@ class _CagePickerSheetState extends State<_CagePickerSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
+                color: context.cuTextDisabled,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -826,13 +994,13 @@ class _CagePickerSheetState extends State<_CagePickerSheet> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _batiments.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Padding(
-                            padding: EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(24),
                             child: Text(
                               'Aucune cage configurée.\nCréez d\'abord un bâtiment, un clapier et des cages depuis le module Cages.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.grey),
+                              style: TextStyle(color: context.cuTextSecondary),
                             ),
                           ),
                         )
@@ -864,7 +1032,7 @@ class _CagePickerSheetState extends State<_CagePickerSheet> {
       padding: const EdgeInsets.only(left: 16),
       child: ExpansionTile(
         initiallyExpanded: true,
-        leading: const Icon(Icons.shelves, color: Colors.indigo, size: 20),
+        leading: const Icon(Icons.shelves, color: CuColors.accentTools, size: 20),
         title: Text(cl.nom, style: const TextStyle(fontSize: 14)),
         children: cages.map((cg) => _buildCageTile(b, cl, cg)).toList(),
       ),
@@ -885,9 +1053,9 @@ class _CagePickerSheetState extends State<_CagePickerSheet> {
               fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal)),
       subtitle: Text('${cg.statutLabel} • $occ/$cap'),
       trailing: pleine
-          ? const Icon(Icons.lock, color: Colors.red, size: 18)
+          ? const Icon(Icons.lock, color: CuColors.danger, size: 18)
           : (isCurrent
-              ? const Icon(Icons.check_circle, color: Colors.green)
+              ? const Icon(Icons.check_circle, color: CuColors.success)
               : const Icon(Icons.chevron_right)),
       onTap: pleine
           ? null

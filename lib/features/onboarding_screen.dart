@@ -7,9 +7,12 @@ import '../database/db_helper.dart';
 import '../models/reglages.dart';
 import '../providers/state_providers.dart';
 import '../services/account_service.dart';
+import '../services/auth/google_auth_service.dart';
 import '../services/auth/local_lock_service.dart';
+import '../services/sync_service.dart';
 import '../ui/cu_ui.dart';
 import '../widgets/common_widgets.dart';
+import 'auth/google_sign_in_button.dart';
 import 'main_scaffold.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -46,9 +49,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _terminer() async {
     final state = ref.read(reglagesProvider.notifier);
-    final db = DBHelper.instance;
-    final r = await db.getReglages();
-    await db.updateReglages(
+    final profilRepo = await DBHelper.instance.profil;
+    final r = await profilRepo.getReglages();
+    await profilRepo.updateReglages(
       r.copyWith(onboardingDone: true, themeMode: _themeMode),
     );
     await state.refresh();
@@ -78,11 +81,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
-      await AccountService.instance.creerCompte(
+      final lien = await AccountService.instance.creerCompte(
         email: _emailCtrl.text.trim(),
         nom: _nomCtrl.text.trim(),
         motDePasse: _passCtrl.text,
       );
+      if (!mounted) return;
+      // Si la connexion cloud a échoué, on prévient EXPLICITEMENT l'utilisateur
+      // avant de continuer : sans cet avertissement il croit avoir un compte
+      // cloud et perdra ses données à la réinstallation. notApplicable = build
+      // sans Supabase configuré (cas légitime offline-only) → pas d'alerte.
+      if (lien == CloudLinkOutcome.failed) {
+        await _avertirLienCloudEchoue();
+        if (!mounted) return;
+      }
+      // Demande à l'utilisateur si les données déjà présentes lui
+      // appartiennent AVANT tout envoi vers le cloud.
+      await _gererDonneesLocales();
       if (!mounted) return;
       setState(() {
         _compteCree = true;
@@ -96,6 +111,245 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
       setState(() => _busy = false);
       showErrorSnackBar(context, 'Création du compte impossible.');
+    }
+  }
+
+  /// Avertit l'utilisateur que la connexion au cloud a échoué. L'app reste
+  /// pleinement fonctionnelle hors-ligne ; il pourra relier le cloud plus
+  /// tard depuis Réglages → Sauvegarde cloud.
+  Future<void> _avertirLienCloudEchoue() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: const [
+            Icon(Icons.cloud_off, color: CuColors.warning),
+            SizedBox(width: CuSpacing.sm),
+            Expanded(child: Text('Sauvegarde cloud indisponible')),
+          ],
+        ),
+        content: const Text(
+          'Ton compte a bien été créé sur ce téléphone, mais la connexion '
+          'au cloud a échoué (pas de réseau ou serveur injoignable).\n\n'
+          'L\'app fonctionne hors-ligne — tu peux continuer.\n\n'
+          'Pour activer la sauvegarde plus tard : Réglages → Sauvegarde cloud.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Compris'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Gère les données déjà présentes localement à la création d'un compte.
+  ///
+  /// CORRECTIF CONFIDENTIALITÉ : avant ce garde-fou, l'app poussait
+  /// automatiquement TOUTES les données locales vers le cloud du nouveau
+  /// compte — y compris des données de test ou celles d'un autre éleveur
+  /// ayant utilisé le même téléphone. On demande désormais explicitement.
+  Future<void> _gererDonneesLocales() async {
+    final n = await AccountService.instance.compterDonneesLocales();
+    if (!mounted) return;
+
+    // Aucune donnée locale → on récupère simplement le contenu du compte.
+    if (n == 0) {
+      await _showInitialPushModal();
+      return;
+    }
+
+    final choix = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Text('Des données existent déjà'),
+          content: Text(
+            'Cet appareil contient déjà des données d\'élevage '
+            '($n éléments).\n\n'
+            'Sont-elles bien les tiennes ?\n\n'
+            '• OUI → elles seront sauvegardées sur ton compte cloud.\n'
+            '• NON (données de démonstration, ou compte d\'un autre '
+            'éleveur) → choisis « Repartir de zéro » : elles seront '
+            'effacées de cet appareil et ne seront PAS envoyées. Si un '
+            'compte cloud est lié, ses données seront récupérées à la '
+            'place.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'fresh'),
+              child: const Text('Repartir de zéro'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, 'mine'),
+              child: const Text('Ce sont mes données'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+
+    if (choix == 'fresh') {
+      try {
+        await DBHelper.instance.effacerDonneesMetier();
+        await ref.read(lapinsProvider.notifier).refresh();
+        await ref.read(alertesCountProvider.notifier).refresh();
+        await ref.read(profilProvider.notifier).refresh();
+      } catch (e) {
+        debugPrint('ONBOARDING ⚠ effacement données locales : $e');
+      }
+      if (!mounted) return;
+    }
+    // 'mine' comme 'fresh' : on lance ensuite la sync. Pour « fresh » la
+    // base est vide → la sync ne fait qu'un pull du compte cloud.
+    await _showInitialPushModal();
+  }
+
+  /// Handler du résultat Google Sign-In. Crée le compte local et
+  /// fait avancer l'onboarding vers la page suivante (thème).
+  Future<void> _onGoogleResult(GoogleAuthResult result) async {
+    debugPrint(
+        'ONBOARDING 📥 Google result : success=${result.isSuccess} cancelled=${result.cancelled} email=${result.email} err=${result.error}');
+    if (result.cancelled) return;
+    if (!result.isSuccess) {
+      if (!mounted) return;
+      showErrorSnackBar(context, result.error ?? 'Connexion Google échouée');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      // 1. Crée le compte local (synchrone — vite).
+      await AccountService.instance.creerCompteGoogle(
+        email: result.email ?? '',
+        nom: result.displayName,
+        session: result.session!,
+      );
+      debugPrint('ONBOARDING ✅ creerCompteGoogle terminé');
+      if (!mounted) return;
+
+      // 2. Gère les données locales (consentement explicite) puis
+      //    synchronise. Ne pousse JAMAIS sans l'accord de l'utilisateur.
+      await _gererDonneesLocales();
+      debugPrint('ONBOARDING ✅ gestion données locales terminée');
+      if (!mounted) return;
+
+      setState(() {
+        _compteCree = true;
+        _busy = false;
+      });
+      _pageCtrl.nextPage(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+      );
+    } catch (e, st) {
+      debugPrint('ONBOARDING ❌ creerCompteGoogle ÉCHEC : $e\n$st');
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showErrorSnackBar(context, 'Création du compte impossible : $e');
+    }
+  }
+
+  /// Affiche une modale non-dismissible avec progression en temps réel
+  /// pendant le push initial des données locales vers Supabase.
+  Future<void> _showInitialPushModal() async {
+    final progressNotifier = ValueNotifier<SyncProgress>(
+      const SyncProgress(
+        phase: 'preparing',
+        processed: 0,
+        total: 0,
+        message: 'Préparation de tes données…',
+      ),
+    );
+    // Capturé AVANT l'await pour rester valide si le widget est unmounted.
+    final nav = Navigator.of(context, rootNavigator: true);
+
+    // Ouvre la modale en parallèle du push.
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.cloud_upload, color: Colors.blue),
+              SizedBox(width: 12),
+              Expanded(child: Text('Sauvegarde de tes données')),
+            ],
+          ),
+          content: ValueListenableBuilder<SyncProgress>(
+            valueListenable: progressNotifier,
+            builder: (_, progress, __) {
+              return SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(progress.message,
+                        style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 16),
+                    if (progress.fraction != null)
+                      LinearProgressIndicator(
+                        value: progress.fraction,
+                        minHeight: 6,
+                        backgroundColor: Colors.grey.shade200,
+                      )
+                    else
+                      const LinearProgressIndicator(minHeight: 6),
+                    if (progress.total > 0) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${progress.processed} / ${progress.total}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tes données restent disponibles hors-ligne pendant '
+                      'la sauvegarde.',
+                      style: TextStyle(
+                          fontSize: 11.5,
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    // Premier sign-in : on force le push de TOUT (peu importe l'historique
+    // local de la sync_queue, qui peut contenir des entries marquées
+    // comme "déjà synchronisées" mais à un userId différent).
+    final report = await AccountService.instance.doInitialPush(
+      forceAll: true,
+      onProgress: (p) {
+        progressNotifier.value = p;
+      },
+    );
+
+    if (nav.mounted && nav.canPop()) nav.pop();
+    progressNotifier.dispose();
+
+    if (report != null && !report.success && mounted) {
+      // On informe l'utilisateur mais on continue l'onboarding —
+      // il pourra réessayer manuellement depuis Réglages → Sauvegarde.
+      showErrorSnackBar(context,
+          'Sauvegarde partielle : ${report.message ?? "réessaye plus tard"}');
     }
   }
 
@@ -287,6 +541,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
             ),
             const SizedBox(height: CuSpacing.xl),
+
+            // ── Connexion Google (V3.1) — chemin rapide premium ──
+            GoogleSignInButton(
+              onResult: _onGoogleResult,
+              enabled: !_busy,
+            ),
+            const SizedBox(height: CuSpacing.lg),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: CuSpacing.sm),
+                  child: Text(
+                    'ou crée un compte email',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: CuColors.textSecondaryLight,
+                        ),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: CuSpacing.lg),
+
             TextFormField(
               controller: _nomCtrl,
               textInputAction: TextInputAction.next,
@@ -321,6 +599,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   icon: Icon(_obscure
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined),
+                  tooltip: _obscure
+                      ? 'Afficher le mot de passe'
+                      : 'Masquer le mot de passe',
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
@@ -368,11 +649,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: CuSpacing.md),
+            // Échappatoire premium : l'utilisateur n'est pas obligé de créer
+            // un compte cloud pour démarrer. L'app reste pleinement
+            // fonctionnelle offline ; le compte se configure plus tard
+            // dans Réglages → Sauvegarde cloud.
+            TextButton.icon(
+              onPressed: _busy ? null : _continuerSansCompte,
+              icon: const Icon(Icons.cloud_off_outlined, size: 18),
+              label: const Text('Démarrer sans compte cloud (offline)'),
+              style: TextButton.styleFrom(
+                foregroundColor: CuColors.textSecondaryLight,
+              ),
+            ),
             const SizedBox(height: CuSpacing.lg),
           ],
         ),
       ),
     );
+  }
+
+  /// Permet de finir l'onboarding sans créer de compte cloud. L'app
+  /// fonctionne en mode 100 % offline. L'utilisateur peut lier un
+  /// compte plus tard via Réglages → Sauvegarde cloud.
+  Future<void> _continuerSansCompte() async {
+    setState(() => _busy = true);
+    try {
+      final profilRepo = await DBHelper.instance.profil;
+      final r = await profilRepo.getReglages();
+      await profilRepo.updateReglages(r.copyWith(
+        onboardingDone: true,
+        themeMode: _themeMode,
+      ));
+      await ref.read(reglagesProvider.notifier).refresh();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScaffold()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showErrorSnackBar(context, 'Impossible de démarrer : $e');
+    }
   }
 
   String? _validerEmail(String? v) {

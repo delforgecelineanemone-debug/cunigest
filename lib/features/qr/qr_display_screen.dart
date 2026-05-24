@@ -36,6 +36,7 @@ class QrDisplayScreen extends StatelessWidget {
         extraActions: [
           IconButton(
             icon: const Icon(Icons.share),
+            tooltip: 'Partager',
             onPressed: () => _partager(context),
           ),
         ],

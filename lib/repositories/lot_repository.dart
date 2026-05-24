@@ -21,6 +21,8 @@
 import 'dart:convert';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/lot.dart';
+import '../services/data_bus.dart';
+import 'sync_meta.dart';
 
 class LotRepository {
   final Database db;
@@ -29,102 +31,119 @@ class LotRepository {
   // ── Lots ──
 
   Future<int> insertLot(Lot lot) async {
-    final id = await db.insert('lots', lot.toMap());
-    await _enqueueSyncIfEnabled('lots', id, 'insert', {...lot.toMap(), 'id': id});
+    final payload = stampUpdated(lot.toMap());
+    final id = await db.insert('lots', payload);
+    await _enqueueSyncIfEnabled('lots', id, 'insert', {...payload, 'id': id});
+    DataBus.instance.notify(DataTopics.lots);
     return id;
   }
 
   Future<List<Lot>> getAll() async {
-    final maps = await db.query('lots', orderBy: 'date_creation DESC');
+    final maps = await db.query('lots',
+        where: kNotDeletedWhere, orderBy: 'date_creation DESC');
     return maps.map((m) => Lot.fromMap(m)).toList();
   }
 
   Future<List<Lot>> getEnCours() async {
     final maps = await db.query('lots',
-        where: 'statut = ?', whereArgs: ['en_cours'], orderBy: 'date_creation DESC');
+        where: 'statut = ? AND $kNotDeletedWhere',
+        whereArgs: ['en_cours'],
+        orderBy: 'date_creation DESC');
     return maps.map((m) => Lot.fromMap(m)).toList();
   }
 
   Future<Lot?> getById(int id) async {
-    final maps = await db.query('lots', where: 'id = ?', whereArgs: [id]);
+    final maps = await db.query('lots',
+        where: 'id = ? AND $kNotDeletedWhere', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return Lot.fromMap(maps.first);
   }
 
   Future<int> update(Lot lot) async {
-    final r = await db.update('lots', lot.toMap(), where: 'id = ?', whereArgs: [lot.id]);
+    final payload = stampUpdated(lot.toMap());
+    final r = await db.update('lots', payload, where: 'id = ?', whereArgs: [lot.id]);
     if (lot.id != null) {
-      await _enqueueSyncIfEnabled('lots', lot.id!, 'update', lot.toMap());
+      await _enqueueSyncIfEnabled('lots', lot.id!, 'update', payload);
     }
+    DataBus.instance.notify(DataTopics.lots);
     return r;
   }
 
   Future<int> delete(int id) async {
-    final r = await db.delete('lots', where: 'id = ?', whereArgs: [id]);
-    await _enqueueSyncIfEnabled('lots', id, 'delete', {'id': id});
+    final r = await softDelete(db, 'lots', id);
+    await _enqueueSyncIfEnabled('lots', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.lots);
     return r;
   }
 
   Future<int> terminer(int id, String dateFin) async {
+    final now = nowIso();
     final r = await db.update(
       'lots',
-      {'statut': 'termine', 'date_fin': dateFin},
+      {'statut': 'termine', 'date_fin': dateFin, 'updated_at': now},
       where: 'id = ?',
       whereArgs: [id],
     );
     final lot = await getById(id);
     if (lot != null) {
-      await _enqueueSyncIfEnabled('lots', id, 'update', lot.toMap());
+      await _enqueueSyncIfEnabled('lots', id, 'update', stampUpdated(lot.toMap()));
     }
+    DataBus.instance.notify(DataTopics.lots);
     return r;
   }
 
   // ── Pesées ──
 
   Future<int> insertPesee(Pesee p) async {
-    final id = await db.insert('pesees', p.toMap());
-    await _enqueueSyncIfEnabled('pesees', id, 'insert', {...p.toMap(), 'id': id});
+    final payload = stampUpdated(p.toMap());
+    final id = await db.insert('pesees', payload);
+    await _enqueueSyncIfEnabled('pesees', id, 'insert', {...payload, 'id': id});
+    DataBus.instance.notify(DataTopics.pesees);
     return id;
   }
 
   Future<List<Pesee>> getPeseesByLot(int lotId) async {
     final maps = await db.query('pesees',
-        where: 'lot_id = ?',
+        where: 'lot_id = ? AND $kNotDeletedWhere',
         whereArgs: [lotId],
         orderBy: 'date_pesee ASC');
     return maps.map((m) => Pesee.fromMap(m)).toList();
   }
 
   Future<int> deletePesee(int id) async {
-    final r = await db.delete('pesees', where: 'id = ?', whereArgs: [id]);
-    await _enqueueSyncIfEnabled('pesees', id, 'delete', {'id': id});
+    final r = await softDelete(db, 'pesees', id);
+    await _enqueueSyncIfEnabled('pesees', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.pesees);
     return r;
   }
 
   // ── Distributions d'aliment ──
 
   Future<int> insertDistribution(DistributionAliment d) async {
-    final id = await db.insert('distributions_aliment', d.toMap());
+    final payload = stampUpdated(d.toMap());
+    final id = await db.insert('distributions_aliment', payload);
     await _enqueueSyncIfEnabled(
       'distributions_aliment',
       id,
       'insert',
-      {...d.toMap(), 'id': id},
+      {...payload, 'id': id},
     );
+    DataBus.instance.notify(DataTopics.distributionsAliment);
     return id;
   }
 
   Future<List<DistributionAliment>> getDistributionsByLot(int lotId) async {
     final maps = await db.query('distributions_aliment',
-        where: 'lot_id = ?',
+        where: 'lot_id = ? AND $kNotDeletedWhere',
         whereArgs: [lotId],
         orderBy: 'date_distribution ASC');
     return maps.map((m) => DistributionAliment.fromMap(m)).toList();
   }
 
   Future<int> deleteDistribution(int id) async {
-    final r = await db.delete('distributions_aliment', where: 'id = ?', whereArgs: [id]);
-    await _enqueueSyncIfEnabled('distributions_aliment', id, 'delete', {'id': id});
+    final r = await softDelete(db, 'distributions_aliment', id);
+    await _enqueueSyncIfEnabled('distributions_aliment', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.distributionsAliment);
     return r;
   }
 
@@ -152,31 +171,38 @@ class LotRepository {
 
   // ── Lapins du lot ──
 
-  Future<int> ajouterLapin(int lotId, int lapinId, String dateEntree) {
-    return db.insert(
+  Future<int> ajouterLapin(int lotId, int lapinId, String dateEntree) async {
+    final r = await db.insert(
       'lot_lapins',
       {
         'lot_id': lotId,
         'lapin_id': lapinId,
         'date_entree': dateEntree,
+        'updated_at': nowIso(),
       },
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
+    DataBus.instance.notify(DataTopics.lots);
+    return r;
   }
 
-  Future<int> retirerLapin(int lotId, int lapinId, String dateSortie, String motif) {
-    return db.update(
+  Future<int> retirerLapin(int lotId, int lapinId, String dateSortie, String motif) async {
+    final r = await db.update(
       'lot_lapins',
-      {'date_sortie': dateSortie, 'motif_sortie': motif},
+      {'date_sortie': dateSortie, 'motif_sortie': motif, 'updated_at': nowIso()},
       where: 'lot_id = ? AND lapin_id = ?',
       whereArgs: [lotId, lapinId],
     );
+    DataBus.instance.notify(DataTopics.lots);
+    return r;
   }
 
   Future<List<int>> getLapinIdsDuLot(int lotId, {bool seulementPresents = true}) async {
     final maps = await db.query(
       'lot_lapins',
-      where: seulementPresents ? 'lot_id = ? AND date_sortie IS NULL' : 'lot_id = ?',
+      where: seulementPresents
+          ? 'lot_id = ? AND date_sortie IS NULL AND $kNotDeletedWhere'
+          : 'lot_id = ? AND $kNotDeletedWhere',
       whereArgs: [lotId],
     );
     return maps.map((m) => m['lapin_id'] as int).toList();

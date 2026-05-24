@@ -27,7 +27,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../database/db_helper.dart';
 import '../database/schema.dart';
+import 'data_bus.dart';
 import 'encryption_key_service.dart';
+import 'kpi_service.dart';
 
 // ─── Constantes format .cunigest ─────────────────────────────
 const _kMagic = [0x43, 0x47, 0x42, 0x4B]; // "CGBK"
@@ -133,6 +135,7 @@ class BackupService {
       final destPath = p.join(destDir.path, 'cunigest_backup_$stamp.cunigest');
       await File(destPath).writeAsBytes(fileBytes);
 
+      KpiService.instance.track(KpiEvent.sauvegardeCreee);
       return BackupResult(
         success: true,
         path: destPath,
@@ -225,6 +228,9 @@ class BackupService {
       final db = await DBHelper.instance.database;
       await _restoreTables(db, data);
 
+      // Toutes les tables ont potentiellement changé → invalidation globale.
+      DataBus.instance.notify(DataTopics.all);
+
       return const BackupResult(
         success: true,
         message: 'Restauration réussie. L\'application va recharger les données.',
@@ -235,50 +241,15 @@ class BackupService {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // FORMAT .db LEGACY — EXPORT / IMPORT
+  // FORMAT .db LEGACY — IMPORT SEULEMENT
   // ═══════════════════════════════════════════════════════════
-
-  /// Exporte la base SQLCipher brute (même appareil uniquement).
-  Future<BackupResult> exporter() async {
-    try {
-      final dbPath = await DBHelper.instance.databasePath;
-      final dbFile = File(dbPath);
-      if (!await dbFile.exists()) {
-        return const BackupResult(success: false, message: 'La base de données est introuvable.');
-      }
-      final destDir = await _getBackupDir();
-      final stamp = _timestamp();
-      final destPath = p.join(destDir.path, 'cunigest_backup_$stamp.db');
-      await dbFile.copy(destPath);
-      return BackupResult(
-        success: true,
-        path: destPath,
-        message: 'Sauvegarde créée : ${p.basename(destPath)}',
-      );
-    } catch (e) {
-      return BackupResult(success: false, message: 'Échec de la sauvegarde : $e');
-    }
-  }
-
-  /// Crée une sauvegarde `.db` (legacy) et ouvre le partage.
-  Future<BackupResult> exporterEtPartager() async {
-    final result = await exporter();
-    if (!result.success || result.path == null) return result;
-    try {
-      await Share.shareXFiles(
-        [XFile(result.path!)],
-        subject: 'Sauvegarde CuniGest',
-        text: 'Sauvegarde de l\'élevage cunicole — à conserver précieusement.',
-      );
-      return result;
-    } catch (e) {
-      return BackupResult(
-        success: true,
-        path: result.path,
-        message: 'Sauvegarde créée mais partage indisponible : $e',
-      );
-    }
-  }
+  // L'EXPORT au format `.db` brut a été retiré (audit sécurité) : ce
+  // fichier embarque la clé SQLCipher, donc quiconque récupère le
+  // fichier peut lire les données. Toutes les nouvelles sauvegardes
+  // utilisent le format `.cunigest` chiffré par mot de passe.
+  //
+  // La RESTAURATION d'un ancien `.db` reste supportée (cf. `restaurer()`)
+  // pour les utilisateurs qui possèdent encore d'anciennes sauvegardes.
 
   /// Restaure un fichier de sauvegarde.
   /// Auto-détecte le format : .cunigest (chiffré) ou .db (legacy SQLCipher).
@@ -354,6 +325,9 @@ class BackupService {
         await DBHelper.instance.resetForRestore();
         return BackupResult(success: false, message: 'Restauration annulée : $e');
       }
+
+      // Toutes les tables ont potentiellement changé → invalidation globale.
+      DataBus.instance.notify(DataTopics.all);
 
       return const BackupResult(
         success: true,

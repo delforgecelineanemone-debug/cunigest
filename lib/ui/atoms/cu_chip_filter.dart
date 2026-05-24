@@ -41,7 +41,12 @@ class CuChipFilter extends StatelessWidget {
             color: isDark ? CuColors.borderDark : CuColors.borderLight,
           );
 
-    return GestureDetector(
+    return Semantics(
+      label: count != null ? '$label, $count' : label,
+      button: true,
+      selected: selected,
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
         onTap();
@@ -92,6 +97,7 @@ class CuChipFilter extends StatelessWidget {
             ],
           ],
         ),
+      ),
       ),
     );
   }

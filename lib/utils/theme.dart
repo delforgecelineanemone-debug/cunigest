@@ -25,7 +25,7 @@ class AppTheme {
   static const Color moduleOutils = CuColors.accentTools;
   static const Color moduleAdmin = CuColors.accentAdmin;
 
-  static String devise = '€';
+  static String devise = 'FCFA';
 
   static ThemeData get theme => _build(Brightness.light);
   static ThemeData get darkTheme => _build(Brightness.dark);

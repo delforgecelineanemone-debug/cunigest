@@ -72,8 +72,9 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
         ...hist.map((h) => h.lapinId),
       };
       final cache = <int, Lapin>{};
+      final lapinsRepo = await DBHelper.instance.lapins;
       for (final id in ids) {
-        final l = await DBHelper.instance.getLapinById(id);
+        final l = await lapinsRepo.getLapinById(id);
         if (l != null) cache[id] = l;
       }
 
@@ -197,7 +198,7 @@ class _CageDetailScreenState extends ConsumerState<CageDetailScreen> {
           'Cage pleine ($occMax/$occMax). Sortez un lapin avant d\'en ajouter un.');
       return;
     }
-    final lapins = await DBHelper.instance.getAllLapins();
+    final lapins = await (await DBHelper.instance.lapins).getAllLapins();
     final disponibles = lapins
         .where((l) =>
             l.id != null &&

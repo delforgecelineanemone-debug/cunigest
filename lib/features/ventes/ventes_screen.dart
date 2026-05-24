@@ -47,11 +47,12 @@ class _VentesScreenState extends State<VentesScreen>
   }
 
   Future<void> _load() async {
+    final (ventesRepo, lapinsRepo) = await (db.ventes, db.lapins).wait;
     final (ventes, stats) = await (
-      db.getAllVentes(limit: _pageSize),
-      db.getStatistiquesVentes(),
+      ventesRepo.getAllVentes(limit: _pageSize),
+      ventesRepo.getStatistiquesVentes(),
     ).wait;
-    final map = await db.getLapinsByIds(
+    final map = await lapinsRepo.getLapinsByIds(
       ventes.where((v) => v.lapinId != null).map((v) => v.lapinId!),
     );
 
@@ -75,8 +76,9 @@ class _VentesScreenState extends State<VentesScreen>
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
-    final next = await db.getAllVentes(limit: _pageSize, offset: _ventes.length);
-    final map = await db.getLapinsByIds(
+    final next = await (await db.ventes)
+        .getAllVentes(limit: _pageSize, offset: _ventes.length);
+    final map = await (await db.lapins).getLapinsByIds(
       next.where((v) => v.lapinId != null).map((v) => v.lapinId!),
     );
     for (var v in next) {
@@ -254,8 +256,8 @@ class _VentesScreenState extends State<VentesScreen>
             await UndoHelper.deleteWithUndo(
               context: context,
               label: 'Vente du ${v.dateVente}',
-              delete: () => db.deleteVente(v.id!),
-              restore: () => db.insertVente(v).then((_) {}),
+              delete: () async => (await db.ventes).deleteVente(v.id!),
+              restore: () async => (await db.ventes).insertVente(v).then((_) {}),
               onUndone: _load,
             );
             _load();
@@ -266,7 +268,7 @@ class _VentesScreenState extends State<VentesScreen>
   }
 
   Future<void> _ajouter() async {
-    final lapins = await db.getLapinsByStatut('actif');
+    final lapins = await (await db.lapins).getLapinsByStatut('actif');
     final formMap = {for (final l in lapins) if (l.id != null) l.id!: l};
     if (!mounted) return;
     await Navigator.push(context, MaterialPageRoute(builder: (_) => VenteFormScreen(lapinsMap: formMap)));

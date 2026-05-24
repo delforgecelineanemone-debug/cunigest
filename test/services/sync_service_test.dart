@@ -20,18 +20,32 @@ import 'package:gestion_cunicole/services/sync_service.dart';
 
 void main() {
   group('kSyncedTables — contrat d\'ordre et de contenu', () {
-    test('contient exactement les 8 tables miroir Supabase', () {
-      expect(kSyncedTables.toSet(), {
-        'lapins',
-        'lots',
-        'stocks',
-        'saillies',
-        'soins',
-        'ventes',
-        'pesees',
-        'distributions_aliment',
-      });
-      expect(kSyncedTables.length, 8);
+    test('couvre toutes les tables miroir attendues', () {
+      // V17 — couverture étendue : cheptel + cages + finances + routines
+      // + profil. La liste doit contenir exactement ce socle.
+      const attendues = {
+        'batiments', 'clapiers', 'cages',
+        'lapins', 'lots', 'stocks',
+        'mouvements_cage', 'pesees_lapin',
+        'saillies', 'soins', 'ventes', 'depenses',
+        'pesees', 'distributions_aliment',
+        'consommations', 'lot_lapins',
+        'taches_quotidiennes', 'completions',
+        'profil_eleveur', 'reglages',
+      };
+      expect(kSyncedTables.toSet(), attendues);
+    });
+
+    test('aucun doublon dans kSyncedTables', () {
+      expect(kSyncedTables.length, kSyncedTables.toSet().length);
+    });
+
+    test('hiérarchie cages : bâtiment avant clapier avant cage', () {
+      final iBat = kSyncedTables.indexOf('batiments');
+      final iClapier = kSyncedTables.indexOf('clapiers');
+      final iCage = kSyncedTables.indexOf('cages');
+      expect(iBat, lessThan(iClapier));
+      expect(iClapier, lessThan(iCage));
     });
 
     test('lapins arrive AVANT ses dépendants (saillies, soins, ventes)', () {

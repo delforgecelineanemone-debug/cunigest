@@ -83,6 +83,7 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
         extraActions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: 'Modifier le lot',
             onPressed: () async {
               final r = await Navigator.push(context,
                   MaterialPageRoute(builder: (_) => LotFormScreen(lot: _lot)));
@@ -188,6 +189,7 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
                         ? IconButton(
                             icon: const Icon(Icons.delete_outline,
                                 color: Colors.red),
+                            tooltip: 'Supprimer cette pesée',
                             onPressed: () => _supprimerPesee(p),
                           )
                         : null,
@@ -236,6 +238,7 @@ class _LotDetailScreenState extends State<LotDetailScreen> {
                         ? IconButton(
                             icon: const Icon(Icons.delete_outline,
                                 color: Colors.red),
+                            tooltip: 'Supprimer cette distribution',
                             onPressed: () => _supprimerDistribution(d),
                           )
                         : null,

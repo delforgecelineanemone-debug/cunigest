@@ -49,12 +49,13 @@ class _RapportsScreenState extends State<RapportsScreen> {
     final lastDay = DateTime(now.year, now.month + 1, 0).day;
     final to = '${now.year}-$monthStr-${lastDay.toString().padLeft(2, '0')}';
 
-    final stats = await DBHelper.instance.getStatistiquesVentes();
+    final ventesRepo = await DBHelper.instance.ventes;
+    final stats = await ventesRepo.getStatistiquesVentes();
     final depRepo = await DBHelper.instance.depenses;
     final dep = await depRepo.totalSurPeriode(from, to);
-    final clients =
-        await DBHelper.instance.getTopClients(from: from, to: to, limit: 5);
-    final naissances = await DBHelper.instance.naissancesParMois(6);
+    final clients = await ventesRepo.getTopClients(from: from, to: to, limit: 5);
+    final naissances =
+        await (await DBHelper.instance.lapins).naissancesParMois(6);
 
     if (!mounted) return;
     setState(() {

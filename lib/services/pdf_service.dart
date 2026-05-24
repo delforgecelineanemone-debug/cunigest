@@ -55,8 +55,8 @@ class PdfService {
       'SELECT COUNT(*) as nb, COALESCE(SUM(cout), 0) as cout FROM soins WHERE date_soin LIKE ?',
       ['$moisStr%'],
     );
-    final stats = await db.getStatistiquesLapins();
-    final repro = await db.getStatistiquesReproduction();
+    final stats = await (await db.lapins).getStatistiquesLapins();
+    final repro = await (await db.saillies).getStatistiquesReproduction();
 
     // ── Construction du PDF ──
     final doc = pw.Document(
@@ -337,13 +337,13 @@ class PdfService {
   /// Génère le pedigree PDF d'un lapin sur 4 générations (V2.4 — Phase 4).
   /// Construit récursivement l'arbre via DBHelper.getLapinById(pere/mere).
   Future<Uint8List> genererPedigreePDF(Lapin lapin) async {
-    final db = DBHelper.instance;
+    final lapinsRepo = await DBHelper.instance.lapins;
     const color = PdfColor.fromInt(0xFF1D9E75);
 
     // Charge récursivement les ancêtres jusqu'à 4 générations
     Future<_PedigreeNode> build(int? id, int depth) async {
       if (id == null || depth > 4) return _PedigreeNode(null);
-      final l = await db.getLapinById(id);
+      final l = await lapinsRepo.getLapinById(id);
       if (l == null) return _PedigreeNode(null);
       final pere = await build(l.pereId, depth + 1);
       final mere = await build(l.mereId, depth + 1);

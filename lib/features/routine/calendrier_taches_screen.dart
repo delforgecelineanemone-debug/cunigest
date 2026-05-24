@@ -42,7 +42,7 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
   }
 
   Future<void> _load() async {
-    final taches = await db.getTachesActives();
+    final taches = await (await db.routines).getTachesActives();
     if (!mounted) return;
     setState(() {
       _taches = taches;
@@ -120,7 +120,7 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
     final nouvelles = [...dejaExclus, jourStr].join(',');
 
     final maj = t.copyWith(exceptions: nouvelles);
-    await db.updateTache(maj);
+    await (await db.routines).updateTache(maj);
     await _load();
     if (!mounted) return;
     showSuccessSnackBar(context, 'Occurrence passée');
@@ -138,7 +138,7 @@ class _CalendrierTachesScreenState extends State<CalendrierTachesScreen> {
     if (!ok) return;
 
     final maj = t.copyWith(statut: 'reporte');
-    await db.updateTache(maj);
+    await (await db.routines).updateTache(maj);
     await _load();
     if (!mounted) return;
     showSuccessSnackBar(context, 'Tâche reportée');

@@ -29,6 +29,15 @@ void main() {
   });
 
   Future<void> pumpForm(WidgetTester tester, {Lapin? lapin}) async {
+    // Depuis P2.12, le formulaire est un wizard 3 étapes : indicateur
+    // en haut + barre de navigation en bas réduisent la zone scrollable.
+    // On agrandit le viewport de test pour que toute l'étape "Identité"
+    // (photo + bague + nom + sexe + race + ...) soit visible d'un coup.
+    tester.view.physicalSize = const Size(1080, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(home: LapinFormScreen(lapin: lapin)),

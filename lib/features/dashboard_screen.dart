@@ -9,7 +9,6 @@ import '../models/lot.dart';
 import '../models/profil.dart';
 import '../providers/dashboard_notifier.dart';
 import '../providers/state_providers.dart';
-import '../state/app_state.dart';
 import '../ui/cu_ui.dart';
 import '../utils/breakpoints.dart';
 import 'auth/cloud_reconnect_banner.dart';
@@ -81,10 +80,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 class _Body extends StatelessWidget {
   final DashboardData data;
-  final ProfilState profilState;
-  final ReglagesState reglagesState;
+  final ProfilViewState profilState;
+  final ReglagesViewState reglagesState;
   final bool peutVoirFinances;
-  final SessionState session;
+  final SessionViewState session;
   final void Function(Widget) navigate;
 
   const _Body({

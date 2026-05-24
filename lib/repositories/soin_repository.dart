@@ -4,6 +4,10 @@
 
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/soin.dart';
+import '../services/data_bus.dart';
+import '../services/kpi_service.dart';
+import 'repository_validators.dart';
+import 'sync_meta.dart';
 
 class SoinRepository {
   final Database db;
@@ -13,8 +17,12 @@ class SoinRepository {
 
   /// Enregistre un nouveau soin
   Future<int> insertSoin(Soin s) async {
-    final id = await db.insert('soins', s.toMap());
-    await enqueueSyncIfEnabled?.call('soins', id, 'insert', {...s.toMap(), 'id': id});
+    RepositoryValidators.assertValidSoin(s);
+    final payload = stampUpdated(s.toMap());
+    final id = await db.insert('soins', payload);
+    await enqueueSyncIfEnabled?.call('soins', id, 'insert', {...payload, 'id': id});
+    DataBus.instance.notify(DataTopics.soins);
+    KpiService.instance.track(KpiEvent.soinEnregistre);
     return id;
   }
 
@@ -22,6 +30,7 @@ class SoinRepository {
   Future<List<Soin>> getAllSoins({int? limit, int? offset}) async {
     final maps = await db.query(
       'soins',
+      where: kNotDeletedWhere,
       orderBy: 'date_soin DESC',
       limit: limit,
       offset: offset,
@@ -31,7 +40,10 @@ class SoinRepository {
 
   /// Récupère les soins d'un lapin spécifique
   Future<List<Soin>> getSoinsByLapin(int lapinId) async {
-    final maps = await db.query('soins', where: 'lapin_id = ?', whereArgs: [lapinId], orderBy: 'date_soin DESC');
+    final maps = await db.query('soins',
+        where: 'lapin_id = ? AND $kNotDeletedWhere',
+        whereArgs: [lapinId],
+        orderBy: 'date_soin DESC');
     return maps.map((m) => Soin.fromMap(m)).toList();
   }
 
@@ -39,7 +51,7 @@ class SoinRepository {
   Future<List<Soin>> getRappelsProchains(int jours) async {
     final limite = DateTime.now().add(Duration(days: jours)).toIso8601String().substring(0, 10);
     final maps = await db.query('soins',
-        where: 'date_rappel IS NOT NULL AND date_rappel <= ?',
+        where: 'date_rappel IS NOT NULL AND date_rappel <= ? AND $kNotDeletedWhere',
         whereArgs: [limite],
         orderBy: 'date_rappel ASC');
     return maps.map((m) => Soin.fromMap(m)).toList();
@@ -47,22 +59,26 @@ class SoinRepository {
 
   /// Met à jour un soin
   Future<int> updateSoin(Soin s) async {
-    final r = await db.update('soins', s.toMap(), where: 'id = ?', whereArgs: [s.id]);
+    RepositoryValidators.assertValidSoin(s);
+    final payload = stampUpdated(s.toMap());
+    final r = await db.update('soins', payload, where: 'id = ?', whereArgs: [s.id]);
     if (s.id != null) {
-      await enqueueSyncIfEnabled?.call('soins', s.id!, 'update', s.toMap());
+      await enqueueSyncIfEnabled?.call('soins', s.id!, 'update', payload);
     }
+    DataBus.instance.notify(DataTopics.soins);
     return r;
   }
 
-  /// Supprime un soin
+  /// Supprime un soin (soft-delete).
   Future<int> deleteSoin(int id) async {
-    final r = await db.delete('soins', where: 'id = ?', whereArgs: [id]);
-    await enqueueSyncIfEnabled?.call('soins', id, 'delete', {'id': id});
+    final r = await softDelete(db, 'soins', id);
+    await enqueueSyncIfEnabled?.call('soins', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.soins);
     return r;
   }
 
   Future<int> count() async {
-    final r = await db.rawQuery('SELECT COUNT(*) as c FROM soins');
+    final r = await db.rawQuery('SELECT COUNT(*) as c FROM soins WHERE deleted_at IS NULL');
     return (r.first['c'] as int?) ?? 0;
   }
 
@@ -75,6 +91,7 @@ class SoinRepository {
       WHERE lapin_id = ?
         AND delai_attente_jours IS NOT NULL
         AND delai_attente_jours > 0
+        AND deleted_at IS NULL
         AND date(date_soin, '+' || delai_attente_jours || ' days') > date(?)
       ORDER BY date(date_soin, '+' || delai_attente_jours || ' days') DESC
       LIMIT 1

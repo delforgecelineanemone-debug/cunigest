@@ -28,8 +28,7 @@ class CsvService {
 
   /// Exporte le cheptel complet.
   Future<void> exporterLapins(BuildContext context) async {
-    final db = DBHelper.instance;
-    final lapins = await db.getAllLapins();
+    final lapins = await (await DBHelper.instance.lapins).getAllLapins();
 
     final rows = <List<String>>[
       [
@@ -54,8 +53,7 @@ class CsvService {
 
   /// Exporte toutes les ventes.
   Future<void> exporterVentes(BuildContext context) async {
-    final db = DBHelper.instance;
-    final ventes = await db.getAllVentes();
+    final ventes = await (await DBHelper.instance.ventes).getAllVentes();
     final devise = await _devise();
 
     final rows = <List<String>>[
@@ -78,8 +76,7 @@ class CsvService {
 
   /// Exporte tous les soins / vaccinations.
   Future<void> exporterSoins(BuildContext context) async {
-    final db = DBHelper.instance;
-    final soins = await db.getAllSoins();
+    final soins = await (await DBHelper.instance.soins).getAllSoins();
     final devise = await _devise();
 
     final rows = <List<String>>[
@@ -132,7 +129,7 @@ class CsvService {
 
   Future<String> _devise() async {
     try {
-      return (await DBHelper.instance.getReglages()).devise;
+      return (await (await DBHelper.instance.profil).getReglages()).devise;
     } catch (_) {
       return '€';
     }

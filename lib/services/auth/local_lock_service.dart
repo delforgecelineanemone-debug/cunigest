@@ -31,8 +31,18 @@ class LocalLockService {
   static const _kPinHash = 'cunigest_lock_pin_hash';     // PBKDF2 du PIN
   static const _kReLockMin = 'cunigest_lock_relock_min'; // re-verrou après N min
   static const _kLastUnlock = 'cunigest_lock_last_unlock'; // ISO timestamp
+  static const _kPinFailCount = 'cunigest_lock_pin_fails';   // tentatives PIN
+  static const _kPinLockedUntil = 'cunigest_lock_pin_locked_until'; // ISO
 
   static const int defaultReLockMinutes = 15;
+
+  // ── Brute-force guard ───────────────────────────────────────
+  /// Délais (secondes) appliqués après chaque tentative ratée à partir
+  /// de la 3e. Indice = (fails - 3). Au-delà du dernier indice = lockout
+  /// fixe `kPinLockoutFinalSeconds` (15 min) jusqu'à ce que l'utilisateur
+  /// passe par la biométrie ou attende.
+  static const List<int> kPinBackoffSeconds = [1, 2, 5, 15, 60, 300];
+  static const int kPinLockoutFinalSeconds = 900; // 15 minutes
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
@@ -110,7 +120,54 @@ class LocalLockService {
   Future<bool> verifyPin(String pin) async {
     final hash = await _storage.read(key: _kPinHash);
     if (hash == null || hash.isEmpty) return false;
-    return pbkdf2Verify(pin, hash);
+    final ok = await pbkdf2Verify(pin, hash);
+    if (ok) {
+      await _resetPinFailCount();
+    } else {
+      await _registerPinFailure();
+    }
+    return ok;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BRUTE-FORCE GUARD
+  // ═══════════════════════════════════════════════════════════
+
+  /// Renvoie le nombre de secondes restantes avant la prochaine tentative
+  /// autorisée. 0 = pas de blocage, l'utilisateur peut saisir son PIN.
+  Future<int> pinLockoutSecondsRemaining() async {
+    final until = await _storage.read(key: _kPinLockedUntil);
+    if (until == null || until.isEmpty) return 0;
+    final dt = DateTime.tryParse(until);
+    if (dt == null) return 0;
+    final diff = dt.difference(DateTime.now().toUtc()).inSeconds;
+    return diff > 0 ? diff : 0;
+  }
+
+  /// Nombre de tentatives PIN consécutives ratées.
+  Future<int> pinFailCount() async {
+    final v = await _storage.read(key: _kPinFailCount);
+    return int.tryParse(v ?? '') ?? 0;
+  }
+
+  Future<void> _resetPinFailCount() async {
+    await _storage.delete(key: _kPinFailCount);
+    await _storage.delete(key: _kPinLockedUntil);
+  }
+
+  Future<void> _registerPinFailure() async {
+    final n = await pinFailCount() + 1;
+    await _storage.write(key: _kPinFailCount, value: n.toString());
+    // Appliquer un délai à partir de la 3e tentative ratée.
+    if (n >= 3) {
+      final idx = n - 3;
+      final delay = idx < kPinBackoffSeconds.length
+          ? kPinBackoffSeconds[idx]
+          : kPinLockoutFinalSeconds;
+      final lockedUntil =
+          DateTime.now().toUtc().add(Duration(seconds: delay)).toIso8601String();
+      await _storage.write(key: _kPinLockedUntil, value: lockedUntil);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -152,29 +209,40 @@ class LocalLockService {
 
   /// Lance le prompt biométrique natif.
   /// Retourne true si l'utilisateur est authentifié.
+  ///
+  /// `stickyAuth: false` (corrigé V2.5) — le prompt ne reste pas ouvert en
+  /// arrière-plan, ce qui fermerait la fenêtre d'attaque physique (un voleur
+  /// qui force Face ID dans les 15s suivant le vol). Timeout 8s : si l'utilisateur
+  /// ne réagit pas dans ce délai, on échoue proprement et on retombe sur PIN.
   Future<bool> authenticateBiometry({String? reason}) async {
     try {
-      return await _auth.authenticate(
-        localizedReason: reason ?? 'Déverrouille CuniGest',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
-        authMessages: const [
-          AndroidAuthMessages(
-            signInTitle: 'CuniGest',
-            cancelButton: 'Annuler',
-            biometricHint: '',
-            biometricNotRecognized: 'Empreinte non reconnue',
-            biometricSuccess: 'Authentifié',
-          ),
-          IOSAuthMessages(
-            cancelButton: 'Annuler',
-            lockOut: 'Réessaye plus tard',
-          ),
-        ],
-      );
+      final result = await _auth
+          .authenticate(
+            localizedReason: reason ?? 'Déverrouille CuniGest',
+            options: const AuthenticationOptions(
+              biometricOnly: true,
+              stickyAuth: false,
+              useErrorDialogs: true,
+            ),
+            authMessages: const [
+              AndroidAuthMessages(
+                signInTitle: 'CuniGest',
+                cancelButton: 'Annuler',
+                biometricHint: '',
+                biometricNotRecognized: 'Empreinte non reconnue',
+                biometricSuccess: 'Authentifié',
+              ),
+              IOSAuthMessages(
+                cancelButton: 'Annuler',
+                lockOut: 'Réessaye plus tard',
+              ),
+            ],
+          )
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () => false,
+          );
+      return result;
     } on PlatformException catch (e) {
       debugPrint('LocalLockService.authenticateBiometry: $e');
       return false;

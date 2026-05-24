@@ -59,7 +59,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
     }
 
     if (type == 'lapin') {
-      final lapin = await DBHelper.instance.getLapinById(id);
+      final lapin = await (await DBHelper.instance.lapins).getLapinById(id);
       if (!mounted) return;
       if (lapin == null) {
         _showError('Lapin introuvable (ID $id)');
@@ -105,10 +105,12 @@ class _QrScanScreenState extends State<QrScanScreen> {
         extraActions: [
           IconButton(
             icon: const Icon(Icons.flashlight_on),
+            tooltip: 'Lampe torche',
             onPressed: () => _controller.toggleTorch(),
           ),
           IconButton(
             icon: const Icon(Icons.cameraswitch),
+            tooltip: 'Changer de caméra',
             onPressed: () => _controller.switchCamera(),
           ),
         ],

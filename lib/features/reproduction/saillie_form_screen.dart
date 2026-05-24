@@ -101,7 +101,8 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
       return;
     }
     setState(() => _checkingConsanguinite = true);
-    final result = await db.verifierConsanguinite(_mereId!, _pereId!);
+    final result =
+        await (await db.lapins).verifierConsanguinite(_mereId!, _pereId!);
     if (mounted) {
       setState(() {
         _consanguiniteWarning = result;
@@ -372,7 +373,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
 
   Widget _bandeauRappelsAuto() {
     final lignes = _rappelsAutoLignes();
-    const violet = Color(0xFF7F77DD);
+    const violet = CuColors.accentRepro;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -559,11 +560,12 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
 
     try {
       int saillieId;
+      final sailliesRepo = await db.saillies;
       if (widget.saillie == null) {
-        saillieId = await db.insertSaillie(saillie);
+        saillieId = await sailliesRepo.insertSaillie(saillie);
       } else {
         saillieId = widget.saillie!.id!;
-        await db.updateSaillie(saillie);
+        await sailliesRepo.updateSaillie(saillie);
       }
 
       // ── V13 : auto-création du lot à la mise bas ──
@@ -592,7 +594,7 @@ class _SaillieFormScreenState extends State<SaillieFormScreen> {
 
         // Lier la saillie au lot
         saillie = saillie.copyWith(lotId: lotId);
-        await db.updateSaillie(saillie);
+        await (await db.saillies).updateSaillie(saillie);
         messageLot = 'Lot $code créé automatiquement';
       }
 

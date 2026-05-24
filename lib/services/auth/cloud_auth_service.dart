@@ -18,8 +18,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../database/db_helper.dart';
 import '../../utils/app_config.dart';
+import '../account_service.dart';
 import '../sync_service.dart';
 
 enum CloudHealth {
@@ -66,6 +68,21 @@ class CloudAuthService {
         return _setHealth(CloudHealth.notConfigured);
       }
 
+      // 0. Si supabase_flutter a déjà une session valide persistée
+      // (cas typique des comptes Google), on la copie dans sync_config
+      // et c'est gagné — pas besoin de refresh manuel.
+      try {
+        final s = sb.Supabase.instance.client.auth.currentSession;
+        if (s != null && !s.isExpired) {
+          await AccountService.instance.syncFromSupabaseSession(s);
+          debugPrint(
+              'CloudAuth: session supabase_flutter déjà valide ✅');
+          return _setHealth(CloudHealth.healthy);
+        }
+      } catch (_) {
+        // supabase_flutter pas initialisé — on continue en mode legacy.
+      }
+
       // 1. Tentative refresh via refresh_token (cas nominal — 99 %).
       if (cfg.refreshToken != null && cfg.refreshToken!.isNotEmpty) {
         final ok = await SyncService.instance.refreshTokenIfPossible();
@@ -76,6 +93,11 @@ class CloudAuthService {
       }
 
       // 2. Fallback : re-signin silencieux avec mot de passe stocké.
+      // (Skip pour les comptes Google — pas de mot de passe stocké.)
+      if (cfg.isOAuthAccount) {
+        debugPrint('CloudAuth: compte OAuth, pas de re-signin silencieux');
+        return _setHealth(CloudHealth.needsReconnect);
+      }
       final email = cfg.email;
       final pwd = await _storage.read(key: _kCloudPasswordKey);
       if (email != null && email.isNotEmpty && pwd != null && pwd.isNotEmpty) {

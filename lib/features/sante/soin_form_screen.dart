@@ -79,7 +79,7 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
   /// Évite la ressaisie du nom pour les éleveurs qui ont un vétérinaire attitré.
   Future<void> _prefillVeterinaireRecent() async {
     try {
-      final recents = await db.getAllSoins(limit: 5);
+      final recents = await (await db.soins).getAllSoins(limit: 5);
       final dernier = recents
           .map((s) => s.veterinaire)
           .firstWhere((v) => v != null && v.trim().isNotEmpty,
@@ -395,10 +395,11 @@ class _SoinFormScreenState extends State<SoinFormScreen> {
     );
 
     try {
+      final soinsRepo = await db.soins;
       if (widget.soin == null) {
-        await db.insertSoin(soin);
+        await soinsRepo.insertSoin(soin);
       } else {
-        await db.updateSoin(soin);
+        await soinsRepo.updateSoin(soin);
       }
       if (mounted) {
         _formCtrl.markClean();

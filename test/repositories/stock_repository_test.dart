@@ -95,14 +95,27 @@ void main() {
     });
   });
 
-  group('cascade suppression', () {
-    test('supprimer un stock → cascade sur ses consommations', () async {
+  group('soft-delete', () {
+    test('supprimer un stock le retire de getAllStocks() sans purge physique',
+        () async {
       final id = await ajouterStock(50);
       await repo.consommerStock(id, 5, '2026-05-01');
       expect((await db.query('consommations')).length, 1);
 
       await repo.deleteStock(id);
-      expect(await db.query('consommations'), isEmpty);
+
+      // Soft-delete : le stock n'apparaît plus dans la liste métier...
+      final visibles = await repo.getAllStocks();
+      expect(visibles.where((s) => s.id == id), isEmpty);
+
+      // ...mais la row existe toujours en base avec deleted_at rempli
+      // (préservation jusqu'à confirmation du push cloud).
+      final raw = await db.query('stocks', where: 'id = ?', whereArgs: [id]);
+      expect(raw.length, 1);
+      expect(raw.first['deleted_at'], isNotNull);
+
+      // Les consommations historiques sont conservées (faits passés).
+      expect((await db.query('consommations')).length, 1);
     });
   });
 }

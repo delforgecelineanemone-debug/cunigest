@@ -7,21 +7,46 @@
 
 import 'package:sqflite_sqlcipher/sqflite.dart';
 import '../models/depense.dart';
+import '../services/data_bus.dart';
+import 'repository_validators.dart';
+import 'sync_meta.dart';
 
 class DepenseRepository {
   final Database _db;
-  DepenseRepository(this._db);
+  final Future<void> Function(String, int, String, Map<String, dynamic>)?
+      enqueueSyncIfEnabled;
+
+  DepenseRepository(this._db, {this.enqueueSyncIfEnabled});
 
   Future<int> insert(Depense d) async {
-    final m = d.toMap()..remove('id');
-    return _db.insert('depenses', m);
+    RepositoryValidators.assertValidDepense(d);
+    final m = stampUpdated(d.toMap()..remove('id'));
+    final id = await _db.insert('depenses', m);
+    await enqueueSyncIfEnabled?.call(
+        'depenses', id, 'insert', {...m, 'id': id});
+    DataBus.instance.notify(DataTopics.depenses);
+    return id;
   }
 
-  Future<int> update(Depense d) =>
-      _db.update('depenses', d.toMap(), where: 'id = ?', whereArgs: [d.id]);
+  Future<int> update(Depense d) async {
+    RepositoryValidators.assertValidDepense(d);
+    final payload = stampUpdated(d.toMap());
+    final r = await _db.update('depenses', payload,
+        where: 'id = ?', whereArgs: [d.id]);
+    if (d.id != null) {
+      await enqueueSyncIfEnabled?.call(
+          'depenses', d.id!, 'update', payload);
+    }
+    DataBus.instance.notify(DataTopics.depenses);
+    return r;
+  }
 
-  Future<int> delete(int id) =>
-      _db.delete('depenses', where: 'id = ?', whereArgs: [id]);
+  Future<int> delete(int id) async {
+    final r = await softDelete(_db, 'depenses', id);
+    await enqueueSyncIfEnabled?.call('depenses', id, 'delete', {'id': id, 'deleted_at': nowIso()});
+    DataBus.instance.notify(DataTopics.depenses);
+    return r;
+  }
 
   Future<List<Depense>> getAll({
     String? categorie,
@@ -30,7 +55,7 @@ class DepenseRepository {
     int? limit,
     int? offset,
   }) async {
-    final wheres = <String>[];
+    final wheres = <String>['deleted_at IS NULL'];
     final args = <Object?>[];
     if (categorie != null) {
       wheres.add('categorie = ?');
@@ -46,7 +71,7 @@ class DepenseRepository {
     }
     final maps = await _db.query(
       'depenses',
-      where: wheres.isEmpty ? null : wheres.join(' AND '),
+      where: wheres.join(' AND '),
       whereArgs: args.isEmpty ? null : args,
       orderBy: 'date_depense DESC',
       limit: limit,
@@ -59,7 +84,7 @@ class DepenseRepository {
   Future<double> totalSurPeriode(String from, String to) async {
     final r = await _db.rawQuery(
       'SELECT COALESCE(SUM(montant), 0) AS total FROM depenses '
-      'WHERE date_depense BETWEEN ? AND ?',
+      'WHERE date_depense BETWEEN ? AND ? AND deleted_at IS NULL',
       [from, to],
     );
     return ((r.first['total'] as num?) ?? 0).toDouble();
@@ -69,7 +94,7 @@ class DepenseRepository {
   Future<Map<String, double>> totalParCategorie(String from, String to) async {
     final r = await _db.rawQuery(
       'SELECT categorie, SUM(montant) AS total FROM depenses '
-      'WHERE date_depense BETWEEN ? AND ? GROUP BY categorie',
+      'WHERE date_depense BETWEEN ? AND ? AND deleted_at IS NULL GROUP BY categorie',
       [from, to],
     );
     return {
@@ -81,7 +106,7 @@ class DepenseRepository {
   /// Liste des dépenses imputées à un lot (avec total).
   Future<List<Depense>> getByLot(int lotId) async {
     final maps = await _db.query('depenses',
-        where: 'lot_id = ?',
+        where: 'lot_id = ? AND $kNotDeletedWhere',
         whereArgs: [lotId],
         orderBy: 'date_depense DESC');
     return maps.map(Depense.fromMap).toList();
@@ -90,7 +115,7 @@ class DepenseRepository {
   /// Liste des dépenses imputées à un lapin (reproducteur).
   Future<List<Depense>> getByLapin(int lapinId) async {
     final maps = await _db.query('depenses',
-        where: 'lapin_id = ?',
+        where: 'lapin_id = ? AND $kNotDeletedWhere',
         whereArgs: [lapinId],
         orderBy: 'date_depense DESC');
     return maps.map(Depense.fromMap).toList();
@@ -99,7 +124,7 @@ class DepenseRepository {
   /// Total des dépenses imputées à un lot.
   Future<double> totalParLot(int lotId) async {
     final r = await _db.rawQuery(
-      'SELECT COALESCE(SUM(montant), 0) AS total FROM depenses WHERE lot_id = ?',
+      'SELECT COALESCE(SUM(montant), 0) AS total FROM depenses WHERE lot_id = ? AND deleted_at IS NULL',
       [lotId],
     );
     return ((r.first['total'] as num?) ?? 0).toDouble();
@@ -108,7 +133,7 @@ class DepenseRepository {
   /// Total des dépenses imputées à un lapin.
   Future<double> totalParLapin(int lapinId) async {
     final r = await _db.rawQuery(
-      'SELECT COALESCE(SUM(montant), 0) AS total FROM depenses WHERE lapin_id = ?',
+      'SELECT COALESCE(SUM(montant), 0) AS total FROM depenses WHERE lapin_id = ? AND deleted_at IS NULL',
       [lapinId],
     );
     return ((r.first['total'] as num?) ?? 0).toDouble();
@@ -122,7 +147,7 @@ class DepenseRepository {
         .substring(0, 10);
     final r = await _db.rawQuery(
       'SELECT substr(date_depense, 1, 7) AS mois, SUM(montant) AS total '
-      'FROM depenses WHERE date_depense >= ? GROUP BY mois ORDER BY mois ASC',
+      'FROM depenses WHERE date_depense >= ? AND deleted_at IS NULL GROUP BY mois ORDER BY mois ASC',
       [from],
     );
     return {

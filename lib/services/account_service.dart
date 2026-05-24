@@ -14,6 +14,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../database/db_helper.dart';
 import '../models/sync_entry.dart';
 import '../utils/app_config.dart';
@@ -25,6 +26,24 @@ const int _kKeyLength = 32; // bytes (256 bits)
 const int _kSaltLength = 16; // bytes (128 bits)
 const String _kPbkdf2Prefix = 'pbkdf2\$';
 const String _kLegacySalt = 'cunigest_v3_account_salt_8a2d';
+
+/// Résultat d'une tentative de lien entre le compte local et le cloud Supabase.
+/// Distingue les cas pour que l'UI puisse réagir : silence en cas de
+/// non-applicabilité, avertissement utilisateur en cas d'échec réel.
+enum CloudLinkOutcome {
+  /// Le compte local est lié au cloud (signUp ou signIn Supabase OK).
+  success,
+
+  /// Aucune tentative n'a été faite (pas de compte local, pas de config
+  /// Supabase compilée, ou mot de passe absent → compte Google). Pas une
+  /// erreur utilisateur ; l'app reste pleinement fonctionnelle offline.
+  notApplicable,
+
+  /// Tentative effectuée mais échouée (pas de réseau, identifiants
+  /// invalides, serveur down). L'utilisateur doit en être informé pour
+  /// pouvoir réessayer plus tard depuis Réglages → Sauvegarde cloud.
+  failed,
+}
 
 // ─── PBKDF2-HMAC-SHA256 — top-level pour compute() ───────────
 // Reçoit un record Dart 3.0 {password, salt}.
@@ -136,9 +155,39 @@ class AccountService {
     return cfg.hasLocalAccount;
   }
 
-  /// Crée le compte local avec hash PBKDF2.
-  /// Lance le lien cloud en tâche de fond.
-  Future<void> creerCompte({
+  /// Compte les lignes de données métier présentes localement (cheptel,
+  /// reproduction, santé, ventes, lots, cages…).
+  ///
+  /// Sert, à la création d'un compte, à détecter si l'appareil contient
+  /// déjà des données — auquel cas on DOIT demander à l'utilisateur si
+  /// elles lui appartiennent avant tout envoi vers le cloud.
+  Future<int> compterDonneesLocales() async {
+    try {
+      final db = await DBHelper.instance.database;
+      const tables = [
+        'lapins', 'saillies', 'soins', 'ventes', 'depenses',
+        'lots', 'cages', 'batiments', 'clapiers', 'stocks',
+      ];
+      var total = 0;
+      for (final t in tables) {
+        try {
+          final r = await db.rawQuery('SELECT COUNT(*) AS n FROM $t');
+          total += (r.first['n'] as int?) ?? 0;
+        } catch (_) {/* table absente — ignore */}
+      }
+      return total;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Crée le compte local avec hash PBKDF2, puis tente le lien cloud.
+  ///
+  /// Retourne le résultat de la tentative de lien — l'appelant DOIT vérifier
+  /// la valeur pour informer l'utilisateur en cas d'échec (sinon il croit
+  /// avoir un compte cloud sans en avoir un, et perd ses données à la
+  /// réinstallation).
+  Future<CloudLinkOutcome> creerCompte({
     required String email,
     required String nom,
     required String motDePasse,
@@ -153,7 +202,128 @@ class AccountService {
       clearAuth: true,
     ));
     await _storage.write(key: _kCloudPasswordKey, value: motDePasse);
-    unawaited(tenterLienCloud());
+    // Lien cloud uniquement. Le push initial des données locales est géré
+    // SÉPARÉMENT par l'onboarding, APRÈS un consentement explicite : on ne
+    // pousse jamais de données vers le cloud sans l'accord de l'éleveur.
+    return tenterLienCloud();
+  }
+
+  /// Crée (ou met à jour) le compte local après une connexion Google
+  /// réussie. Pas de mot de passe local — la session Supabase fait foi.
+  ///
+  /// La session passée en paramètre est déjà persistée par supabase_flutter
+  /// dans SharedPreferences ; on la recopie aussi dans `sync_config` pour
+  /// que l'ancien `SyncService` (push/pull REST) puisse continuer à
+  /// fonctionner sans refactor immédiat.
+  Future<void> creerCompteGoogle({
+    required String email,
+    required String? nom,
+    required sb.Session session,
+  }) async {
+    final cfg = await _getConfig();
+
+    // Détection changement d'utilisateur cloud :
+    // - Si on avait déjà un userId et qu'il est différent du nouveau,
+    //   les rows locales (déjà push à l'ancien userId) doivent être
+    //   re-pushées au nouveau.
+    final isUserChange =
+        cfg.userId != null && cfg.userId!.isNotEmpty && cfg.userId != session.user.id;
+    if (isUserChange) {
+      debugPrint(
+          'AccountService 🔄 changement de userId cloud : ${cfg.userId} → ${session.user.id}');
+    }
+
+    await _saveConfig(cfg.copyWith(
+      email: email,
+      nom: nom ?? cfg.nom,
+      passwordHash: SyncConfig.googleOAuthSentinel,
+      enabled: true,
+      serverUrl: AppConfig.supabaseUrl,
+      apiKey: AppConfig.supabaseAnonKey,
+      userId: session.user.id,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+    ));
+    // Marque l'onboarding comme terminé : avec un compte Google, on peut
+    // sauter directement à MainScaffold même si l'utilisateur ferme
+    // l'app avant d'avoir cliqué « Commencer ».
+    try {
+      final profilRepo = await DBHelper.instance.profil;
+      final r = await profilRepo.getReglages();
+      if (!r.onboardingDone) {
+        await profilRepo.updateReglages(r.copyWith(onboardingDone: true));
+      }
+    } catch (e) {
+      debugPrint('AccountService : updateReglages échec : $e');
+    }
+    debugPrint('AccountService : compte Google créé (${session.user.id})');
+    // AUCUN push automatique : l'onboarding demande explicitement à
+    // l'utilisateur si les données locales lui appartiennent avant tout
+    // envoi vers le cloud. Pousser en silence des données qui ne sont pas
+    // les siennes (données de test, ancien compte) est un défaut grave.
+  }
+
+  /// Push initial après création de compte.
+  /// Scan toutes les tables locales et enqueue les rows non encore
+  /// connues du cloud, puis déclenche une sync immédiate.
+  ///
+  /// Si [onProgress] est fourni, émet le SyncProgress pendant le push
+  /// (utile pour afficher une modale dans l'onboarding).
+  ///
+  /// Idempotent : ne ré-enqueue pas les rows déjà connues.
+  Future<SyncReport?> doInitialPush({
+    void Function(SyncProgress)? onProgress,
+    bool forceAll = false,
+  }) async {
+    try {
+      debugPrint(
+          'AccountService 🚀 doInitialPush — scan des tables (forceAll=$forceAll)…');
+      onProgress?.call(const SyncProgress(
+        phase: 'preparing',
+        processed: 0,
+        total: 0,
+        message: 'Analyse de tes données locales…',
+      ));
+      final added = await SyncService.instance.enqueueAllExistingRows(
+        forceAll: forceAll,
+      );
+      debugPrint('AccountService 🚀 $added élément(s) ajouté(s) à la file');
+      if (added == 0) {
+        // Rien à pousser (cas user fraichement créé sans données locales).
+        // On déclenche quand même une sync pour faire le pull si jamais.
+        onProgress?.call(const SyncProgress(
+          phase: 'preparing',
+          processed: 0,
+          total: 0,
+          message: 'Aucune donnée à envoyer.',
+        ));
+      }
+      debugPrint('AccountService 🚀 lancement synchroniser()…');
+      final report = await SyncService.instance.synchroniser(
+        onProgress: onProgress,
+      );
+      debugPrint(
+          'AccountService 🚀 résultat : success=${report.success} pushed=${report.pushed} errors=${report.errors} msg="${report.message}"');
+      return report;
+    } catch (e, st) {
+      debugPrint('AccountService 🚀 doInitialPush KO : $e\n$st');
+      return null;
+    }
+  }
+
+  /// Synchronise la session courante de supabase_flutter dans `sync_config`
+  /// — appelé sur authStateChange pour que le SyncService legacy ait
+  /// toujours les bons tokens.
+  Future<void> syncFromSupabaseSession(sb.Session? session) async {
+    if (session == null) return;
+    final cfg = await _getConfig();
+    await _saveConfig(cfg.copyWith(
+      serverUrl: AppConfig.supabaseUrl,
+      apiKey: AppConfig.supabaseAnonKey,
+      userId: session.user.id,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+    ));
   }
 
   /// Vérifie le mot de passe contre le hash local.
@@ -207,16 +377,21 @@ class AccountService {
   // ═══════════════════════════════════════════════════════════
 
   /// Tente de lier le compte local au cloud Supabase.
-  /// Silencieux en cas d'échec (pas de réseau, etc.).
-  Future<void> tenterLienCloud() async {
+  ///
+  /// Retourne un [CloudLinkOutcome] pour permettre à l'appelant (onboarding,
+  /// écran de connexion) d'afficher un avertissement si l'utilisateur croit
+  /// avoir un compte cloud mais que le lien a échoué. N'élève jamais.
+  Future<CloudLinkOutcome> tenterLienCloud() async {
     try {
       final cfg = await _getConfig();
-      if (cfg.isCloudLinked) return;
-      if (!cfg.hasLocalAccount) return;
-      if (!AppConfig.hasSupabaseDefaults) return;
+      if (cfg.isCloudLinked) return CloudLinkOutcome.success;
+      if (!cfg.hasLocalAccount) return CloudLinkOutcome.notApplicable;
+      if (!AppConfig.hasSupabaseDefaults) return CloudLinkOutcome.notApplicable;
 
       final motDePasse = await _storage.read(key: _kCloudPasswordKey);
-      if (motDePasse == null || motDePasse.isEmpty) return;
+      if (motDePasse == null || motDePasse.isEmpty) {
+        return CloudLinkOutcome.notApplicable;
+      }
 
       final email = cfg.email!;
 
@@ -228,14 +403,19 @@ class AccountService {
       );
 
       if (signUpErr == null) {
-        await SyncService.instance.signIn(
+        final signInErr = await SyncService.instance.signIn(
           serverUrl: AppConfig.supabaseUrl,
           apiKey: AppConfig.supabaseAnonKey,
           email: email,
           password: motDePasse,
         );
-        debugPrint('AccountService : compte créé et lié au cloud.');
-        return;
+        if (signInErr == null) {
+          debugPrint('AccountService : compte créé et lié au cloud.');
+          return CloudLinkOutcome.success;
+        }
+        debugPrint(
+            'AccountService : signUp OK mais signIn KO — $signInErr');
+        return CloudLinkOutcome.failed;
       }
 
       final signInErr = await SyncService.instance.signIn(
@@ -246,16 +426,20 @@ class AccountService {
       );
       if (signInErr == null) {
         debugPrint('AccountService : compte existant rejoint sur le cloud.');
-      } else {
-        debugPrint('AccountService : lien cloud impossible — $signInErr');
+        return CloudLinkOutcome.success;
       }
+      debugPrint('AccountService : lien cloud impossible — $signInErr');
+      return CloudLinkOutcome.failed;
     } catch (e) {
       debugPrint('AccountService.tenterLienCloud erreur : $e');
+      return CloudLinkOutcome.failed;
     }
   }
 }
 
 /// Lance un Future sans attendre, sans warning du linter.
-void unawaited(Future<void> f) {
-  f.catchError((_) {});
+/// Accepte n'importe quel Future (y compris Future<CloudLinkOutcome>) car
+/// l'appelant choisit explicitement de ne pas attendre la valeur retournée.
+void unawaited(Future<Object?> f) {
+  f.catchError((Object _) {});
 }

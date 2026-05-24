@@ -45,15 +45,17 @@ Cheptel, reproduction, santé, ventes — hors-ligne par défaut, synchronisatio
 | Couche | Technologie |
 |--------|-------------|
 | Langage | Dart 3 / Flutter (Material 3) |
-| State | Riverpod / Provider 6.x |
-| Base | sqflite_sqlcipher (SQLite chiffré AES-256) |
+| State | Riverpod 2.x (`NotifierProvider`, `AsyncNotifierProvider`) |
+| Base locale | sqflite_sqlcipher (SQLite chiffré AES-256) |
 | Stockage clés | flutter_secure_storage (Android Keystore) |
-| Photos | image_picker + path_provider |
+| Cloud | Supabase (Auth PKCE + REST + Realtime WebSocket) |
+| Auth locale | PBKDF2-HMAC-SHA256 (100 k itérations, sel par compte) |
+| Auth cloud | Google Sign-In + email/mot de passe Supabase |
+| Photos | image_picker + flutter_image_compress (thumbnails 200×200) |
 | Notifications | flutter_local_notifications + timezone |
 | QR | qr_flutter + mobile_scanner |
 | PDF | pdf + printing |
-| Sync cloud | http (Supabase REST) |
-| Auth locale | crypto (PIN SHA-256) |
+| Monitoring | Sentry Flutter (crash reporting + filtre PII) |
 
 ---
 
@@ -146,9 +148,10 @@ lib/
 - ✅ **V2.1** — Stabilisation, chiffrement DB, permissions Android
 - ✅ **V2.2** — Module Cages complet, photos lapins
 - ✅ **V2.3** — Bottom nav 5 onglets, dark mode, onboarding, courbes croissance
-- ✅ **V2.4** — Audit UX/UI V3.1, landing page, GitHub Pages
-- 🟦 **V3.0** — Tâches avancées, coût production, pedigree PDF 4 générations, export CSV
-- 🟦 **V3.1** — Play Store (signing, RGPD, crash reporting, fiche store)
+- ✅ **V2.4** — Audit UX/UI, landing page GitHub Pages, couverture tests >60%
+- ✅ **V2.5** — Supabase V3.1 + Google Sign-In, sync résiliente (soft-delete, backoff), wizard formulaire, Riverpod NotifierProvider, FCFA par défaut
+- 🟦 **V2.6** — Play Store screenshots + soumission internal testing
+- 🟦 **V3.0** — Pedigree PDF 4 générations, coût de production, export CSV avancé, i18n FR/EN
 
 ---
 

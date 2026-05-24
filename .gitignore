@@ -75,3 +75,14 @@ sentry.properties
 fastlane/service-account.json
 **/service-account*.json
 fastlane/report.xml
+
+# ── Fichiers de travail temporaires ──
+all_tests.txt
+*.txt.bak
+
+# ── Outils CSS/Tailwind compilés localement ──
+tailwindcss*.exe
+tailwind.config.js
+
+# ── Propriétés Sentry (contient le DSN) ──
+sentry.properties

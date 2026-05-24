@@ -37,7 +37,50 @@
     --jade: #0F8C66;
     --paper: #FAF9F5;
     --ink: #1A1F1B;
+    --repro: #7C5CDB;
+    --health: #E24B4A;
+    --feed: #D85A30;
+    --finance: #B47416;
+    --tools: #1565C0;
+    --warn: #E8A02C;
+    --admin: #546E7A;
   }
+  
+  /* Premium Soft Icon Wrappers */
+  .icon-wrap-jade { background-color: rgba(15, 140, 102, 0.12); color: var(--jade); }
+  .icon-wrap-repro { background-color: rgba(124, 92, 219, 0.12); color: var(--repro); }
+  .icon-wrap-health { background-color: rgba(226, 75, 74, 0.12); color: var(--health); }
+  .icon-wrap-warn { background-color: rgba(232, 160, 44, 0.12); color: var(--warn); }
+  .icon-wrap-feed { background-color: rgba(216, 90, 48, 0.12); color: var(--feed); }
+  .icon-wrap-finance { background-color: rgba(180, 116, 22, 0.12); color: var(--finance); }
+  .icon-wrap-tools { background-color: rgba(21, 101, 192, 0.12); color: var(--tools); }
+  .icon-wrap-admin { background-color: rgba(84, 110, 122, 0.12); color: var(--admin); }
+
+  /* Range input custom styles */
+  input[type="range"]::-webkit-slider-thumb {
+    background: var(--jade) !important;
+    border-radius: 9999px;
+    height: 16px;
+    width: 16px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(26,31,27,0.15);
+    -webkit-appearance: none;
+    margin-top: -5px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    background: var(--jade) !important;
+    border-radius: 9999px;
+    height: 16px;
+    width: 16px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(26,31,27,0.15);
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    background: #E5E3DC;
+    height: 6px;
+    border-radius: 9999px;
+  }
+
   html, body { background: var(--paper); color: var(--ink); }
   body { font-feature-settings: "ss01","cv11","cv02"; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
   .font-display { font-family:'Instrument Serif', Georgia, serif; letter-spacing:-0.005em; }
@@ -303,8 +346,8 @@
     <!-- Grid -->
     <div class="mt-10 -mx-5 px-[7.5vw] sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 lg:gap-px lg:bg-line lg:rounded-2xl lg:overflow-hidden lg:shadow-card lg:border lg:border-line snap-x snap-mandatory hide-scrollbar pb-4 lg:pb-0">
       <!-- 1 Cheptel -->
-      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+      <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 hover:bg-paper-raised transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
+        <div class="w-10 h-10 rounded-xl icon-wrap-jade flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M12 20c0-3 2.5-5 6-5s6 2 6 5"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Cheptel</h3>
@@ -312,7 +355,7 @@
       </div>
       <!-- 2 Reproduction -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-repro text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-repro flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 6.5-7 11-7 11z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Reproduction</h3>
@@ -320,7 +363,7 @@
       </div>
       <!-- 3 Santé -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-health text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-health flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5 0 2.5-1 2.5-2.5S20.5 9 19 9c-1 0-1.5.5-2 1l-2-2c.5-.5 1-1 1-2 0-1.5-1-2.5-2.5-2.5S11 4.5 11 6c0 1 .5 1.5 1 2l-7 7c-.5-.5-1-1-2-1-1.5 0-2.5 1-2.5 2.5S1.5 19 3 19c1 0 1.5-.5 2-1l2 2c-.5.5-1 1-1 2 0 1.5 1 2.5 2.5 2.5S11 23.5 11 22c0-1-.5-1.5-1-2l7-7c.5.5 1 1 2 1z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Santé &amp; prophylaxie</h3>
@@ -328,7 +371,7 @@
       </div>
       <!-- 4 Tâches & Streak -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-warn text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-warn flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Routine quotidienne</h3>
@@ -337,7 +380,7 @@
 
       <!-- 5 Lots & engraissement -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-jade-500 text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-jade flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M9 20V4M15 20v-7M21 20v-12"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Lots d'engraissement</h3>
@@ -346,7 +389,7 @@
 
       <!-- 6 Ventes & finances -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-finance text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-finance flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 16h4"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Ventes &amp; dépenses</h3>
@@ -355,7 +398,7 @@
 
       <!-- 7 Cages QR -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-tools text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-tools flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Cages &amp; QR</h3>
@@ -364,7 +407,7 @@
 
       <!-- 8 Modes terrain -->
       <div class="shrink-0 snap-center w-[85vw] sm:w-[320px] lg:w-auto bg-paper-card p-4 sm:p-7 transition group rounded-2xl border border-line lg:rounded-none lg:border-0 shadow-card lg:shadow-none" data-reveal>
-        <div class="w-10 h-10 rounded-xl bg-admin text-white flex items-center justify-center mb-5 group-hover:scale-105 transition">
+        <div class="w-10 h-10 rounded-xl icon-wrap-admin flex items-center justify-center mb-5 group-hover:scale-105 transition">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>
         </div>
         <h3 class="text-[17px] font-semibold tracking-tight text-ink">Pensée pour le terrain</h3>
@@ -406,7 +449,7 @@
       <!-- Phone 1: Cheptel -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe loading="lazy" src="mockups/render.html?screen=cheptel" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=cheptel" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
@@ -419,7 +462,7 @@
       <!-- Phone 2: Reproduction -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe loading="lazy" src="mockups/render.html?screen=repro" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=repro" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
@@ -432,7 +475,7 @@
       <!-- Phone 3: Tâches -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe loading="lazy" src="mockups/render.html?screen=taches" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=taches" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
@@ -445,7 +488,7 @@
       <!-- Phone 4: Lapin fiche -->
       <div data-reveal class="shrink-0 snap-center w-[75vw] sm:w-[300px] lg:w-auto flex flex-col items-center lg:-mt-10">
         <div class="phone" style="width:240px;height:509px;">
-          <iframe loading="lazy" src="mockups/render.html?screen=lapin" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
+          <iframe class="lazy-phone-iframe" loading="lazy" data-src="mockups/render.html?screen=lapin" src="about:blank" style="transform:scale(0.591);width:406px;height:860px;" onload="this.classList.add('loaded')"></iframe>
           <div class="phone-skel"></div>
         </div>
         <div class="mt-6 text-center max-w-[240px]">
@@ -719,9 +762,9 @@
             <div class="text-[12.5px] font-semibold text-ink">Sauvegarde en ligne</div>
             <div class="text-[11px] text-ink-muted">Vous décidez, vous désactivez quand vous voulez</div>
           </div>
-          <div class="w-11 h-6 rounded-full bg-jade-500 relative">
-            <span class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></span>
-          </div>
+          <button id="toggle-backup" class="w-11 h-6 rounded-full bg-jade-500 relative transition-colors duration-200 focus:outline-none" aria-label="Activer ou désactiver la sauvegarde">
+            <span id="toggle-thumb" class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200" style="right: 2px;"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -767,7 +810,7 @@
           <div class="w-10 h-10 rounded-full bg-white text-jade-700 flex items-center justify-center font-semibold">FB</div>
           <div>
             <div class="text-[14px] font-semibold">Fatou Bâ</div>
-            <div class="text-[12.5px] text-white/70">Coop. Lapinière du Sahel · Dakar</div>
+            <div class="text-[12.5px] text-jade-100">Coop. Lapinière du Sahel · Dakar</div>
           </div>
         </figcaption>
       </figure>
@@ -786,6 +829,69 @@
           </div>
         </figcaption>
       </figure>
+    </div>
+  </div>
+</section>
+
+
+<!-- ───────────────────────── CALCULATEUR ROI ───────────────────────── -->
+<section id="calculateur" class="py-14 sm:py-20 bg-paper-raised/30 border-y border-line">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8">
+    <div class="grid lg:grid-cols-12 gap-10 items-center">
+      
+      <div class="lg:col-span-6" data-reveal>
+        <div class="text-[12px] uppercase tracking-[0.18em] text-jade-600 font-medium">Rentabilité</div>
+        <h2 class="mt-3 text-[30px] sm:text-[42px] leading-[1.1] tracking-[-0.02em] font-semibold text-ink">
+          Estimez les gains de<br />
+          <span class="font-display italic font-normal text-jade-600">votre élevage.</span>
+        </h2>
+        <p class="mt-4 text-[15px] sm:text-[16px] leading-relaxed text-ink-soft">
+          En éliminant le carnet papier et en automatisant le suivi des portées, CuniGest vous aide à réduire la mortalité des portées et à optimiser l'alimentation. Faites glisser le curseur pour voir votre retour sur investissement estimé.
+        </p>
+      </div>
+
+      <div class="lg:col-span-6" data-reveal>
+        <div class="bg-white border border-line rounded-3xl p-6 sm:p-8 shadow-card">
+          <!-- Sliders -->
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between text-[13.5px] font-medium text-ink mb-2">
+                <span>Nombre de femelles reproductrices</span>
+                <span class="text-jade-600 font-semibold" id="female-count-val">30</span>
+              </div>
+              <input type="range" id="female-count" min="5" max="200" value="30" class="w-full h-1.5 bg-paper-raised rounded-lg appearance-none cursor-pointer accent-jade-500" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[13.5px] font-medium text-ink mb-2">
+                <span>Prix moyen de vente d'un lapin</span>
+                <span class="text-jade-600 font-semibold" id="rabbit-price-val">3 500 FCFA</span>
+              </div>
+              <input type="range" id="rabbit-price" min="1500" max="6000" step="500" value="3500" class="w-full h-1.5 bg-paper-raised rounded-lg appearance-none cursor-pointer accent-jade-500" />
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-line my-6"></div>
+
+          <!-- Results -->
+          <div class="grid grid-cols-2 gap-4 text-center">
+            <div class="bg-paper rounded-2xl p-4 border border-line">
+              <div class="text-[11px] uppercase tracking-wider text-ink-muted">Portées sauvées / an</div>
+              <div class="mt-1 text-[24px] sm:text-[28px] font-bold text-ink" id="litters-saved">6</div>
+            </div>
+            <div class="bg-jade-50/50 rounded-2xl p-4 border border-jade-100">
+              <div class="text-[11px] uppercase tracking-wider text-jade-700 font-medium">Gain estimé / an</div>
+              <div class="mt-1 text-[24px] sm:text-[28px] font-bold text-jade-600 font-sans" id="money-saved">147 000 F</div>
+            </div>
+          </div>
+          
+          <div class="mt-4 text-[11px] text-center text-ink-muted">
+            *Estimation basée sur une réduction moyenne de 15% des pertes de portées en élevage cunicole suivi par logiciel.
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -812,7 +918,7 @@
           </p>
 
           <div class="mt-9 flex flex-wrap items-center gap-3">
-            <a href="#" class="btn-press inline-flex items-center gap-3 bg-white text-ink hover:bg-paper font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
+            <a href="javascript:void(0)" class="js-open-modal btn-press inline-flex items-center gap-3 bg-white text-ink hover:bg-paper font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M5 3v18l7-5 7 5V3z"/>
               </svg>
@@ -821,7 +927,7 @@
                 <span class="block text-[15px] font-semibold leading-tight">Pour Android · v2.4</span>
               </span>
             </a>
-            <a href="#" class="btn-press inline-flex items-center gap-3 border border-white/20 hover:bg-white/5 text-white font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
+            <a href="javascript:void(0)" class="js-open-modal btn-press inline-flex items-center gap-3 border border-white/20 hover:bg-white/5 text-white font-medium pl-4 pr-5 py-3.5 rounded-xl transition">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
                 <path d="M4 4h4l3 7 3-7h4M5 20l4-9M19 20l-4-9"/>
               </svg>
@@ -930,13 +1036,171 @@
   </div>
 </footer>
 
+<!-- Modal Bêta / Waitlist -->
+<div id="beta-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+  <div class="relative w-full max-w-md bg-paper border border-line rounded-[28px] p-6 sm:p-8 shadow-card transform scale-95 transition-transform duration-300">
+    <button id="close-modal" class="absolute top-4 right-4 w-8 h-8 rounded-full border border-line hover:bg-paper-raised flex items-center justify-center transition" aria-label="Fermer la modale">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="text-center">
+      <div class="w-12 h-12 rounded-2xl bg-jade-50 text-jade-700 flex items-center justify-center mx-auto mb-4 text-xl">
+        🐇
+      </div>
+      <h3 class="text-[22px] font-semibold tracking-tight text-ink">Rejoindre la bêta CuniGest</h3>
+      <p class="mt-2 text-[14px] leading-relaxed text-ink-muted">
+        Soyez averti dès que l'application est disponible sur le Google Play Store et rejoignez nos testeurs sur iOS.
+      </p>
+    </div>
+    <form id="beta-form" class="mt-6 space-y-4">
+      <div>
+        <label for="email" class="block text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-1.5">Adresse e-mail</label>
+        <input type="email" id="email" required placeholder="nom@exemple.com" class="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-[14.5px] placeholder-ink-muted/50 focus:outline-none focus:ring-2 focus:ring-jade-500/25 focus:border-jade-500 transition" />
+      </div>
+      <div>
+        <label for="elevage" class="block text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-1.5">Taille de votre élevage</label>
+        <select id="elevage" class="w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-ink text-[14.5px] focus:outline-none focus:ring-2 focus:ring-jade-500/25 focus:border-jade-500 transition">
+          <option>Moins de 10 lapins (Familial)</option>
+          <option>10 à 50 lapins (Professionnel moyen)</option>
+          <option>Plus de 50 lapins (Grand élevage/Coopérative)</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full btn-press py-3 rounded-xl bg-jade-500 hover:bg-jade-600 text-white font-medium text-[15px] shadow-card transition">
+        S'inscrire à l'accès anticipé
+      </button>
+    </form>
+    <div id="modal-success" class="hidden text-center py-4">
+      <div class="w-12 h-12 rounded-full bg-jade-50 text-jade-700 flex items-center justify-center mx-auto mb-3 text-lg">
+        ✓
+      </div>
+      <h4 class="text-[17px] font-semibold text-ink">Inscription réussie !</h4>
+      <p class="mt-1 text-[13.5px] text-ink-muted">Merci, nous vous contacterons très prochainement.</p>
+    </div>
+  </div>
+</div>
+
 <script>
+  // 1. Reveal observer
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
     }
   }, { threshold: 0.10, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+
+  // 2. Modal waitlist / bêta
+  const modal = document.getElementById('beta-modal');
+  const openModalBtns = document.querySelectorAll('.js-open-modal');
+  const closeModalBtn = document.getElementById('close-modal');
+  const betaForm = document.getElementById('beta-form');
+  const modalSuccess = document.getElementById('modal-success');
+
+  openModalBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modal.firstElementChild.classList.remove('scale-95');
+      modal.firstElementChild.classList.add('scale-100');
+    });
+  });
+
+  const closeModal = () => {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.firstElementChild.classList.remove('scale-100');
+    modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+      betaForm.classList.remove('hidden');
+      modalSuccess.classList.add('hidden');
+      betaForm.reset();
+    }, 300);
+  };
+
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  if (betaForm) {
+    betaForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      betaForm.classList.add('hidden');
+      modalSuccess.classList.remove('hidden');
+    });
+  }
+
+  // 3. Interactive backup toggle
+  const toggleBtn = document.getElementById('toggle-backup');
+  const toggleThumb = document.getElementById('toggle-thumb');
+  let isBackupActive = true;
+
+  if (toggleBtn && toggleThumb) {
+    toggleBtn.addEventListener('click', () => {
+      isBackupActive = !isBackupActive;
+      if (isBackupActive) {
+        toggleBtn.classList.remove('bg-slate-300');
+        toggleBtn.classList.add('bg-jade-500');
+        toggleThumb.style.right = '2px';
+        toggleThumb.style.left = 'auto';
+      } else {
+        toggleBtn.classList.remove('bg-jade-500');
+        toggleBtn.classList.add('bg-slate-300');
+        toggleThumb.style.left = '2px';
+        toggleThumb.style.right = 'auto';
+      }
+    });
+  }
+
+  // 4. Lazy loading iframes with IntersectionObserver
+  const lazyIframes = document.querySelectorAll('.lazy-phone-iframe');
+  if ('IntersectionObserver' in window) {
+    const iframeObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const iframe = entry.target;
+          if (iframe.dataset.src) {
+            iframe.src = iframe.dataset.src;
+            observer.unobserve(iframe);
+          }
+        }
+      });
+    }, { rootMargin: '0px 0px 300px 0px' });
+
+    lazyIframes.forEach(iframe => iframeObserver.observe(iframe));
+  } else {
+    lazyIframes.forEach(iframe => {
+      if (iframe.dataset.src) iframe.src = iframe.dataset.src;
+    });
+  }
+
+  // 5. ROI Calculator
+  const femaleSlider = document.getElementById('female-count');
+  const priceSlider = document.getElementById('rabbit-price');
+  
+  if (femaleSlider && priceSlider) {
+    const femaleVal = document.getElementById('female-count-val');
+    const priceVal = document.getElementById('rabbit-price-val');
+    const littersSaved = document.getElementById('litters-saved');
+    const moneySaved = document.getElementById('money-saved');
+
+    const updateROI = () => {
+      const females = parseInt(femaleSlider.value);
+      const price = parseInt(priceSlider.value);
+      
+      femaleVal.innerText = females;
+      priceVal.innerText = price.toLocaleString('fr-FR') + ' FCFA';
+      
+      const litters = Math.max(1, Math.round(females * 0.2));
+      littersSaved.innerText = litters;
+      
+      const gain = litters * 7 * price;
+      moneySaved.innerText = gain.toLocaleString('fr-FR') + ' F';
+    };
+
+    femaleSlider.addEventListener('input', updateROI);
+    priceSlider.addEventListener('input', updateROI);
+    updateROI();
+  }
 </script>
 </body>
 </html>

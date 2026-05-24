@@ -1,8 +1,8 @@
 # 🗺️ ROADMAP DE REFACTORING — CuniGest V2.5 → V3.0
 
-> **Document vivant.** Mis à jour au fil de l'eau par Claude (rôle CTO).
-> **Dernière mise à jour :** 2026-05-17
-> **Statut global :** ✅ Phase A terminée | ✅ Phase B terminée | ✅ Phase C terminée | ✅ Phase D (5/6) | ✅ Phase E terminée
+> **Document archivé.** Les phases A→E sont terminées. Voir `CHANGELOG.md` pour le détail des livraisons.
+> **Dernière mise à jour :** 2026-05-24
+> **Statut global :** ✅ Phase A | ✅ Phase B | ✅ Phase C | ✅ Phase D (5/6) | ✅ Phase E | ⏸ Phase F (3/5 — store)
 
 ---
 

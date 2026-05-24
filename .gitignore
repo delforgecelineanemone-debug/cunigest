@@ -58,6 +58,7 @@ app.*.map.json
 /android/key.properties
 /android/*.jks
 /android/*.keystore
+/android/build/
 
 # ── Environnement ──
 .env

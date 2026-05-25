@@ -76,7 +76,7 @@ dependencies:
   # (compat). Le client supabase_flutter gère Auth + Realtime.
   http: ^1.2.2
   supabase_flutter: ^2.5.6
-  google_sign_in: ^6.2.1
+  google_sign_in: ^7.2.0
 
   # ── Crash reporting (Phase A.2) ──
   sentry_flutter: ^8.0.0

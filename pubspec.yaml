@@ -25,7 +25,7 @@ dependencies:
 
   # ── Partage et import de fichiers ──
   share_plus: ^10.0.2
-  file_picker: ^8.1.2
+  file_picker: ^11.0.2
 
   # ── Formatage et localisation ──
   intl: ^0.20.2
